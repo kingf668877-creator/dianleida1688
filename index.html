@@ -979,6 +979,120 @@ const MODIFIER_SYNONYMS = {
   '果冻': ['透明', 'PVC', '胶'],
 };
 
+// ===== E-commerce Keyword Dictionary for long keyword splitting =====
+// Used by splitLongKeyword() to break down compound search terms like
+// "欧美女装西装针织" → ["欧美", "女装", "西装", "针织"]
+const ECOMMERCE_KEYWORDS = [
+  // 服装品类
+  '女装','男装','童装','婴儿','西装','外套','衬衫','卫衣','毛衣','羊毛','羊绒',
+  '连衣裙','半身裙','裙子','裤子','牛仔裤','短裤','长裤','上衣','打底','针织',
+  '羽绒','棉服','风衣','大衣','夹克','马甲','西裤','休闲裤','运动裤','背心','吊带',
+  '阔腿裤','哈伦裤','蕾丝衫','雪纺衫','T恤','POLO','卫裤','打底裤',
+  // 鞋类
+  '运动鞋','皮鞋','凉鞋','拖鞋','靴子','高跟鞋','帆布鞋','板鞋','老爹鞋','马丁靴',
+  // 箱包
+  '手提包','斜挎包','单肩包','双肩包','背包','钱包','卡包','手包','腰包','胸包',
+  // 风格
+  '欧美','韩版','日系','复古','时尚','潮流','可爱','个性','创意','简约','商务',
+  '休闲','运动','学院','街头','田园','民族','英伦','法式','国潮','港风','ins',
+  '跨境','外贸','出口','网红','爆款','热销','新款','小众','百搭','宽松','修身',
+  '显瘦','气质','甜美','性感','帅气','干练','优雅','知性','活泼','清新',
+  // 材质
+  '棉麻','丝绸','皮革','帆布','亚克力','草编','牛仔','涤纶','蕾丝','网纱','雪纺',
+  '缎面','灯芯绒','法兰绒','羊羔绒','珊瑚绒','摇粒绒','水洗','做旧','磨毛',
+  // 颜色
+  '黑色','白色','红色','蓝色','绿色','黄色','粉色','紫色','灰色','棕色','卡其',
+  '米色','杏色','藏青','酒红','墨绿','宝蓝','鹅黄','藕粉','雾霾蓝','牛油果',
+  // 季节
+  '春季','夏季','秋季','冬季','春夏','秋冬','初秋','深秋','初春','盛夏',
+  // 美甲
+  '美甲','甲油','甲片','甲胶','美甲贴','穿戴甲','延长甲',
+  // 饰品
+  '饰品','项链','手链','耳环','耳钉','戒指','发夹','发饰','胸针','手镯',
+  // 家居
+  '瓷砖','地砖','墙砖','岩板','美缝','填缝','背胶','护角',
+  // 其他
+  '气球','包装','礼盒','玩具','积木','拼图','毛绒','玩偶','模型',
+  '花盆','园艺','多肉','绿植','花架',
+  '锅','炒锅','汤锅','煎锅','蒸锅','刀具','砧板',
+  '灯','灯具','吊灯','台灯','射灯','灯泡','灯带',
+  '手机壳','手机膜','充电宝','数据线','耳机',
+];
+
+// Split a long compound keyword into known e-commerce segments
+// Uses greedy matching (longest first) + 2-char fallback
+// e.g., "欧美女装西装针织" → ["欧美", "女装", "西装", "针织"]
+function splitLongKeyword(keyword) {
+  if (!keyword || keyword.length <= 2) return [keyword];
+
+  // Sort keywords by length descending (greedy: longest first)
+  const sortedKeywords = [...ECOMMERCE_KEYWORDS].sort((a, b) => b.length - a.length);
+
+  const result = [];
+  let remaining = keyword;
+  let maxIterations = 20;
+
+  while (remaining.length > 0 && maxIterations-- > 0) {
+    let found = false;
+
+    // Try prefix match (greedy, longest first)
+    for (const kw of sortedKeywords) {
+      if (remaining.toLowerCase().startsWith(kw.toLowerCase())) {
+        result.push(kw);
+        remaining = remaining.slice(kw.length);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      // Try substring match: find earliest-occurring known keyword
+      let bestMatch = null;
+      let bestIdx = Infinity;
+      for (const kw of sortedKeywords) {
+        const idx = remaining.toLowerCase().indexOf(kw.toLowerCase());
+        if (idx >= 0 && idx < bestIdx) {
+          bestMatch = kw;
+          bestIdx = idx;
+        }
+      }
+      if (bestMatch !== null && bestIdx < remaining.length) {
+        // If there's unmatched prefix, add it as a token (if length >= 2)
+        if (bestIdx >= 2) {
+          result.push(remaining.slice(0, bestIdx));
+        } else if (bestIdx === 1) {
+          // Single char prefix - attach to next match
+          result.push(remaining[0] + bestMatch);
+          remaining = remaining.slice(bestIdx + bestMatch.length);
+          found = true;
+          continue;
+        }
+        result.push(bestMatch);
+        remaining = remaining.slice(bestIdx + bestMatch.length);
+        found = true;
+      }
+    }
+
+    if (!found) {
+      // Fallback: take 2 chars at a time
+      if (remaining.length >= 2) {
+        result.push(remaining.slice(0, 2));
+        remaining = remaining.slice(2);
+      } else {
+        // Single char left - append to last token if possible
+        if (result.length > 0) {
+          result[result.length - 1] += remaining;
+        } else {
+          result.push(remaining);
+        }
+        remaining = '';
+      }
+    }
+  }
+
+  return result.filter(t => t.length > 0);
+}
+
 // ===== Non-bag compound words (also need splitting but NOT bag context) =====
 const COMPOUND_SPLIT = {
   '美甲钻': { split: ['美甲', '钻'], synonyms: ['锆石', '水钻', '平底钻', '尖底钻', '水晶钻'] },
@@ -1307,7 +1421,26 @@ function smartTokenize(query) {
       return;
     }
 
-    // --- Rule 5: Default - add as-is ---
+    // --- Rule 5: Long keyword auto-split ---
+    // For keywords longer than 2 chars that didn't match other rules,
+    // try to split into known e-commerce segments
+    if (bt.length > 2) {
+      const segments = splitLongKeyword(bt);
+      if (segments.length > 1) {
+        tokens.push(...segments);
+        isCompound = true;
+        // Expand synonyms for each segment
+        segments.forEach(seg => {
+          if (MODIFIER_SYNONYMS[seg]) {
+            expandedTerms.push(...MODIFIER_SYNONYMS[seg]);
+          }
+          if (AMBIGUOUS_CHARS[seg]) ambiguousChars.push(seg);
+        });
+        return;
+      }
+    }
+
+    // --- Rule 5b: Default - add as-is ---
     tokens.push(bt);
     if (AMBIGUOUS_CHARS[bt]) ambiguousChars.push(bt);
   });
@@ -1395,23 +1528,35 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
       if (titleLower.includes(term)) score += 3;
     });
 
-    // --- Strict relevance filtering for compound AND multi-word searches ---
+    // --- Relevance filtering for compound AND multi-word searches ---
     if (requireAllTokens || multiWordSearch) {
-      // For non-ambiguous tokens: must appear in title, shop, or location
       const nonAmbiguousTokens = tokens.filter(t => !AMBIGUOUS_CHARS[t]);
-      const allNonAmbiguousMatched = nonAmbiguousTokens.every(token =>
-        titleLower.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
-        (MODIFIER_SYNONYMS[token] && MODIFIER_SYNONYMS[token].some(syn => titleLower.includes(syn)))
-      );
-
-      // For ambiguous tokens: must be confirmed context (e.g., "包" = bag)
       const ambiguousTokens = tokens.filter(t => AMBIGUOUS_CHARS[t]);
-      const allAmbiguousConfirmed = ambiguousTokens.every(token => {
-        if (token === '包') return bagContextResult === true;
-        return titleLower.includes(token);
-      });
 
-      if (!allNonAmbiguousMatched || !allAmbiguousConfirmed) return null;
+      // For API products: use relaxed matching (at least 1 non-ambiguous token match)
+      // The API already filtered by keyword, so local matching just needs to confirm relevance
+      if (p._fromAPI) {
+        // At least 1 non-ambiguous token must match (in title, shop, location, or synonym)
+        const anyTokenMatched = nonAmbiguousTokens.some(token =>
+          titleLower.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
+          (MODIFIER_SYNONYMS[token] && MODIFIER_SYNONYMS[token].some(syn => titleLower.includes(syn)))
+        );
+        if (!anyTokenMatched && nonAmbiguousTokens.length > 0) return null;
+      } else {
+        // For local data: require ALL non-ambiguous tokens to match (strict)
+        const allNonAmbiguousMatched = nonAmbiguousTokens.every(token =>
+          titleLower.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
+          (MODIFIER_SYNONYMS[token] && MODIFIER_SYNONYMS[token].some(syn => titleLower.includes(syn)))
+        );
+
+        // For ambiguous tokens: must be confirmed context (e.g., "包" = bag)
+        const allAmbiguousConfirmed = ambiguousTokens.every(token => {
+          if (token === '包') return bagContextResult === true;
+          return titleLower.includes(token);
+        });
+
+        if (!allNonAmbiguousMatched || !allAmbiguousConfirmed) return null;
+      }
     }
 
     // Must have at least some primary token match
@@ -1548,9 +1693,9 @@ const CATEGORY_MAP = {
     excludeSubcategories: ['瓷砖附件', '瓷砖胶'],
     excludeTitleKeywords: ['瓷砖胶', '瓷砖清洁', '瓷砖美缝', '瓷砖修复', '瓷砖贴纸', '瓷砖贴', '清洁剂', '美缝剂', '填缝剂', '修补', '防水', '胶水', '粘合剂'],
   },
-  // 服装 (id=200035008)
+  // 服装 (id=200035008, may need fallback to no-category)
   clothing: {
-    matchKeywords: ['衣服', '服装', 'T恤', '衬衫', '外套', '卫衣', '裤子', '裙子', '连衣裙', '羽绒服', '毛衣', '针织'],
+    matchKeywords: ['衣服', '服装', '女装', '男装', '童装', 'T恤', '衬衫', '外套', '卫衣', '裤子', '裙子', '连衣裙', '羽绒服', '毛衣', '针织', '西装', '大衣', '风衣', '夹克', '马甲', '半身裙', '牛仔裤', '棉服', '打底', '上衣'],
     categoryId: 200035008,
     excludeSubcategories: ['服装辅料', '服装配件', '拉链', '纽扣', '花边', '商标'],
     excludeTitleKeywords: ['辅料', '拉链', '纽扣', '花边', '商标', '吊牌', '衣架', '缝纫线'],
@@ -1690,9 +1835,19 @@ async function fetchProductsFromAPI(keyword) {
   }
   
   // Step 1: Fetch first page to get totalPages
-  const firstResult = await callDianLeiDaAPI('search', { ...baseParams, pageIndex: 1 });
+  let firstResult = await callDianLeiDaAPI('search', { ...baseParams, pageIndex: 1 });
   if (firstResult.code !== 200) {
     throw new Error(`API error: ${firstResult.msg}`);
+  }
+  
+  // Fallback: if category filter returns 0 results, retry without category filter
+  if (hasCategoryFilter && (!firstResult.result.totalPages || firstResult.result.totalPages === 0)) {
+    console.log('Category filter returned 0 results, retrying without category filter...');
+    delete baseParams.categoryIdList;
+    firstResult = await callDianLeiDaAPI('search', { ...baseParams, pageIndex: 1 });
+    if (firstResult.code !== 200) {
+      throw new Error(`API error: ${firstResult.msg}`);
+    }
   }
   
   const totalPages = Math.min(firstResult.result.totalPages || 1, 20);
@@ -1945,7 +2100,29 @@ async function doSearch() {
     </div>`;
 
   // Now do local matching on the fetched products
-  const results = searchProductsInArray(query, apiProducts, priceFilter, sortBy);
+  let results = searchProductsInArray(query, apiProducts, priceFilter, sortBy);
+
+  // Fallback: if API returned products but local matching filtered all out,
+  // show API products directly (sorted by sales, with price filter applied)
+  if (results.length === 0 && apiProducts.length > 0 && API_MODE === 'api') {
+    console.log('Local matching returned 0 from API products, using API products directly');
+    const maxSales = Math.max(...apiProducts.map(p => p.sales), 1);
+    results = apiProducts
+      .filter(p => {
+        if (priceFilter === 'all') return true;
+        if (priceFilter === '0-5') return p.price < 5;
+        if (priceFilter === '5-20') return p.price >= 5 && p.price < 20;
+        if (priceFilter === '20-50') return p.price >= 20 && p.price < 50;
+        if (priceFilter === '50+') return p.price >= 50;
+        return true;
+      })
+      .map(p => ({
+        product: p,
+        matchScore: 1,
+        compositeScore: calcCompositeScore(p, maxSales),
+      }))
+      .sort((a, b) => b.compositeScore - a.compositeScore);
+  }
 
   // Step 6: Score ranking
   await sleep(350);
