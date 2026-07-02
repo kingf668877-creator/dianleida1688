@@ -1514,7 +1514,9 @@ async function callDianLeiDaAPI(action, params) {
   const body = { action, ...params };
   const resp = await fetch(API_PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // Use text/plain to avoid CORS preflight (OPTIONS) request
+    // Netlify function still parses body as JSON via JSON.parse()
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body),
   });
   if (!resp.ok) throw new Error(`Proxy error: ${resp.status}`);
