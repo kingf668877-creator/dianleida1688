@@ -1681,6 +1681,174 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
 }
 
 // ===== Scoring Model =====
+// ===== Auto-detect & optimize: scan results for outlier products =====
+// After initial search, this function:
+// 1. Extracts high-frequency keywords from result titles
+// 2. Identifies "outlier" products that don't share mainstream keywords
+// 3. Extracts exclusion rules from outliers
+// 4. Returns optimized result set + optimization report
+
+function autoDetectAndOptimize(query, results) {
+  if (!results || results.length < 10) {
+    return { results, optimized: false, report: null };
+  }
+
+  const products = results.map(r => r.product || r);
+  const titles = products.map(p => p.title || '');
+
+  // Step 1: Extract 2-char and 3-char substrings, count frequency
+  const freq2 = {};
+  const freq3 = {};
+  for (const title of titles) {
+    const seen2 = new Set();
+    const seen3 = new Set();
+    for (let i = 0; i < title.length - 1; i++) {
+      const sub2 = title.substr(i, 2);
+      if (!seen2.has(sub2)) { freq2[sub2] = (freq2[sub2] || 0) + 1; seen2.add(sub2); }
+    }
+    for (let i = 0; i < title.length - 2; i++) {
+      const sub3 = title.substr(i, 3);
+      if (!seen3.has(sub3)) { freq3[sub3] = (freq3[sub3] || 0) + 1; seen3.add(sub3); }
+    }
+  }
+
+  // Step 2: Find "mainstream" keywords (appear in >30% of titles)
+  const threshold = Math.max(3, Math.floor(products.length * 0.3));
+  const mainstream2 = Object.entries(freq2)
+    .filter(([kw, count]) => count >= threshold && kw.length >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([kw]) => kw);
+  const mainstream3 = Object.entries(freq3)
+    .filter(([kw, count]) => count >= threshold && kw.length >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([kw]) => kw);
+  const mainstreamKeywords = [...mainstream3, ...mainstream2];
+
+  // Filter out generic keywords that don't help distinguish categories
+  const genericWords = ['的', '了', '和', '与', '在', '新款', '批发', '厂家', '直销', '现货', '热卖', '爆款'];
+  const filteredMainstream = mainstreamKeywords.filter(kw => !genericWords.some(gw => kw === gw));
+
+  if (filteredMainstream.length === 0) {
+    return { results, optimized: false, report: null };
+  }
+
+  // Step 3: Identify outlier products (don't contain ANY mainstream keyword)
+  const outliers = [];
+  const normalProducts = [];
+  for (let i = 0; i < products.length; i++) {
+    const titleLower = (products[i].title || '').toLowerCase();
+    const hasMainstream = filteredMainstream.some(kw => titleLower.includes(kw.toLowerCase()));
+    if (!hasMainstream) {
+      outliers.push({ index: i, product: products[i], result: results[i] });
+    } else {
+      normalProducts.push(results[i]);
+    }
+  }
+
+  // If outliers < 5% or < 3 products, no optimization needed
+  if (outliers.length < 3 || outliers.length / products.length < 0.05) {
+    return { results, optimized: false, report: null };
+  }
+
+  console.log(`[AutoOptimize] Detected ${outliers.length} outlier products out of ${products.length}`);
+
+  // Step 4: Extract common keywords from outliers (these become new exclusion words)
+  const outlierFreq2 = {};
+  for (const o of outliers) {
+    const title = o.product.title || '';
+    const seen = new Set();
+    for (let i = 0; i < title.length - 1; i++) {
+      const sub = title.substr(i, 2);
+      if (!seen.has(sub)) { outlierFreq2[sub] = (outlierFreq2[sub] || 0) + 1; seen.add(sub); }
+    }
+  }
+
+  // Find keywords that appear frequently in outliers but rarely in normal products
+  const newExcludeWords = [];
+  for (const [kw, outlierCount] of Object.entries(outlierFreq2)) {
+    if (outlierCount < 2) continue;  // Must appear in at least 2 outliers
+    const normalCount = freq2[kw] || 0;
+    const normalProductCount = normalCount - outlierCount;
+    // If keyword appears in >50% of outliers but <10% of normal products → exclusion word
+    if (outlierCount / outliers.length >= 0.5 && normalProductCount / normalProducts.length < 0.1) {
+      newExcludeWords.push({ keyword: kw, outlierCount, normalCount: normalProductCount });
+    }
+  }
+
+  // Also check 3-char keywords
+  const outlierFreq3 = {};
+  for (const o of outliers) {
+    const title = o.product.title || '';
+    const seen = new Set();
+    for (let i = 0; i < title.length - 2; i++) {
+      const sub = title.substr(i, 3);
+      if (!seen.has(sub)) { outlierFreq3[sub] = (outlierFreq3[sub] || 0) + 1; seen.add(sub); }
+    }
+  }
+  for (const [kw, outlierCount] of Object.entries(outlierFreq3)) {
+    if (outlierCount < 2) continue;
+    const normalCount = freq3[kw] || 0;
+    const normalProductCount = normalCount - outlierCount;
+    if (outlierCount / outliers.length >= 0.4 && normalProductCount / normalProducts.length < 0.1) {
+      newExcludeWords.push({ keyword: kw, outlierCount, normalCount: normalProductCount });
+    }
+  }
+
+  // Sort by outlier frequency (most common in outliers first)
+  newExcludeWords.sort((a, b) => b.outlierCount - a.outlierCount);
+
+  // Filter out overly short or generic words
+  const validExcludeWords = newExcludeWords
+    .filter(w => w.keyword.length >= 2 && !genericWords.includes(w.keyword))
+    .map(w => w.keyword);
+
+  if (validExcludeWords.length === 0) {
+    // Even without extractable exclusion words, just remove outliers
+    const optimizedResults = normalProducts;
+    return {
+      results: optimizedResults,
+      optimized: true,
+      report: {
+        outlierCount: outliers.length,
+        totalCount: products.length,
+        excludeWords: [],
+        outlierSamples: outliers.slice(0, 5).map(o => (o.product.title || '').substr(0, 40)),
+      }
+    };
+  }
+
+  // Step 5: Re-filter ALL results using new exclusion words
+  // (not just outliers - some outliers might have been borderline)
+  const optimizedResults = results.filter(r => {
+    const p = r.product || r;
+    const titleLower = (p.title || '').toLowerCase();
+    const shopLower = (p.shop || '').toLowerCase();
+    for (const ew of validExcludeWords) {
+      if (titleLower.includes(ew.toLowerCase()) || shopLower.includes(ew.toLowerCase())) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  console.log(`[AutoOptimize] Extracted exclude words: ${validExcludeWords.join(', ')}`);
+  console.log(`[AutoOptimize] ${results.length} → ${optimizedResults.length} (removed ${results.length - optimizedResults.length})`);
+
+  return {
+    results: optimizedResults,
+    optimized: true,
+    report: {
+      outlierCount: outliers.length,
+      totalCount: products.length,
+      excludeWords: validExcludeWords,
+      outlierSamples: outliers.slice(0, 5).map(o => (o.product.title || '').substr(0, 40)),
+      mainstreamKeywords: filteredMainstream.slice(0, 5),
+    }
+  };
+}
+
 function calcCompositeScore(p, maxSales) {
   // Market validation (35 pts)
   let marketScore = 0;
@@ -2212,6 +2380,37 @@ async function doSearch() {
       .sort((a, b) => b.compositeScore - a.compositeScore);
   }
 
+  // ===== Auto-detect & optimize step =====
+  // Scan results for outlier products, extract exclusion rules, re-filter
+  let autoOptReport = null;
+  let autoOptExcluded = 0;
+  if (results.length >= 10) {
+    const optResult = autoDetectAndOptimize(query, results);
+    if (optResult.optimized) {
+      autoOptExcluded = results.length - optResult.results.length;
+      autoOptReport = optResult.report;
+      results = optResult.results;
+      console.log('[AutoOptimize] Report:', autoOptReport);
+    }
+  }
+
+  // Show auto-optimize step in UI (Step 5b)
+  if (autoOptReport) {
+    await sleep(300);
+    const step5bEl = document.createElement('div');
+    step5bEl.className = 'ai-step show';
+    const excludeWordsStr = autoOptReport.excludeWords.length > 0
+      ? autoOptReport.excludeWords.join('、')
+      : '（无特定排除词，直接移除离群商品）';
+    step5bEl.innerHTML = `
+      <span class="ai-step-icon">🤖</span>
+      <div class="ai-step-content">
+        <div class="ai-step-title">Step 5b: 智能检测优化</div>
+        <div class="ai-step-detail">检测到 ${autoOptReport.outlierCount} 款离群商品（共 ${autoOptReport.totalCount} 款）→ 提取排除词：${escapeHtml(excludeWordsStr)} → 移除 ${autoOptExcluded} 款不相关商品</div>
+      </div>`;
+    stepsContainer.appendChild(step5bEl);
+  }
+
   // Step 6: Score ranking
   await sleep(350);
   let stats = { total: results.length, excluded: totalExcluded };
@@ -2263,8 +2462,19 @@ async function doSearch() {
     { step: 3, title: '同义词扩展', icon: '🔗', detail: expandedTerms.length > 0 ? `扩展${expandedTerms.length}个同义词` : '无需扩展', expanded_terms: expandedTerms, status: 'done' },
     { step: 4, title: '歧义字符验证', icon: mustValidateBag ? '⚠️' : '✅', detail: mustValidateBag ? '排除非包包商品' : '无需验证', status: 'done' },
     { step: 5, title: '商品匹配', icon: '🔍', detail: matchDetail, matched_count: results.length, excluded_count: totalExcluded, status: 'done' },
-    { step: 6, title: '综合评分排序', icon: '📊', detail: results.length > 0 ? `匹配${results.length}款` : '无匹配', status: 'done' },
   ];
+
+  // Add auto-optimize step if optimization was performed
+  if (autoOptReport) {
+    steps.push({
+      step: '5b', title: '智能检测优化', icon: '🤖',
+      detail: `检测到 ${autoOptReport.outlierCount} 款离群商品 → 提取排除词：${autoOptReport.excludeWords.join('、') || '（移除离群商品）'} → 移除 ${autoOptExcluded} 款`,
+      optimized: true, outlier_count: autoOptReport.outlierCount, exclude_words: autoOptReport.excludeWords,
+      status: 'done'
+    });
+  }
+
+  steps.push({ step: 6, title: '综合评分排序', icon: '📊', detail: results.length > 0 ? `匹配${results.length}款${autoOptExcluded > 0 ? `（智能优化移除${autoOptExcluded}款）` : ''}` : '无匹配', status: 'done' });
 
   currentResults = results;
   currentPage = 1;
