@@ -1264,6 +1264,78 @@ function isBagAccessory(title) {
   return accessoryCount >= 2;
 }
 
+// ===== Clothing accessory & non-clothing detection =====
+// Detects if a title is a clothing ACCESSORY (buttons, zippers, etc.) or non-clothing (pet clothes, etc.)
+// rather than actual wearable clothing
+const CLOTHING_ACCESSORY_KEYWORDS = [
+  // 扣类配件
+  '磁铁扣', '磁吸扣', '暗扣', '子母扣', '四合扣', '五爪扣', '纽扣', '按钮',
+  '调节扣', '日字扣', '梯扣', 'D扣', '方扣', '口字扣', '插扣', '钩扣',
+  '金属扣', '塑料扣', '树脂扣', '牛角扣', '椰壳扣', '贝壳扣', '工字扣',
+  '大衣扣', '外套扣', '西装扣', '衬衫扣', '裤扣', '袖扣',
+  // 拉链辅料
+  '拉链', '拉头', '链牙', '尼龙拉链', '金属拉链', '树脂拉链', '隐形拉链',
+  // 缝纫辅料
+  '缝纫线', '弹力绳', '松紧带', '花边', '蕾丝边', '织带', '丝带', '罗纹',
+  '粘合衬', '肩垫', '垫肩', '胸垫', '领衬', '袖笼条',
+  // 商标吊牌
+  '吊牌', '商标', '标签', '水洗标', '尺码标', '领标', '吊粒',
+  // 工具设备
+  '打版', '打版纸', '裁缝', '缝纫机', '拷边机', '裁布机', '烫画机',
+  '打标机', '锁边机', '包缝机',
+];
+
+const NON_CLOTHING_KEYWORDS = [
+  // 宠物服装
+  '宠物', '狗狗', '猫猫', '猫咪', '仓鼠', '兔子', '宠物服装', '宠物衣服',
+  '狗衣服', '猫衣服', '四脚衣', '宠物用品',
+  // 玩偶/模特
+  '玩偶', '布娃娃', '芭比', '模特', '假人', '人台', '模特架',
+  // 收纳/包装
+  '收纳袋', '防尘罩', '保护套', '收纳箱', '整理袋', '包装袋',
+];
+
+// Check if company/shop name indicates an accessories seller
+const ACCESSORY_COMPANY_KEYWORDS = ['辅料', '配件', '五金', '拉链', '纽扣', '扣具'];
+
+function isClothingAccessory(title) {
+  const titleLower = title.toLowerCase();
+  let accessoryCount = 0;
+  for (const kw of CLOTHING_ACCESSORY_KEYWORDS) {
+    if (titleLower.includes(kw.toLowerCase())) accessoryCount++;
+  }
+  // 2+ accessory keywords → very likely an accessory, not clothing
+  return accessoryCount >= 2;
+}
+
+function isNonClothingProduct(title) {
+  const titleLower = title.toLowerCase();
+  for (const kw of NON_CLOTHING_KEYWORDS) {
+    if (titleLower.includes(kw.toLowerCase())) return true;
+  }
+  return false;
+}
+
+function isAccessorySeller(shopName) {
+  if (!shopName) return false;
+  const shopLower = shopName.toLowerCase();
+  for (const kw of ACCESSORY_COMPANY_KEYWORDS) {
+    if (shopLower.includes(kw.toLowerCase())) return true;
+  }
+  return false;
+}
+
+// Verify product is actual wearable clothing, not accessory/pet/non-clothing
+function isClothingContext(title, shopName) {
+  // Exclude pet clothing, doll clothes, etc.
+  if (isNonClothingProduct(title)) return false;
+  // Exclude accessories (buttons, zippers, etc.)
+  if (isClothingAccessory(title)) return false;
+  // Exclude products from accessory sellers
+  if (isAccessorySeller(shopName)) return false;
+  return true;
+}
+
 // ===== Decompose multi-modifier string into individual known modifiers =====
 // e.g., "异形手提" → ["异形", "手提"], "跨境斜挎" → ["跨境", "斜挎"]
 // Uses greedy prefix matching (longest first), then substring fallback
@@ -1475,6 +1547,9 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
   // CRITICAL: if search contains "包" (bag), ALWAYS validate bag context
   // regardless of whether it's a compound word or separate token
   const mustValidateBag = ambiguousChars.includes('包');
+  // Check if search keyword matches clothing category → validate clothing context
+  const clothingCatConfig = matchCategory(query);
+  const mustValidateClothing = clothingCatConfig && clothingCatConfig.categoryId === 200035008;
   // Multi-word search: if user inputs 2+ space-separated words, require ALL to match
   const multiWordSearch = tokens.length >= 2;
 
@@ -1496,6 +1571,12 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
     } else if (p._fromAPI) {
       // API products already passed category filter, treat as confirmed bag context
       bagContextResult = true;
+    }
+
+    // --- Clothing context validation ---
+    // Even for API products: exclude accessories, pet clothing, non-clothing items
+    if (mustValidateClothing) {
+      if (!isClothingContext(p.title, p.shop)) return null;
     }
 
     // --- Primary token matching ---
@@ -2873,6 +2954,8 @@ function countMatches(query) {
 
   const multiWordSearch = tokens.length >= 2;
   const mustValidateBag = ambiguousChars.includes('包');
+  const clothingCat = matchCategory(query);
+  const mustValidateClothing = clothingCat && clothingCat.categoryId === 200035008;
   let count = 0;
 
   for (const p of PRODUCTS) {
@@ -2884,6 +2967,7 @@ function countMatches(query) {
       const ctx = isBagContext(p.title);
       if (ctx !== true) continue;
     }
+    if (mustValidateClothing && !isClothingContext(p.title, p.shop)) continue;
 
     if (multiWordSearch) {
       const nonAmbiguous = tokens.filter(t => !AMBIGUOUS_CHARS[t]);
@@ -2911,6 +2995,8 @@ function getPreviewProducts(query, n) {
 
   const multiWordSearch = tokens.length >= 2;
   const mustValidateBag = ambiguousChars.includes('包');
+  const clothingCat = matchCategory(query);
+  const mustValidateClothing = clothingCat && clothingCat.categoryId === 200035008;
   const results = [];
 
   for (const p of PRODUCTS) {
@@ -2921,6 +3007,7 @@ function getPreviewProducts(query, n) {
     if (mustValidateBag) {
       if (isBagContext(p.title) !== true) continue;
     }
+    if (mustValidateClothing && !isClothingContext(p.title, p.shop)) continue;
 
     let score = 0;
     tokens.forEach(token => {
