@@ -2070,13 +2070,67 @@ function shouldExcludeByCategory(levelName, title, catConfig) {
 
 // Fetch all pages of search results from API
 // Uses concurrent requests for speed (5 pages at a time)
+// Multi-query strategy: when keyword is "descriptor + category" (e.g. "异形包"),
+// also search with just the descriptor ("异形") to get more relevant results
 async function fetchProductsFromAPI(keyword) {
   const allProducts = [];
+  const seenOfferIds = new Set(); // For deduplication
   const pageSize = 100;
   
   // Universal category matching: find the best category for this keyword
   const catConfig = matchCategory(keyword);
   const hasCategoryFilter = catConfig !== null;
+  
+  // === Multi-query strategy ===
+  // If keyword contains a category word (e.g. "包" in "异形包"), generate
+  // an additional search with just the descriptor ("异形") for better relevance
+  const searchQueries = generateSearchQueries(keyword, catConfig);
+  console.log(`[MultiQuery] Search queries: ${JSON.stringify(searchQueries)}`);
+  
+  for (const searchKW of searchQueries) {
+    console.log(`[MultiQuery] Searching: "${searchKW}"`);
+    const products = await searchSingleQuery(searchKW, catConfig, hasCategoryFilter, pageSize);
+    
+    // Merge with deduplication
+    for (const p of products) {
+      if (!seenOfferIds.has(p.offerId)) {
+        seenOfferIds.add(p.offerId);
+        allProducts.push(p);
+      }
+    }
+    console.log(`[MultiQuery] "${searchKW}" returned ${products.length} products (total unique: ${allProducts.length})`);
+  }
+  
+  return allProducts;
+}
+
+// Generate multiple search queries for better coverage
+// e.g. "异形包" → ["异形包", "异形"] (full keyword + descriptor only)
+function generateSearchQueries(keyword, catConfig) {
+  const queries = [keyword]; // Always search with full keyword first
+  
+  // If keyword ends with a category word, also search without it
+  if (catConfig && catConfig.matchKeywords) {
+    for (const catKW of catConfig.matchKeywords) {
+      // Check if keyword contains this category word (e.g. "包" in "异形包")
+      if (keyword.length > catKW.length && keyword.includes(catKW)) {
+        // Extract the descriptor part (e.g. "异形" from "异形包")
+        let descriptor = keyword.replace(catKW, '').trim();
+        // Only add if descriptor is meaningful (length >= 2)
+        if (descriptor.length >= 2 && descriptor !== keyword) {
+          queries.push(descriptor);
+          break; // Only add one descriptor query
+        }
+      }
+    }
+  }
+  
+  return queries;
+}
+
+// Search a single query and return products
+async function searchSingleQuery(keyword, catConfig, hasCategoryFilter, pageSize) {
+  const products = [];
   
   const baseParams = {
     pageSize: pageSize,
@@ -2099,8 +2153,9 @@ async function fetchProductsFromAPI(keyword) {
   // Fallback: if category filter returns 0 results, retry without category filter
   if (hasCategoryFilter && (!firstResult.result.totalPages || firstResult.result.totalPages === 0)) {
     console.log('Category filter returned 0 results, retrying without category filter...');
-    delete baseParams.categoryIdList;
-    firstResult = await callDianLeiDaAPI('search', { ...baseParams, pageIndex: 1 });
+    const fallbackParams = { ...baseParams };
+    delete fallbackParams.categoryIdList;
+    firstResult = await callDianLeiDaAPI('search', { ...fallbackParams, pageIndex: 1 });
     if (firstResult.code !== 200) {
       throw new Error(`API error: ${firstResult.msg}`);
     }
@@ -2109,7 +2164,7 @@ async function fetchProductsFromAPI(keyword) {
   const totalPages = Math.min(firstResult.result.totalPages || 1, 20);
   
   // Process first page products
-  processAPIProducts(firstResult.result.list || [], allProducts, catConfig);
+  processAPIProducts(firstResult.result.list || [], products, catConfig);
   
   // Step 2: Fetch remaining pages concurrently (5 at a time)
   const remainingPages = [];
@@ -2132,12 +2187,12 @@ async function fetchProductsFromAPI(keyword) {
     
     for (const result of results) {
       if (result && result.code === 200 && result.result) {
-        processAPIProducts(result.result.list || [], allProducts, catConfig);
+        processAPIProducts(result.result.list || [], products, catConfig);
       }
     }
   }
   
-  return allProducts;
+  return products;
 }
 
 // Process API products: filter and convert to internal format
@@ -2344,9 +2399,13 @@ async function doSearch() {
     }
   }
   const totalExcluded = bagExcluded + accessoryExcluded;
+  const searchQueries = generateSearchQueries(query, catConfig);
+  const multiQueryNote = searchQueries.length > 1 
+    ? `（多关键词搜索：${searchQueries.map(q => `"${q}"`).join(' + ')}）`
+    : '';
   const matchDetail = apiError 
     ? `API暂时不可用（${apiError}），已切换到本地${PRODUCTS.length}条数据 → 匹配中`
-    : `从1688实时拉取 ${apiProducts.length} 条商品${catConfig ? `（类目过滤排除部分无关商品）` : ''}`;
+    : `从1688实时拉取 ${apiProducts.length} 条商品${multiQueryNote}${catConfig ? `（类目过滤排除部分无关商品）` : ''}`;
   
   step5El.innerHTML = `
     <span class="ai-step-icon">🔍</span>
