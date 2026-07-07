@@ -1612,15 +1612,14 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
       const nonAmbiguousTokens = tokens.filter(t => !AMBIGUOUS_CHARS[t]);
       const ambiguousTokens = tokens.filter(t => AMBIGUOUS_CHARS[t]);
 
-      // For API products: use relaxed matching (at least 1 non-ambiguous token match)
-      // The API already filtered by keyword, so local matching just needs to confirm relevance
+      // For API products: require ALL non-ambiguous tokens to match (same as local)
+      // This ensures "男士休闲外套" matches products with ALL three words, not just "男士"
       if (p._fromAPI) {
-        // At least 1 non-ambiguous token must match (in title, shop, location, or synonym)
-        const anyTokenMatched = nonAmbiguousTokens.some(token =>
+        const allNonAmbiguousMatched = nonAmbiguousTokens.every(token =>
           titleLower.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
           (MODIFIER_SYNONYMS[token] && MODIFIER_SYNONYMS[token].some(syn => titleLower.includes(syn)))
         );
-        if (!anyTokenMatched && nonAmbiguousTokens.length > 0) return null;
+        if (!allNonAmbiguousMatched && nonAmbiguousTokens.length > 0) return null;
       } else {
         // For local data: require ALL non-ambiguous tokens to match (strict)
         const allNonAmbiguousMatched = nonAmbiguousTokens.every(token =>
