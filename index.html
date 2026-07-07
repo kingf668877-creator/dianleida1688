@@ -1561,17 +1561,14 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
     const locationLower = p.location.toLowerCase();
 
     // --- Context validation for ambiguous chars (e.g., "包") ---
-    // Skip for API products that already passed category filtering
+    // Must validate for BOTH local and API products
     let bagContextResult = null;
-    if (mustValidateBag && !p._fromAPI) {
+    if (mustValidateBag) {
       bagContextResult = isBagContext(p.title);
       // If "包" is in search and this product is NOT a bag, EXCLUDE immediately
       if (bagContextResult !== true) return null;
       // Accessory detection: if title has 2+ accessory keywords, it's a part not a bag
       if (isBagAccessory(p.title)) return null;
-    } else if (p._fromAPI) {
-      // API products already passed category filter, treat as confirmed bag context
-      bagContextResult = true;
     }
 
     // --- Clothing context validation ---
