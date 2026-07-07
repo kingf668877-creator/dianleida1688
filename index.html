@@ -2101,8 +2101,9 @@ async function fetchProductsFromAPI(keyword) {
     
     // Merge with deduplication
     for (const p of products) {
-      if (!seenOfferIds.has(p.offerId)) {
-        seenOfferIds.add(p.offerId);
+      const oid = p.offerId || p.id;
+      if (!seenOfferIds.has(oid)) {
+        seenOfferIds.add(oid);
         allProducts.push(p);
       }
     }
