@@ -831,6 +831,202 @@ const MODIFIER_SYNONYMS = {
   '针织': ['飞织', '编织'],
   '透明': ['PVC', '透明', '果冻'],
   '果冻': ['透明', 'PVC', '胶'],
+  // 品类同义词
+  '移动电源': ['充电宝', '充电宝', '行动电源'],
+  '充电宝': ['移动电源', '行动电源'],
+  '沙发罩': ['沙发套', '沙发巾', '沙发垫'],
+  '沙发套': ['沙发罩', '沙发巾', '沙发垫'],
+  '手提包': ['手拎包', '拎包'],
+  '手拎包': ['手提包', '拎包'],
+  '运动鞋': ['跑鞋', '休闲运动鞋'],
+  '老花镜': ['老花眼镜', '老视镜'],
+  '老花眼镜': ['老花镜', '老视镜'],
+  // 修饰词补充
+  '宽松': ['阔版', 'oversize', '大码'],
+  '修身': ['显瘦', '收腰', '紧身'],
+  '百搭': ['基础款', '经典款', '通勤款'],
+  '高端': ['轻奢', '高档', '品质'],
+  '平价': ['性价比', '便宜', '实惠'],
+  '加厚': ['加绒', '保暖', '厚款'],
+  '加绒': ['加厚', '保暖', '绒里'],
+  '透气': ['网眼', '镂空', '薄款'],
+  '防水': ['防雨', '防泼水'],
+  '耐磨': ['耐造', '耐用'],
+  '轻便': ['轻量化', '超轻', '轻盈'],
+  // 场景词
+  '运动': ['健身', '跑步', '户外', '训练'],
+  '健身': ['运动', '跑步', '训练', '瑜伽'],
+  '旅行': ['旅游', '出差', '出行'],
+  '上学': ['学生', '校园', '书包'],
+  '上班': ['通勤', '办公', '商务'],
+  '约会': ['聚会', '派对', '晚宴'],
+  '日常': ['休闲', '百搭', '通勤'],
+  // 人群词
+  '女士': ['女款', '女式', '女生', '女性'],
+  '男士': ['男款', '男式', '男生', '男性'],
+  '儿童': ['小孩', '宝宝', '孩童', '小童', '大童'],
+  '中老年': ['中年', '老年', '妈妈', '爸爸', '长辈'],
+  '孕妇': ['孕期', '孕妈', '准妈妈'],
+};
+
+// ===== E-commerce Proper Nouns Dictionary (不可拆分专有名词) =====
+// These are compound words that have a specific meaning as a whole and should NOT be split.
+// When smartTokenize finds these, they are kept as a single token with category context.
+// Structure: { word: { category: 'bag|clothing|shoes|...', synonyms: [...], isProperNoun: true } }
+const PROPER_NOUNS = {
+  // === 箱包类专有名词 (款式/风格特定的包型) ===
+  '麻将包': { category: 'bag', synonyms: ['麻将纹', '麻将图案', '发财包'] },
+  '托特包': { category: 'bag', synonyms: ['tote', ' tote', '大手提包'] },
+  '剑桥包': { category: 'bag', synonyms: ['satchel', ' satchel', '学院风包'] },
+  '法棍包': { category: 'bag', synonyms: ['baguette', '长条形包', '细长包'] },
+  '饺子包': { category: 'bag', synonyms: ['月牙包', '半月包', '弧形包'] },
+  '云朵包': { category: 'bag', synonyms: ['褶皱包', '柔软包', '云朵造型'] },
+  '水桶包': { category: 'bag', synonyms: ['桶包', '抽绳包'] },
+  '贝壳包': { category: 'bag', synonyms: ['贝壳形状', '蚌壳包'] },
+  '小方包': { category: 'bag', synonyms: ['方盒包', '盒子包', '方形包'] },
+  '盒子包': { category: 'bag', synonyms: ['方盒包', '硬壳包', '定型包'] },
+  '枕头包': { category: 'bag', synonyms: ['波士顿包', 'boston', '圆筒包'] },
+  '波士顿包': { category: 'bag', synonyms: ['枕头包', 'boston', '圆筒包'] },
+  '邮差包': { category: 'bag', synonyms: ['messenger', '信使包', '骑行包'] },
+  '马鞍包': { category: 'bag', synonyms: ['saddle', '马蹄包', '半圆包'] },
+  '腋下包': { category: 'bag', synonyms: ['夹包', 'hobo', '新月包'] },
+  'hobo包': { category: 'bag', synonyms: ['腋下包', '新月包', '软包'] },
+  '流浪包': { category: 'bag', synonyms: ['gabrielle', '菱格链条', '双链条'] },
+  '链条包': { category: 'bag', synonyms: ['金属链', '链条款'] },
+  '菱格包': { category: 'bag', synonyms: ['菱格纹', '绗缝包', '格纹包'] },
+  '戴妃包': { category: 'bag', synonyms: ['lady dior', '菱格戴妃', '三格戴妃'] },
+  '铂金包': { category: 'bag', synonyms: ['birkin', '凯莉包', 'kelly'] },
+  '凯莉包': { category: 'bag', synonyms: ['kelly', '铂金包', 'birkin'] },
+  '康康包': { category: 'bag', synonyms: ['constance', '空姐包', 'H扣包'] },
+  '菜篮子包': { category: 'bag', synonyms: ['picotin', '水桶菜篮', '手提菜篮'] },
+  '保龄球包': { category: 'bag', synonyms: ['bowling', '圆筒手提', '复古圆筒'] },
+  '机车包': { category: 'bag', synonyms: ['motorcycle', '铆钉包', '流苏包'] },
+  '医生包': { category: 'bag', synonyms: ['doctor bag', '口金包', '复古手提'] },
+  '口金包': { category: 'bag', synonyms: ['医生包', '铰口包', '夹口包'] },
+  '双肩包': { category: 'bag', synonyms: ['背包', '书包', 'backpack'] },
+  '斜挎包': { category: 'bag', synonyms: ['单肩包', '跨包', 'messenger bag'] },
+  '胸包': { category: 'bag', synonyms: ['腰包', '斜挎胸包'] },
+  '腰包': { category: 'bag', synonyms: ['胸包', 'belt bag', 'fanny pack'] },
+  '手拿包': { category: 'bag', synonyms: ['手包', '手抓包', 'clutch'] },
+  '晚宴包': { category: 'bag', synonyms: ['礼服包', '宴会包', 'clutch'] },
+  '化妆包': { category: 'bag', synonyms: ['洗漱包', '收纳包', 'makeup bag'] },
+  '妈咪包': { category: 'bag', synonyms: ['母婴包', '妈妈包', 'diaper bag'] },
+  '电脑包': { category: 'bag', synonyms: ['笔记本包', 'laptop bag', '公文包'] },
+  '公文包': { category: 'bag', synonyms: ['商务包', '公事包', 'briefcase'] },
+  '书包': { category: 'bag', synonyms: ['双肩包', '背包', '学生包'] },
+  '购物袋': { category: 'bag', synonyms: ['托特包', '环保袋', 'shopping bag'] },
+  '编织包': { category: 'bag', synonyms: ['草编包', '藤编包', '手工编织'] },
+  '草编包': { category: 'bag', synonyms: ['编织包', '藤编包', '草编'] },
+  '果冻包': { category: 'bag', synonyms: ['透明包', 'PVC包', '硅胶包'] },
+  '帆布包': { category: 'bag', synonyms: ['布袋', 'canvas bag', '环保帆布'] },
+  '牛仔包': { category: 'bag', synonyms: ['丹宁包', '牛仔布包'] },
+  '真皮包': { category: 'bag', synonyms: ['头层牛皮', '牛皮包', '皮包'] },
+  '漆皮包': { category: 'bag', synonyms: ['亮皮包', '漆皮', 'patent leather'] },
+  '麂皮包': { category: 'bag', synonyms: ['翻毛皮', '绒面', 'suede'] },
+  '鳄鱼纹包': { category: 'bag', synonyms: ['压花鳄鱼', '鳄鱼皮纹', '蛇纹'] },
+  '蛇纹包': { category: 'bag', synonyms: ['蟒蛇纹', '蛇皮纹'] },
+  '豹纹包': { category: 'bag', synonyms: ['动物纹', 'leopard'] },
+  '迷彩包': { category: 'bag', synonyms: ['军迷彩', 'camouflage', 'military'] },
+  '碎花包': { category: 'bag', synonyms: ['印花包', '花卉图案', 'flower print'] },
+  '涂鸦包': { category: 'bag', synonyms: ['手绘包', '艺术包', 'graffiti'] },
+  '透明包': { category: 'bag', synonyms: ['果冻包', 'PVC包', 'clear bag'] },
+  '镭射包': { category: 'bag', synonyms: ['炫彩', '全息', 'holographic'] },
+  '亮片包': { category: 'bag', synonyms: ['珠片包', '闪片包', 'sequin'] },
+  '珍珠包': { category: 'bag', synonyms: ['串珠包', '手工珍珠', 'pearl bag'] },
+  '水钻包': { category: 'bag', synonyms: ['镶钻包', '满钻包', 'rhinestone'] },
+  '毛绒包': { category: 'bag', synonyms: ['毛毛包', 'fuzzy bag', 'plush'] },
+  '羊羔毛包': { category: 'bag', synonyms: ['泰迪毛', '摇粒绒', 'shearling'] },
+
+  // === 服装类专有名词 ===
+  '西装外套': { category: 'clothing', synonyms: ['西服', 'blazer', '西装上衣'] },
+  '牛仔外套': { category: 'clothing', synonyms: ['牛仔褂', '牛仔上衣', 'denim jacket'] },
+  '皮夹克': { category: 'clothing', synonyms: ['皮衣', 'leather jacket', '皮外套'] },
+  '羽绒服': { category: 'clothing', synonyms: ['羽绒外套', '羽绒衣', 'down jacket'] },
+  '棉服': { category: 'clothing', synonyms: ['棉袄', '棉大衣', 'padded coat'] },
+  '毛呢大衣': { category: 'clothing', synonyms: ['呢大衣', 'wool coat', '毛呢外套'] },
+  '风衣': { category: 'clothing', synonyms: ['trench coat', '长风衣'] },
+  '卫衣': { category: 'clothing', synonyms: ['帽衫', '连帽卫衣', 'hoodie'] },
+  '连帽卫衣': { category: 'clothing', synonyms: ['帽衫', 'hoodie', '带帽卫衣'] },
+  '套头卫衣': { category: 'clothing', synonyms: ['圆领卫衣', 'crew neck'] },
+  '开衫卫衣': { category: 'clothing', synonyms: ['拉链卫衣', 'zip-up', '开衫'] },
+  '毛衣': { category: 'clothing', synonyms: ['针织衫', '毛线衣', 'sweater'] },
+  '针织开衫': { category: 'clothing', synonyms: ['开衫毛衣', 'cardigan', '外搭开衫'] },
+  '高领毛衣': { category: 'clothing', synonyms: ['堆领毛衣', 'turtleneck', '翻领毛衣'] },
+  '打底衫': { category: 'clothing', synonyms: ['内搭', '秋衣', '打底'] },
+  'T恤': { category: 'clothing', synonyms: ['tee', 't恤衫', '体恤'] },
+  'polo衫': { category: 'clothing', synonyms: ['翻领T恤', '保罗衫', 'polo'] },
+  '衬衫': { category: 'clothing', synonyms: ['衬衣', 'shirt', '寸衫'] },
+  '雪纺衫': { category: 'clothing', synonyms: ['雪纺上衣', 'chiffon'] },
+  '蕾丝衫': { category: 'clothing', synonyms: ['蕾丝上衣', 'lace top'] },
+  '连衣裙': { category: 'clothing', synonyms: ['裙子', 'dress', '连身裙'] },
+  '半身裙': { category: 'clothing', synonyms: ['半裙', 'skirt', '半截裙'] },
+  '百褶裙': { category: 'clothing', synonyms: ['百褶半裙', 'pleated skirt'] },
+  'A字裙': { category: 'clothing', synonyms: ['A裙', 'a-line skirt'] },
+  '包臀裙': { category: 'clothing', synonyms: ['紧身裙', '一步裙', 'pencil skirt'] },
+  '鱼尾裙': { category: 'clothing', synonyms: ['mermaid skirt', '荷叶边裙'] },
+  '蓬蓬裙': { category: 'clothing', synonyms: ['tutu裙', '公主裙', 'ball gown'] },
+  '牛仔裤': { category: 'clothing', synonyms: ['牛仔长裤', 'jeans', '牛仔'] },
+  '阔腿裤': { category: 'clothing', synonyms: ['宽腿裤', 'wide leg', '阔脚裤'] },
+  '直筒裤': { category: 'clothing', synonyms: ['直脚裤', 'straight leg', '筒裤'] },
+  '紧身裤': { category: 'clothing', synonyms: ['小脚裤', 'skinny', '铅笔裤'] },
+  '铅笔裤': { category: 'clothing', synonyms: ['紧身裤', '小脚裤', 'pants'] },
+  '哈伦裤': { category: 'clothing', synonyms: ['灯笼裤', 'harem pants', '萝卜裤'] },
+  '萝卜裤': { category: 'clothing', synonyms: ['哈伦裤', '锥形裤', 'carrot pants'] },
+  '工装裤': { category: 'clothing', synonyms: ['cargo pants', '多袋裤', '军裤'] },
+  '运动裤': { category: 'clothing', synonyms: ['卫裤', '休闲运动裤', 'joggers'] },
+  '休闲裤': { category: 'clothing', synonyms: ['西裤', 'casual pants', '便裤'] },
+  '西裤': { category: 'clothing', synonyms: ['西装裤', '正装裤', 'dress pants'] },
+  '短裤': { category: 'clothing', synonyms: ['五分裤', '热裤', 'shorts'] },
+  '热裤': { category: 'clothing', synonyms: ['超短裤', 'hot pants', '三分裤'] },
+  '背带裤': { category: 'clothing', synonyms: ['工装背带', 'overall', '吊带裤'] },
+  '连体裤': { category: 'clothing', synonyms: ['连身裤', 'jumpsuit', '一体裤'] },
+  '喇叭裤': { category: 'clothing', synonyms: ['flare pants', 'bell-bottoms', '微喇裤'] },
+
+  // === 鞋类专有名词 ===
+  '老爹鞋': { category: 'shoes', synonyms: ['厚底鞋', 'dad shoes', '复古老爹'] },
+  '马丁靴': { category: 'shoes', synonyms: ['短靴', 'dr martens', '马丁'] },
+  '切尔西靴': { category: 'shoes', synonyms: ['chelsea', '松紧带靴', '裸靴'] },
+  '踝靴': { category: 'shoes', synonyms: ['短靴', 'ankle boots', '及踝靴'] },
+  '长靴': { category: 'shoes', synonyms: ['过膝靴', '高筒靴', 'long boots'] },
+  '过膝靴': { category: 'shoes', synonyms: ['长靴', 'thigh high', '高筒靴'] },
+  '雪地靴': { category: 'shoes', synonyms: ['ugg', '棉靴', '保暖靴'] },
+  '帆布鞋': { category: 'shoes', synonyms: ['硫化鞋', 'canvas', '布鞋'] },
+  '小白鞋': { category: 'shoes', synonyms: ['白鞋', 'white sneakers', '板鞋'] },
+  '板鞋': { category: 'shoes', synonyms: ['滑板鞋', 'skate shoes', '休闲板鞋'] },
+  '运动鞋': { category: 'shoes', synonyms: ['跑鞋', 'sneakers', '运动休闲鞋'] },
+  '跑鞋': { category: 'shoes', synonyms: ['跑步鞋', 'running shoes', '运动鞋'] },
+  '篮球鞋': { category: 'shoes', synonyms: ['球鞋', 'basketball shoes', '战靴'] },
+  '高跟鞋': { category: 'shoes', synonyms: ['细跟鞋', 'high heels', '单鞋高跟'] },
+  '平底鞋': { category: 'shoes', synonyms: ['平跟鞋', 'flats', '单鞋平底'] },
+  '单鞋': { category: 'shoes', synonyms: ['浅口鞋', 'pumps', '四季鞋'] },
+  '凉鞋': { category: 'shoes', synonyms: ['凉拖', 'sandals', '露趾鞋'] },
+  '拖鞋': { category: 'shoes', synonyms: ['凉拖', 'slippers', '一字拖'] },
+  '穆勒鞋': { category: 'shoes', synonyms: ['mules', '包头拖', '半拖'] },
+  '乐福鞋': { category: 'shoes', synonyms: ['loafer', '一脚蹬', '豆豆鞋'] },
+  '豆豆鞋': { category: 'shoes', synonyms: ['乐福鞋', "tod's", '驾车鞋'] },
+  '牛津鞋': { category: 'shoes', synonyms: ['oxford', '布洛克', '正装皮鞋'] },
+  '皮鞋': { category: 'shoes', synonyms: ['正装鞋', 'leather shoes', '商务皮鞋'] },
+  '椰子鞋': { category: 'shoes', synonyms: ['yeezy', '侃爷鞋', '爆米花'] },
+  '阿甘鞋': { category: 'shoes', synonyms: ['cortez', '复古跑鞋', 'Nike阿甘'] },
+  '德训鞋': { category: 'shoes', synonyms: ['german trainer', '复古训练', '军训练'] },
+
+  // === 数码配件专有名词 ===
+  '苹果手机壳': { category: 'digital', synonyms: ['iPhone壳', '苹果壳', '手机保护壳'] },
+  '手机壳': { category: 'digital', synonyms: ['手机套', '手机保护壳', 'phone case'] },
+  '钢化膜': { category: 'digital', synonyms: ['手机膜', '玻璃膜', 'screen protector'] },
+  '充电宝': { category: 'digital', synonyms: ['移动电源', '行动电源', 'power bank'] },
+  '数据线': { category: 'digital', synonyms: ['充电线', 'usb线', 'data cable'] },
+  '蓝牙耳机': { category: 'digital', synonyms: ['无线耳机', 'TWS', 'bluetooth earbuds'] },
+  '无线耳机': { category: 'digital', synonyms: ['蓝牙耳机', 'TWS', 'true wireless'] },
+  '降噪耳机': { category: 'digital', synonyms: ['ANC', '主动降噪', 'noise cancelling'] },
+
+  // === 家居日用专有名词 ===
+  '四件套': { category: 'homeTextile', synonyms: ['床上四件套', '床品四件套', 'bedding set'] },
+  '三件套': { category: 'homeTextile', synonyms: ['床上三件套', '床品三件套'] },
+  '记忆枕': { category: 'homeTextile', synonyms: ['记忆棉枕', '颈椎枕', 'memory foam'] },
+  '乳胶枕': { category: 'homeTextile', synonyms: ['天然乳胶', 'latex pillow'] },
+  '蚕丝被': { category: 'homeTextile', synonyms: ['蚕丝被子', 'silk quilt'] },
+  '羽绒被': { category: 'homeTextile', synonyms: ['鹅绒被', '鸭绒被', 'down quilt'] },
 };
 
 // ===== E-commerce Keyword Dictionary for long keyword splitting =====
@@ -1258,7 +1454,7 @@ function decomposeModifier(modifier) {
 // Rule 5: Everything else → add as-is
 function smartTokenize(query) {
   const raw = query.trim().toLowerCase();
-  if (!raw) return { tokens: [], expandedTerms: [], isCompound: false, ambiguousChars: [] };
+  if (!raw) return { tokens: [], expandedTerms: [], isCompound: false, ambiguousChars: [], properNoun: null, category: null };
 
   // Step 1: Split by spaces/commas
   const baseTokens = raw.split(/[\s,，、]+/).filter(t => t.length > 0);
@@ -1267,6 +1463,68 @@ function smartTokenize(query) {
   let expandedTerms = [];
   let isCompound = false;
   let ambiguousChars = [];
+  let detectedProperNoun = null;
+  let detectedCategory = null;
+
+  // --- Step 0.5: Check for proper noun matches in the FULL query ---
+  // Try to match the entire query (or space-joined tokens) against PROPER_NOUNS
+  const fullQuery = baseTokens.join('');
+  // Sort proper nouns by length descending (longest match first)
+  const sortedProperNouns = Object.keys(PROPER_NOUNS).sort((a, b) => b.length - a.length);
+  for (const pn of sortedProperNouns) {
+    if (fullQuery.includes(pn)) {
+      const pnData = PROPER_NOUNS[pn];
+      detectedProperNoun = pn;
+      detectedCategory = pnData.category;
+      // Add proper noun as a token
+      tokens.push(pn);
+      // Add its synonyms as expanded terms
+      if (pnData.synonyms) {
+        expandedTerms.push(...pnData.synonyms);
+      }
+      // Mark compound so we use strict matching
+      isCompound = true;
+      // If it's a bag category, mark "包" as ambiguous for context validation
+      if (pnData.category === 'bag') {
+        ambiguousChars.push('包');
+      }
+      // Remove the matched proper noun from the query and process remaining parts
+      // We need to find which baseTokens contain the proper noun
+      let remainingParts = [];
+      let processed = fullQuery.replace(pn, '|||SPLIT|||');
+      remainingParts = processed.split('|||SPLIT|||').filter(p => p.length > 0);
+      
+      // If there are remaining parts, add them as additional tokens
+      // (e.g., "新款 麻将包" → after matching "麻将包", remaining is "新款")
+      remainingParts.forEach(part => {
+        if (part.length >= 2) {
+          // Try to match known modifiers
+          if (MODIFIER_SYNONYMS[part]) {
+            tokens.push(part);
+            expandedTerms.push(...MODIFIER_SYNONYMS[part]);
+          } else {
+            // Try to decompose if it looks like a modifier string
+            const subMods = decomposeModifier(part);
+            subMods.forEach(sm => {
+              if (sm.length >= 2) {
+                tokens.push(sm);
+                if (MODIFIER_SYNONYMS[sm]) {
+                  expandedTerms.push(...MODIFIER_SYNONYMS[sm]);
+                }
+              }
+            });
+          }
+        }
+      });
+      
+      break; // Only match the longest proper noun
+    }
+  }
+
+  // If we found a proper noun, return early with the proper noun as primary token
+  if (detectedProperNoun) {
+    return { tokens, expandedTerms, isCompound, ambiguousChars, properNoun: detectedProperNoun, category: detectedCategory };
+  }
 
   baseTokens.forEach(bt => {
     // --- Rule 1: Known non-bag compound (e.g., 美甲钻, 饰品, 包装) ---
@@ -1393,8 +1651,16 @@ function searchProducts(query, priceFilter, sortBy) {
 }
 
 function searchProductsInArray(query, productArray, priceFilter, sortBy) {
-  const { tokens, expandedTerms, isCompound, ambiguousChars } = smartTokenize(query);
+  const { tokens, expandedTerms, isCompound, ambiguousChars, properNoun, category } = smartTokenize(query);
   if (tokens.length === 0) return [];
+
+  // === Query Intervention: Get per-query rules ===
+  const intervention = getQueryIntervention(query);
+  
+  // Add extra synonyms from intervention
+  if (intervention && intervention.extraSynonyms) {
+    expandedTerms.push(...intervention.extraSynonyms);
+  }
 
   const requireAllTokens = isCompound && tokens.length >= 2;
   const hasAmbiguous = ambiguousChars.length > 0;
@@ -1410,8 +1676,26 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
   const scored = productArray.map(p => {
     let score = 0;
     const titleLower = p.title.toLowerCase();
+    const normalizedTitle = normalizeTitle(p.title).toLowerCase();
     const shopLower = p.shop.toLowerCase();
     const locationLower = p.location.toLowerCase();
+
+    // --- Query Intervention: Excluded keywords (HARD EXCLUDE) ---
+    if (intervention && intervention.excludedKeywords) {
+      for (const kw of intervention.excludedKeywords) {
+        if (titleLower.includes(kw.toLowerCase())) {
+          return null;
+        }
+      }
+    }
+
+    // --- Query Intervention: Required keywords ---
+    if (intervention && intervention.requiredKeywords && intervention.requiredKeywords.length > 0) {
+      const hasAnyRequired = intervention.requiredKeywords.some(kw => 
+        titleLower.includes(kw.toLowerCase()) || shopLower.includes(kw.toLowerCase())
+      );
+      if (!hasAnyRequired) return null;
+    }
 
     // --- Context validation for ambiguous chars (e.g., "包") ---
     // Must validate for BOTH local and API products
@@ -1430,10 +1714,10 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
       if (!isClothingContext(p.title, p.shop)) return null;
     }
 
-    // --- Primary token matching ---
+    // --- Primary token matching (use normalized title for cleaner matching) ---
     let matchedTokens = 0;
     tokens.forEach(token => {
-      const inTitle = titleLower.includes(token);
+      const inTitle = titleLower.includes(token) || normalizedTitle.includes(token);
       const inShop = shopLower.includes(token);
       const inLocation = locationLower.includes(token);
 
@@ -1441,11 +1725,16 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
         if (AMBIGUOUS_CHARS[token]) {
           score += (bagContextResult === true) ? 10 : 3;
         } else {
-          score += 10;
+          // Proper noun match gets higher weight
+          if (token === properNoun) {
+            score += 20; // Proper noun match is worth double
+          } else {
+            score += 10;
+          }
         }
         if (!AMBIGUOUS_CHARS[token]) matchedTokens++;
-        // Position bonus
-        if (titleLower.startsWith(token) || titleLower.endsWith(token)) score += 5;
+        // Position bonus (check on normalized title)
+        if (normalizedTitle.startsWith(token) || normalizedTitle.endsWith(token)) score += 5;
         // Frequency bonus
         const count = (titleLower.match(new RegExp(token, 'g')) || []).length;
         if (count > 1) score += count * 2;
@@ -1457,7 +1746,7 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
 
     // --- Synonym expansion matching (bonus only, does NOT count as token match) ---
     expandedTerms.forEach(term => {
-      if (titleLower.includes(term)) score += 3;
+      if (titleLower.includes(term) || normalizedTitle.includes(term)) score += 3;
     });
 
     // --- Relevance filtering for compound AND multi-word searches ---
@@ -1469,14 +1758,14 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
       // This ensures "男士休闲外套" matches products with ALL three words, not just "男士"
       if (p._fromAPI) {
         const allNonAmbiguousMatched = nonAmbiguousTokens.every(token =>
-          titleLower.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
+          titleLower.includes(token) || normalizedTitle.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
           (MODIFIER_SYNONYMS[token] && MODIFIER_SYNONYMS[token].some(syn => titleLower.includes(syn)))
         );
         if (!allNonAmbiguousMatched && nonAmbiguousTokens.length > 0) return null;
       } else {
         // For local data: require ALL non-ambiguous tokens to match (strict)
         const allNonAmbiguousMatched = nonAmbiguousTokens.every(token =>
-          titleLower.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
+          titleLower.includes(token) || normalizedTitle.includes(token) || shopLower.includes(token) || locationLower.includes(token) ||
           (MODIFIER_SYNONYMS[token] && MODIFIER_SYNONYMS[token].some(syn => titleLower.includes(syn)))
         );
 
@@ -1496,6 +1785,11 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
     // Bonus for confirmed bag context
     if (bagContextResult === true) score += 5;
 
+    // Bonus for proper noun exact match (highest relevance signal)
+    if (properNoun && (titleLower.includes(properNoun) || normalizedTitle.includes(properNoun))) {
+      score += 15;
+    }
+
     return { product: p, matchScore: score };
   }).filter(item => item !== null);
 
@@ -1510,11 +1804,30 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
     return true;
   });
 
-  // Calculate composite score
+  // Calculate composite score (with text match score as primary factor)
   const maxSales = Math.max(...filtered.map(f => f.product.sales), 1);
+  const maxMatchScore = Math.max(...filtered.map(f => f.matchScore), 1);
   filtered.forEach(item => {
-    item.compositeScore = calcCompositeScore(item.product, maxSales);
+    item.compositeScore = calcCompositeScore(item.product, maxSales, item.matchScore);
   });
+
+  // === Query Intervention: Pin specific products to top ===
+  if (intervention && intervention.pinnedOfferIds && intervention.pinnedOfferIds.length > 0) {
+    const pinned = [];
+    const rest = [];
+    filtered.forEach(item => {
+      const oid = item.product.offerId || item.product.id;
+      if (intervention.pinnedOfferIds.includes(String(oid))) {
+        pinned.push(item);
+      } else {
+        rest.push(item);
+      }
+    });
+    // Re-sort: pinned items first (in order of pinning), then rest by composite score
+    if (sortBy === 'score') {
+      return [...pinned, ...rest];
+    }
+  }
 
   // Sort
   if (sortBy === 'score') {
@@ -1699,44 +2012,53 @@ function autoDetectAndOptimize(query, results) {
   };
 }
 
-function calcCompositeScore(p, maxSales) {
-  // Market validation (35 pts)
+function calcCompositeScore(p, maxSales, matchScore) {
+  // === Text relevance score (40 pts) - BM25风格的文本匹配度 ===
+  // This is the most important factor for search relevance
+  let relevanceScore = 0;
+  if (matchScore !== undefined && matchScore !== null) {
+    // Normalize matchScore to 0-40 range
+    // matchScore typically ranges from 0 (no match) to ~100+ (perfect match)
+    relevanceScore = Math.min(40, Math.round(matchScore * 0.8));
+  }
+
+  // Market validation (25 pts)
   let marketScore = 0;
-  if (p.sales >= 50000) marketScore = 35;
-  else if (p.sales >= 10000) marketScore = 28;
-  else if (p.sales >= 5000) marketScore = 22;
-  else if (p.sales >= 1000) marketScore = 15;
-  else if (p.sales >= 100) marketScore = 8;
-  else marketScore = 3;
+  if (p.sales >= 50000) marketScore = 25;
+  else if (p.sales >= 10000) marketScore = 20;
+  else if (p.sales >= 5000) marketScore = 16;
+  else if (p.sales >= 1000) marketScore = 11;
+  else if (p.sales >= 100) marketScore = 6;
+  else marketScore = 2;
 
-  // Repurchase rate (25 pts)
+  // Repurchase rate (15 pts)
   let repurchaseScore = 0;
-  if (p.repurchase >= 50) repurchaseScore = 25;
-  else if (p.repurchase >= 30) repurchaseScore = 20;
-  else if (p.repurchase >= 20) repurchaseScore = 15;
-  else if (p.repurchase >= 10) repurchaseScore = 10;
-  else if (p.repurchase > 0) repurchaseScore = 5;
+  if (p.repurchase >= 50) repurchaseScore = 15;
+  else if (p.repurchase >= 30) repurchaseScore = 12;
+  else if (p.repurchase >= 20) repurchaseScore = 9;
+  else if (p.repurchase >= 10) repurchaseScore = 6;
+  else if (p.repurchase > 0) repurchaseScore = 3;
 
-  // Credit level (20 pts)
+  // Credit level (10 pts)
   let creditScore = 0;
-  if (p.credit >= 15) creditScore = 20;
-  else if (p.credit >= 10) creditScore = 15;
-  else if (p.credit >= 5) creditScore = 8;
-  else creditScore = 3;
+  if (p.credit >= 15) creditScore = 10;
+  else if (p.credit >= 10) creditScore = 7;
+  else if (p.credit >= 5) creditScore = 4;
+  else creditScore = 1;
 
-  // Price advantage (10 pts) - lower price = higher score
-  let priceScore = 10;
+  // Price advantage (5 pts) - lower price = higher score
+  let priceScore = 5;
   if (p.price > 100) priceScore = 1;
-  else if (p.price > 50) priceScore = 3;
-  else if (p.price > 20) priceScore = 5;
-  else if (p.price > 5) priceScore = 7;
-  else if (p.price > 1) priceScore = 9;
-  else priceScore = 10;
+  else if (p.price > 50) priceScore = 2;
+  else if (p.price > 20) priceScore = 3;
+  else if (p.price > 5) priceScore = 4;
+  else if (p.price > 1) priceScore = 5;
+  else priceScore = 5;
 
-  // Service tags (10 pts, 2pts each, max 10)
-  const tagScore = Math.min(10, (p.tags ? p.tags.length : 0) * 2);
+  // Service tags (5 pts, 1pt each, max 5)
+  const tagScore = Math.min(5, (p.tags ? p.tags.length : 0));
 
-  return Math.round((marketScore + repurchaseScore + creditScore + priceScore + tagScore) * 10) / 10;
+  return Math.round((relevanceScore + marketScore + repurchaseScore + creditScore + priceScore + tagScore) * 10) / 10;
 }
 
 function getScoreGrade(score) {
@@ -1792,6 +2114,125 @@ async function callDianLeiDaAPI(action, params) {
   });
   if (!resp.ok) throw new Error(`API error: ${resp.status}`);
   return resp.json();
+}
+
+// ===== Query Intervention System (Query级黑白名单/干预规则) =====
+// Per-query configuration for precise relevance control.
+// Matches when the search query CONTAINS the key (case-insensitive).
+// Structure:
+//   excludedCategories: 1688 category IDs to exclude at API level
+//   excludedKeywords: title keywords to exclude locally
+//   requiredKeywords: title keywords that MUST appear (boost relevance)
+//   pinnedOfferIds: product IDs to pin to top
+//   extraSynonyms: additional synonyms to expand
+//   forceCategory: override category detection
+const QUERY_INTERVENTION = {
+  // === 麻将包 - 经典badcase案例 ===
+  '麻将包': {
+    excludedKeywords: ['麻将牌', '麻将机', '麻将桌', '麻将垫', '麻将席', '麻将收纳', '麻将盒', '麻将套', '麻将筒', '麻将条', '麻将万', '麻将子', '麻将筹码', '麻将牌九', '自动麻将', '手搓麻将', '迷你麻将', '麻将挂件', '麻将钥匙扣', '麻将耳钉', '麻将项链', '麻将戒指', '麻将手链', '麻将摆件', '麻将手机壳', '麻将贴纸', '麻将贴', '麻将冰箱贴', '麻将胸针', '麻将发夹', '麻将耳环'],
+    requiredKeywords: ['包', '袋'],
+    forceCategory: 'bag',
+    extraSynonyms: ['麻将纹', '麻将图案', '发财包', '幺鸡包', '发财麻将'],
+  },
+  // === 异形包 ===
+  '异形包': {
+    excludedKeywords: ['包装', '材料包', '贴纸包', '配件包', '零件包'],
+    forceCategory: 'bag',
+    extraSynonyms: ['个性包', '创意包', '不规则包', '独特包', '造型包', '3D包', '立体包', '几何包', '设计感包', '非标包', '高颜值包'],
+  },
+  // === 苹果手机壳 - 多义词歧义 ===
+  '苹果手机壳': {
+    excludedKeywords: ['红富士', '水果', '食用', '新鲜', '苹果汁', '苹果醋', '苹果酱', '苹果干', '苹果片', '苹果派', '苹果蛋糕'],
+    forceCategory: 'digital',
+    extraSynonyms: ['iPhone壳', '苹果保护壳', '苹果手机套'],
+  },
+  '苹果壳': {
+    excludedKeywords: ['红富士', '水果', '食用', '新鲜', '苹果汁', '苹果醋'],
+    forceCategory: 'digital',
+  },
+  // === 开关面板 - 组合词歧义 ===
+  '开关面板': {
+    excludedKeywords: ['智能语音', '控制面板', '开关电源', '开关模块', '开关芯片', '开关管'],
+    forceCategory: 'hardware',
+  },
+  // === 儿童防晒 - 修饰词理解 ===
+  '儿童防晒': {
+    excludedKeywords: ['成人防晒', '男士防晒', '女士防晒', '防晒衣', '防晒帽', '防晒伞', '防晒袖', '防晒面罩'],
+    requiredKeywords: ['防晒', '儿童', '宝宝', '小孩'],
+    extraSynonyms: ['儿童防晒霜', '宝宝防晒', '婴儿防晒', '小孩防晒'],
+  },
+  // === 老花眼镜 - 专有名词 ===
+  '老花眼镜': {
+    excludedKeywords: ['老花图案', '老花纹', '老花布', '老花面料', '太阳镜', '墨镜', '近视镜'],
+    forceCategory: 'accessories',
+    extraSynonyms: ['老花镜', '老视镜', '老年眼镜', '远视镜'],
+  },
+  '老花镜': {
+    excludedKeywords: ['老花图案', '老花纹', '老花布', '老花面料', '太阳镜', '墨镜'],
+    forceCategory: 'accessories',
+    extraSynonyms: ['老花眼镜', '老视镜', '老年眼镜'],
+  },
+  // === 面包机 - 品类边界 ===
+  '面包机': {
+    excludedKeywords: ['面包包装盒', '面包包装袋', '面包模具', '面包烤盘', '面包刀', '面包夹', '面包篮', '面包柜', '面包展示', '面包包装袋'],
+    requiredKeywords: ['机'],
+    extraSynonyms: ['烤面包机', '吐司面包机', '全自动面包机', '家用面包机'],
+  },
+  // === 男士休闲外套 ===
+  '男士休闲外套': {
+    excludedKeywords: ['家具', '脚套', '脚垫', '弹簧扣', '保护套', '防尘罩', '遥控器套', '手机套', '外袋', '封套'],
+    forceCategory: 'clothing',
+    extraSynonyms: ['男款休闲外套', '男生休闲夹克', '男士休闲上衣'],
+  },
+  // === 男士外套 ===
+  '男士外套': {
+    excludedKeywords: ['家具', '脚套', '脚垫', '弹簧扣', '保护套', '防尘罩', '遥控器套', '手机套'],
+    forceCategory: 'clothing',
+  },
+  // === 女装外套 ===
+  '女装外套': {
+    excludedKeywords: ['家具', '脚套', '脚垫', '弹簧扣', '保护套', '防尘罩'],
+    forceCategory: 'clothing',
+  },
+  // === 瓷砖 ===
+  '瓷砖': {
+    excludedKeywords: ['瓷砖胶', '瓷砖美缝', '瓷砖清洁', '瓷砖修复', '瓷砖贴', '瓷砖贴纸', '瓷砖切割', '瓷砖打孔', '瓷砖找平'],
+    forceCategory: 'tile',
+  },
+};
+
+// Get query intervention config for a given keyword
+// Returns the most specific (longest key) match
+function getQueryIntervention(keyword) {
+  const kwLower = keyword.toLowerCase();
+  let bestMatch = null;
+  let bestLen = 0;
+  
+  for (const [key, config] of Object.entries(QUERY_INTERVENTION)) {
+    if (kwLower.includes(key.toLowerCase()) && key.length > bestLen) {
+      bestMatch = config;
+      bestLen = key.length;
+    }
+  }
+  
+  return bestMatch;
+}
+
+// ===== Title Normalization =====
+// Clean up product titles for better matching:
+// - Remove promo symbols (🔥, 💥, 🎁, etc.)
+// - Normalize spacing
+// - Extract core product info
+function normalizeTitle(title) {
+  if (!title) return '';
+  let t = title;
+  // Remove emoji and special promo symbols
+  t = t.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}]/gu, '');
+  // Remove common promo prefixes/suffixes in brackets
+  t = t.replace(/[【\[（(](新品|爆款|热销|厂家直销|批发|现货|包邮|特价|促销|清仓|尾货|外贸|跨境|亚马逊|速卖通|独立站|temu|一件代发|代发|定制|加工|OEM|ODM|来图|来样)[\]】）)]/gi, '');
+  // Remove extra whitespace
+  t = t.replace(/\s+/g, ' ').trim();
+  return t;
 }
 
 // ===== Universal Category Mapping System =====
@@ -1915,6 +2356,25 @@ const CATEGORY_CONFIG = {
 // Match a search keyword to a category config
 // Returns the category config object or null if no match
 function matchCategory(keyword) {
+  // Priority 1: Check query intervention forceCategory
+  const intervention = getQueryIntervention(keyword);
+  if (intervention && intervention.forceCategory && CATEGORY_CONFIG[intervention.forceCategory]) {
+    return CATEGORY_CONFIG[intervention.forceCategory];
+  }
+  
+  // Priority 2: Check proper noun category
+  const kwLower = keyword.toLowerCase();
+  const sortedProperNouns = Object.keys(PROPER_NOUNS).sort((a, b) => b.length - a.length);
+  for (const pn of sortedProperNouns) {
+    if (kwLower.includes(pn)) {
+      const pnData = PROPER_NOUNS[pn];
+      if (pnData.category && CATEGORY_CONFIG[pnData.category]) {
+        return CATEGORY_CONFIG[pnData.category];
+      }
+    }
+  }
+  
+  // Priority 3: Default category map matching
   for (const [name, config] of Object.entries(CATEGORY_CONFIG)) {
     // Check if keyword contains any match keyword
     if (config.matchKeywords.some(kw => keyword.includes(kw))) {
