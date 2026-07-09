@@ -2109,6 +2109,268 @@ const API_DIRECT_URL = 'https://open.dianleida.net/api/v1/product/search';
 const API_APP_ID = 'f973685c8aae4bde';
 const API_APP_SECRET = '9b921e202725436ba193b4ef9812345';
 
+// ===== 智谱AI配置 =====
+const ZHIPU_API_KEY = 'd2a647a249c3449191573f2e7a1fLR5I'; // 智谱API Key
+const ZHIPU_MODEL = 'glm-4-flash'; // 搜索分析用flash模型，快且便宜
+const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+const USE_ZHIPU_AI = true; // 是否启用智谱大模型分析
+
+// 智谱AI搜索分析System Prompt
+const ZHIPU_SEARCH_SYSTEM_PROMPT = `你是店雷达的AI选品助手，专为电商卖家提供1688货源搜索服务。
+
+## 你的任务
+用户输入一个搜索词（可以是关键词，也可以是自然语言描述），你需要对其进行深度分析，输出结构化的搜索参数，用于调用店雷达的商品搜索接口。
+
+## 分析步骤（必须严格按顺序执行）
+
+### 第1步：预处理
+- 去除多余空格、表情、无意义符号
+- 全角转半角，统一大小写
+- 纠正明显的错别字
+
+### 第2步：分词与词性标注
+将用户输入拆分为有意义的词，并标注每个词的词性：
+- CATEGORY: 品类词（包、手机、衣服...）
+- BRAND: 品牌词
+- ATTRIBUTE: 属性词（颜色、尺寸、型号...）
+- STYLE: 风格词（复古、韩版、ins风、麻将纹、异形、动物造型...）
+- MATERIAL: 材质词（真皮、纯棉、硅胶...）
+- SCENE: 场景词（夏季、通勤、运动...）
+- PRICE: 价格相关词
+- SALES: 销量/趋势词（爆款、热销、增长快...）
+- AUDIENCE: 人群词（女、男士、儿童...）
+- FUNCTION: 功能词（防水、防晒、便携...）
+- TIME: 时间词（近30天、近7天...）
+- PLATFORM: 平台词（抖音、亚马逊、TEMU...）
+- SUPPLIER: 商家类型词（源头工厂、一件代发...）
+
+### 第3步：意图识别
+判断用户的搜索意图属于哪一类：
+- CLEAR_SEARCH: 明确找品（有明确的品类词）
+- TREND_SEARCH: 趋势选品（有趋势/销量相关词）
+- SCENE_SEARCH: 场景选品（有场景/季节词）
+- RECOMMENDATION: 选品推荐（模糊需求，需要推荐方向）
+- COMPETITOR_SEARCH: 竞品找源（找同款/同源）
+- CROSS_BORDER: 跨境选品（涉及海外平台/国家）
+
+输出意图类型、置信度(0-1)、一句话描述。
+
+### 第4步：类目预测
+预测对应的1688商品类目路径（一级→二级→三级），输出置信度。
+如果有多个可能的类目，按置信度排序输出。
+
+常见类目参考：
+- 箱包 → 女包 → 手提包/单肩包/斜挎包/双肩包/手拿包
+- 服饰 → 女装/男装/童装 → 上衣/裤子/裙子...
+- 鞋靴 → 女鞋/男鞋 → 运动鞋/高跟鞋/凉鞋...
+- 数码 → 手机配件 → 手机壳/钢化膜/充电宝
+- 家居 → 家纺/厨具/收纳
+
+### 第5步：关键词扩展
+基于原词，从以下维度扩展相关关键词：
+- 同义词：意思完全相同的词
+- 近义词：意思相近的词
+- 风格相关词：同风格的其他说法
+- 场景相关词：使用场景相关
+- 具体造型词：如果是异形/创意类，扩展具体造型（动物造型、食物造型等）
+
+要求：
+- 总共扩展5-10个词
+- 分层级：核心扩展（3-4个，高相关）、相关扩展（3-4个，中相关）、宽泛扩展（2-3个，低相关）
+- 宁缺毋滥，必须高度相关
+
+### 第6步：筛选条件提取
+从用户输入中提取结构化的筛选条件，包括：
+- price_min / price_max: 价格区间（数字）
+- material: 材质（数组）
+- gender: 人群（female/male/kid）
+- time_range: 时间范围（如"30d"）
+- growth_rate: 增长率要求（high/medium/low）
+- style: 风格（数组）
+- sort_by: 排序方式（relevance/growth_desc/sales_desc/price_asc）
+
+### 第7步：歧义检测
+判断搜索词是否存在歧义：
+- 如果置信度>0.9，认为无歧义
+- 如果0.7-0.9，列出主要方向和备选方向
+- 如果<0.7，列出所有可能的方向供用户选择
+
+## 输出格式
+严格按照JSON格式输出，不要有任何额外的文字说明，只输出JSON：
+
+{
+  "original_query": "用户原始输入",
+  "cleaned_query": "清洗后的查询词",
+  "preprocess_corrections": ["去除多余空格", "错别字纠正"],
+  "tokens": [
+    {"word": "麻将包", "pos": "CATEGORY"}
+  ],
+  "intent": {
+    "type": "CLEAR_SEARCH",
+    "confidence": 0.88,
+    "description": "用户想找带有麻将图案/麻将纹风格的女式包包"
+  },
+  "category_prediction": {
+    "primary": {"path": ["箱包", "女包", "手提包"], "confidence": 0.92, "category_id": "10166"},
+    "secondary": [
+      {"path": ["箱包", "女包", "单肩包"], "confidence": 0.85}
+    ]
+  },
+  "keyword_expansion": {
+    "core": ["麻将纹包包", "麻将图案女包", "国潮风女包"],
+    "related": ["印花手提包", "复古印花女包", "中国风女包"],
+    "broad": ["女式手提包", "百搭单肩包"]
+  },
+  "filters": {
+    "style": ["麻将纹", "国潮"],
+    "gender": "female"
+  },
+  "sort_by": "relevance",
+  "ambiguity": {
+    "is_ambiguous": true,
+    "confidence": 0.75,
+    "reason": "多义词：可能指麻将图案的包包，也可能指装麻将牌的收纳包",
+    "options": [
+      {"text": "女式包包（麻将纹/印花风格）", "category_path": ["箱包", "女包"], "is_most_likely": true},
+      {"text": "麻将收纳盒/收纳包", "category_path": ["运动户外", "棋牌娱乐"], "is_most_likely": false}
+    ]
+  }
+}
+
+## 注意事项
+1. 用户是电商卖家/选品人员，不是普通消费者，他们关心"好不好卖""利润高不高"
+2. 优先考虑选品视角：增长趋势、竞争程度、利润空间
+3. 对于模糊需求，给出具体的选品方向建议，而不是泛泛而谈
+4. 类目预测尽量准确，这是搜索相关性的关键
+5. 关键词扩展宁缺毋滥，不要为了凑数加不相关的词
+6. 有歧义时一定要检测出来，宁可多问一句，也不要搜错方向
+7. 异形包/创意包搜索时，务必扩展具体造型词：动物造型（蝴蝶、鱼、猫头鹰、兔子等）、食物造型（云朵、饺子、贝壳等）
+8. 只输出JSON，不要有任何markdown标记或额外文字`;
+
+// 调用智谱AI进行搜索分析
+async function callZhipuSearchAnalysis(query) {
+  if (!USE_ZHIPU_AI || !ZHIPU_API_KEY) return null;
+  
+  try {
+    const response = await fetch(ZHIPU_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + ZHIPU_API_KEY
+      },
+      body: JSON.stringify({
+        model: ZHIPU_MODEL,
+        messages: [
+          { role: 'system', content: ZHIPU_SEARCH_SYSTEM_PROMPT },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Zhipu API error: ' + response.status);
+    }
+    
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // 尝试解析JSON
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (e) {
+      // 如果解析失败，尝试提取JSON部分
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse Zhipu response');
+      }
+    }
+    
+    return result;
+  } catch (e) {
+    console.warn('[Zhipu AI] Analysis failed:', e.message);
+    return null; // 失败返回null，降级到规则引擎
+  }
+}
+
+// 将智谱返回的结果转换为统一格式（兼容规则引擎的输出格式）
+function convertZhipuResultToStandard(zhipuResult) {
+  if (!zhipuResult) return null;
+  
+  const tokens = zhipuResult.tokens || [];
+  const tokenWords = tokens.map(t => t.word);
+  const posTags = {};
+  tokens.forEach(t => { posTags[t.word] = t.pos; });
+  
+  const category = zhipuResult.category_prediction || {};
+  const expansion = zhipuResult.keyword_expansion || { core: [], related: [], broad: [] };
+  const ambiguity = zhipuResult.ambiguity || { is_ambiguous: false, confidence: 0.9 };
+  
+  return {
+    original_query: zhipuResult.original_query || '',
+    cleaned_query: zhipuResult.cleaned_query || zhipuResult.original_query || '',
+    preprocess: {
+      original: zhipuResult.original_query || '',
+      cleaned: zhipuResult.cleaned_query || zhipuResult.original_query || '',
+      corrections: zhipuResult.preprocess_corrections || []
+    },
+    tokenize: {
+      tokens: tokenWords,
+      posTags: posTags,
+      properNoun: tokenWords.find(w => posTags[w] === 'CATEGORY' && w.length > 2) || null,
+      category: category.primary && category.primary.path ? category.primary.path[0] : null
+    },
+    intent: {
+      primary: zhipuResult.intent ? {
+        type: zhipuResult.intent.type,
+        confidence: zhipuResult.intent.confidence || 0.8
+      } : null,
+      all: zhipuResult.intent ? [zhipuResult.intent] : [],
+      description: zhipuResult.intent ? zhipuResult.intent.description : '',
+      intentNames: zhipuResult.intent ? [zhipuResult.intent.type] : []
+    },
+    category: {
+      primary: category.primary ? {
+        path: category.primary.path,
+        confidence: category.primary.confidence || 0.8,
+        categoryId: category.primary.category_id || null
+      } : null,
+      secondary: category.secondary || [],
+      categoryName: category.primary && category.primary.path ? category.primary.path[0] : null
+    },
+    expansion: {
+      original: zhipuResult.cleaned_query || zhipuResult.original_query || '',
+      core: expansion.core || [],
+      related: expansion.related || [],
+      broad: expansion.broad || [],
+      allExpanded: function() {
+        return [...this.core, ...this.related, ...this.broad];
+      }
+    },
+    filters: zhipuResult.filters || {},
+    ambiguity: {
+      is_ambiguous: ambiguity.is_ambiguous || false,
+      confidence: ambiguity.confidence || 0.9,
+      reason: ambiguity.reason || '',
+      options: ambiguity.options || []
+    },
+    search_params: {
+      keywords: [...expansion.core || [], ...expansion.related || []],
+      keyword_match_mode: 'weighted_or',
+      category_id: category.primary && category.primary.category_id ? category.primary.category_id : null,
+      category_path: category.primary ? category.primary.path : null,
+      filters: zhipuResult.filters || {},
+      sort_by: zhipuResult.sort_by || 'relevance',
+      fallback_strategy: 'expand_to_related_keywords'
+    },
+    _fromZhipu: true // 标记来自智谱AI
+  };
+}
+
 function md5Hash(str) {
   return CryptoJS.MD5(str).toString();
 }
@@ -2704,39 +2966,96 @@ async function doSearch() {
   currentPage = 1;
   
   // ==========================================
-  // Step 0: 执行AI七步分析
+  // Step 0: 执行AI七步分析（智谱大模型优先，规则引擎兜底）
   // ==========================================
-  const analysis = aiAnalyzeQuery(query);
-  currentAnalysis = analysis;
+  let analysis;
+  let analysisSource = 'rule'; // rule / zhipu
   
-  const thinkingLines = [
+  // 先展示"正在分析"的状态
+  let thinkingLines = [
     `<strong>用户输入：</strong>"${escapeHtml(query)}"`,
-    `<strong>清洗后：</strong>"${escapeHtml(analysis.cleaned_query)}"`,
-    `<strong>分词结果：</strong>${analysis.tokenize.tokens.map(t => `${t}(${POS_TAGS[analysis.tokenize.posTags[t]] || '未知'})`).join(' + ')}`,
-    `<strong>意图识别：</strong>${analysis.intent.description || '未识别'}`,
-    `<strong>类目预测：</strong>${analysis.category.primary ? analysis.category.primary.path.join(' → ') : '未匹配'}`,
-    `<strong>关键词扩展：</strong>核心${analysis.expansion.core.length}个 + 相关${analysis.expansion.related.length}个`,
-    `<strong>筛选条件：</strong>${Object.keys(analysis.filters).filter(k => k !== 'sort_by').length}个条件`,
-    `<strong>歧义检测：</strong>${analysis.ambiguity.is_ambiguous ? '有歧义 - ' + analysis.ambiguity.reason : '无歧义'}`,
+    `<strong>分析模式：</strong>智谱AI大模型分析中...`,
   ];
-  
-  // ==========================================
-  // 逐步展示七步分析过程
-  // ==========================================
-  await sleep(300);
+  await sleep(200);
   let content = buildThinkingSection(thinkingLines);
   content += '<div class="skill-cards" id="skill-cards">';
+  content += buildSkillCard('active', 'AI智能分析', '正在调用智谱AI大模型分析搜索意图...');
+  setAIContent(bubble, content + '</div>');
+  
+  // 调用智谱AI
+  const zhipuResult = await callZhipuSearchAnalysis(query);
+  
+  if (zhipuResult) {
+    // 智谱AI返回成功
+    analysis = convertZhipuResultToStandard(zhipuResult);
+    analysisSource = 'zhipu';
+    
+    // 更新思考行
+    thinkingLines = [
+      `<strong>用户输入：</strong>"${escapeHtml(query)}"`,
+      `<strong>清洗后：</strong>"${escapeHtml(analysis.cleaned_query)}"`,
+      `<strong>分词结果：</strong>${analysis.tokenize.tokens.map(t => `${t}(${POS_TAGS[analysis.tokenize.posTags[t]] || analysis.tokenize.posTags[t] || '未知'})`).join(' + ')}`,
+      `<strong>意图识别：</strong>${analysis.intent.description || '未识别'}`,
+      `<strong>类目预测：</strong>${analysis.category.primary ? analysis.category.primary.path.join(' → ') : '未匹配'}`,
+      `<strong>关键词扩展：</strong>核心${analysis.expansion.core.length}个 + 相关${analysis.expansion.related.length}个`,
+      `<strong>筛选条件：</strong>${Object.keys(analysis.filters).filter(k => k !== 'sort_by').length}个条件`,
+      `<strong>歧义检测：</strong>${analysis.ambiguity.is_ambiguous ? '有歧义 - ' + analysis.ambiguity.reason : '无歧义'}`,
+      `<strong>分析来源：</strong><span style="color:var(--primary)">智谱AI大模型</span>`,
+    ];
+  } else {
+    // 智谱AI失败，降级到规则引擎
+    analysis = aiAnalyzeQuery(query);
+    analysisSource = 'rule';
+    
+    thinkingLines = [
+      `<strong>用户输入：</strong>"${escapeHtml(query)}"`,
+      `<strong>清洗后：</strong>"${escapeHtml(analysis.cleaned_query)}"`,
+      `<strong>分词结果：</strong>${analysis.tokenize.tokens.map(t => `${t}(${POS_TAGS[analysis.tokenize.posTags[t]] || '未知'})`).join(' + ')}`,
+      `<strong>意图识别：</strong>${analysis.intent.description || '未识别'}`,
+      `<strong>类目预测：</strong>${analysis.category.primary ? analysis.category.primary.path.join(' → ') : '未匹配'}`,
+      `<strong>关键词扩展：</strong>核心${analysis.expansion.core.length}个 + 相关${analysis.expansion.related.length}个`,
+      `<strong>筛选条件：</strong>${Object.keys(analysis.filters).filter(k => k !== 'sort_by').length}个条件`,
+      `<strong>歧义检测：</strong>${analysis.ambiguity.is_ambiguous ? '有歧义 - ' + analysis.ambiguity.reason : '无歧义'}`,
+      `<strong>分析来源：</strong><span style="color:var(--muted)">规则引擎（大模型暂不可用）</span>`,
+    ];
+  }
+  
+  currentAnalysis = analysis;
+  
+  // 更新"AI智能分析"卡片为完成状态
+  const firstCard = bubble.querySelector('#skill-cards .skill-card:first-child');
+  if (firstCard) {
+    firstCard.classList.remove('active');
+    firstCard.classList.add('done');
+    const aiLabel = analysisSource === 'zhipu' ? '智谱AI大模型' : '规则引擎';
+    const aiIcon = analysisSource === 'zhipu' ? '🧠' : '⚙️';
+    firstCard.querySelector('.skill-card-title').innerHTML = `${aiIcon} AI智能分析 · ${aiLabel}`;
+    firstCard.querySelector('.skill-card-desc').textContent = 
+      analysisSource === 'zhipu' ? '大模型已完成七步深度分析' : '规则引擎快速分析（大模型暂不可用）';
+  }
+  scrollToBottom();
+  
+  // 更新思考区域
+  const thinkingBlock = bubble.querySelector('.thinking-block');
+  if (thinkingBlock) {
+    thinkingBlock.innerHTML = thinkingLines.map(l => `<div class="thinking-line">${l}</div>`).join('');
+  }
   
   // Step 1: 预处理
-  await sleep(300);
+  await sleep(250);
   let step1Detail = analysis.preprocess.corrections.length > 0
     ? `清洗输入文本：${analysis.preprocess.corrections.join('、')}`
     : '输入文本已标准化';
-  content += buildSkillCard('done', '第①步 · 预处理', escapeHtml(step1Detail));
-  setAIContent(bubble, content + '</div>');
+  const skillCards0 = bubble.querySelector('#skill-cards');
+  if (skillCards0) {
+    skillCards0.insertAdjacentHTML('beforeend',
+      buildSkillCard('done', '第①步 · 预处理', escapeHtml(step1Detail))
+    );
+  }
+  scrollToBottom();
   
   // Step 2: 分词与词性标注
-  await sleep(400);
+  await sleep(300);
   const tokens = analysis.tokenize.tokens;
   let step2Detail = tokens.length > 0
     ? `拆分为 ${tokens.length} 个词，已标注词性`
@@ -2746,7 +3065,7 @@ async function doSearch() {
     tokensHtml = '<div class="skill-tokens">' +
       tokens.map(t => {
         const pos = analysis.tokenize.posTags[t];
-        const posLabel = pos ? POS_TAGS[pos] : '';
+        const posLabel = pos ? (POS_TAGS[pos] || pos) : '';
         return `<span class="skill-token" title="${posLabel}">${escapeHtml(t)}</span>`;
       }).join('') +
       '</div>';
