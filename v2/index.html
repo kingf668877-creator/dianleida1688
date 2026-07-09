@@ -1007,7 +1007,7 @@ const PROPER_NOUNS = {
   '真皮包': { category: 'bag', pos: 'CATEGORY', synonyms: ['头层牛皮', '牛皮包'] },
   '链条包': { category: 'bag', pos: 'CATEGORY', synonyms: ['金属链', '链条款'] },
   '菱格包': { category: 'bag', pos: 'CATEGORY', synonyms: ['菱格纹', '绗缝包'] },
-  '异形包': { category: 'bag', pos: 'CATEGORY', synonyms: ['个性包', '创意包', '搞怪包', '造型包', '不规则包'] },
+  '异形包': { category: 'bag', pos: 'CATEGORY', synonyms: ['个性包', '创意包', '搞怪包', '造型包', '不规则包', '动物包', '立体包', '3D包'], isYixing: true },
   
   // === 服装类专有名词 ===
   '西装外套': { category: 'clothing', pos: 'CATEGORY', synonyms: ['西服', 'blazer'] },
@@ -1633,11 +1633,43 @@ function expandKeywords(originalQuery, tokens, posTags, properNoun, category) {
   const related = [];   // 相关扩展词（中相关）
   const broad = [];     // 宽泛扩展词（低相关）
   
+  // ===== 异形包专用：形状特征词库 =====
+  // 用于：1) 扩展搜索关键词  2) 结果二次打分（异形度）
+  const YIXING_SHAPE_KEYWORDS = {
+    // 动物造型（最典型的异形包）
+    animal: ['鱼形', '蝴蝶', '猫头鹰', '兔子', '猫咪', '小熊', '恐龙', '天鹅', '独角兽', '青蛙', '熊猫', '老虎', '狐狸', '蜜蜂', '瓢虫', '鲸鱼', '海豚', '猫咪', '小狗', '大象'],
+    // 食物/物品造型
+    food: ['云朵', '饺子', '贝壳', '法棍', '波士顿', '马鞍', '水桶', '枕头', '贝壳', '爱心', '心形', '星星', '月亮', '花朵', '花瓣', '草莓', '蛋糕', '冰淇淋', '棒棒糖'],
+    // 创意/几何造型
+    creative: ['异形', '个性', '创意', '搞怪', '独特', '不规则', '造型', '3D', '立体', '设计感', '小众', '高颜值', '解构', '拼接', '褶皱', '打结', '扭结', '编织'],
+    // 具体形状描述
+    shapes: ['圆形', '半圆形', '月牙', '半月', '长条形', '方形', '梯形', '三角形', '菱形', '褶皱', '云朵', '饺子', '贝壳']
+  };
+  
+  // 检测是否为异形包搜索
+  const isYixingSearch = properNoun === '异形包' || tokens.includes('异形') || 
+    (tokens.some(t => ['个性', '创意', '搞怪', '独特', '不规则', '造型', '3D', '立体'].includes(t)) && category === 'bag');
+  
   // 1. 专有名词的同义词
   if (properNoun && PROPER_NOUNS[properNoun]) {
     const syns = PROPER_NOUNS[properNoun].synonyms || [];
     core.push(...syns.slice(0, 2));
     related.push(...syns.slice(2, 4));
+  }
+  
+  // 1.5 异形包专用扩展：用具体造型词扩展搜索
+  if (isYixingSearch) {
+    // 核心扩展：动物造型包（最典型的异形包）
+    const animalBags = YIXING_SHAPE_KEYWORDS.animal.slice(0, 6).map(a => a + '包');
+    core.push(...animalBags);
+    
+    // 相关扩展：食物/物品造型包
+    const foodBags = YIXING_SHAPE_KEYWORDS.food.slice(0, 6).map(f => f + '包');
+    related.push(...foodBags);
+    
+    // 宽泛扩展：创意造型描述词+包
+    const creativeBags = YIXING_SHAPE_KEYWORDS.creative.slice(0, 5).map(c => c + '包');
+    broad.push(...creativeBags);
   }
   
   // 2. 修饰词的同义词
@@ -2131,11 +2163,29 @@ async function fetchProductsWithAnalysis(analysis) {
   const filters = analysis.filters || {};
   const intent = analysis.intent || {};
   
+  // 检测是否为异形包搜索
+  const properNoun = analysis.tokenize.properNoun;
+  const isYixingSearch = properNoun === '异形包' || 
+    (analysis.tokenize.tokens.includes('异形') && analysis.category.primary && analysis.category.primary.path[0] === '箱包');
+  
   // 搜索策略：原词 + 核心扩展词
-  const searchQueries = [
+  let searchQueries = [
     analysis.cleaned_query,
-    ...analysis.expansion.core
-  ].filter((v, i, a) => a.indexOf(v) === i && v.length > 0).slice(0, 3);
+    ...analysis.expansion.core,
+    ...analysis.expansion.related.slice(0, 2)
+  ].filter((v, i, a) => a.indexOf(v) === i && v.length > 0);
+  
+  // 异形包专用：增加更多具体造型关键词（多路召回）
+  if (isYixingSearch) {
+    const yixingExtraQueries = [
+      '动物造型包', '蝴蝶包', '鱼形包', '猫头鹰包', '兔子包',
+      '云朵包', '爱心包', '创意包包', '个性女包', '立体造型包',
+      '饺子包', '贝壳包', '马鞍包'
+    ];
+    searchQueries = [...searchQueries, ...yixingExtraQueries].slice(0, 10);
+  } else {
+    searchQueries = searchQueries.slice(0, 3);
+  }
   
   console.log('[AI Search] Queries:', searchQueries);
   console.log('[AI Search] Filters:', filters);
@@ -2301,6 +2351,30 @@ function searchProductsLocal(query, productArray, priceFilter, sortBy, analysis)
   const mustValidateBag = analysis && analysis.category.primary && 
     (analysis.category.primary.path[0] === '箱包' || tokens.includes('包'));
   
+  // 检测是否为异形包搜索
+  const isYixingSearch = analysis && analysis.tokenize.properNoun === '异形包' || 
+    (tokens.includes('异形') && mustValidateBag);
+  
+  // 异形包形状特征词库（用于二次打分排序）
+  const YIXING_FEATURES = {
+    // 动物造型（高分：最典型的异形包）
+    high: ['鱼形', '蝴蝶', '猫头鹰', '兔子', '猫咪', '小熊', '恐龙', '天鹅', '独角兽', '青蛙', '熊猫', '老虎', '狐狸', '蜜蜂', '瓢虫', '鲸鱼', '海豚', '大象', '小狗', '猫咪造型'],
+    // 食物/物品造型（中分：比较有特色）
+    mid: ['云朵', '饺子', '贝壳', '爱心', '心形', '星星', '月亮', '花朵', '花瓣', '草莓', '蛋糕', '冰淇淋', '棒棒糖', '法棍', '马鞍', '水桶', '枕头', '波士顿'],
+    // 创意造型描述（低分：有特色但不算特别异形）
+    low: ['异形', '个性', '创意', '搞怪', '独特', '不规则', '造型', '3D', '立体', '设计感', '小众', '高颜值', '解构', '拼接', '褶皱', '打结', '扭结', '编织']
+  };
+  
+  // 计算异形度：标题中有多少形状特征词
+  function calcYixingScore(title) {
+    const t = title.toLowerCase();
+    let score = 0;
+    YIXING_FEATURES.high.forEach(w => { if (t.includes(w)) score += 15; });
+    YIXING_FEATURES.mid.forEach(w => { if (t.includes(w)) score += 8; });
+    YIXING_FEATURES.low.forEach(w => { if (t.includes(w)) score += 3; });
+    return score;
+  }
+  
   const scored = productArray.map(p => {
     let score = 0;
     const titleLower = p.title.toLowerCase();
@@ -2334,8 +2408,16 @@ function searchProductsLocal(query, productArray, priceFilter, sortBy, analysis)
       if (titleLower.includes(term.toLowerCase())) score += 3;
     });
     
+    // 异形包搜索：额外异形度打分
+    let yixingScore = 0;
+    if (isYixingSearch) {
+      yixingScore = calcYixingScore(titleLower);
+      // 异形度加成：把真正有造型的包排前面
+      score += yixingScore * 2;
+    }
+    
     if (score === 0) return null;
-    return { product: p, matchScore: score };
+    return { product: p, matchScore: score, yixingScore: yixingScore };
   }).filter(item => item !== null);
   
   // 价格过滤
