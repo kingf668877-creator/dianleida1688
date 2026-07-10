@@ -803,24 +803,41 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
     }
     
     return new Promise((resolve, reject) => {
-      let fullContent = '';
+      let answerContent = '';  // 只保存answer类型的消息
       let hasError = false;
       let errorMsg = '';
+      let answerStarted = false;
       
       parseSSE(
         response,
         // onMessage
         (eventType, data) => {
-          addDebugLog(`事件: ${eventType}`);
+          addDebugLog(`事件: ${eventType}, type: ${data.type || 'unknown'}`);
           
           if (eventType === 'conversation.message.delta') {
+            // 只处理answer类型的消息，忽略其他类型（time_capsule_recall, generate_answer_finish等）
+            const msgType = data.type || '';
             const content = data.content || '';
-            fullContent += content;
-            if (onStreamDelta) {
-              onStreamDelta(content, fullContent);
+            
+            if (msgType === 'answer') {
+              answerStarted = true;
+              answerContent += content;
+              if (onStreamDelta) {
+                onStreamDelta(content, answerContent);
+              }
+            } else if (!answerStarted && msgType === '' && content) {
+              // 有些情况下type字段可能在其他位置，尝试判断内容是否像JSON
+              if (content.trim().startsWith('{') || answerContent.length > 0) {
+                answerContent += content;
+                if (onStreamDelta) {
+                  onStreamDelta(content, answerContent);
+                }
+              }
             }
           } else if (eventType === 'conversation.message.completed') {
             // 消息完成
+            const msgType = data.type || '';
+            addDebugLog(`消息完成, type: ${msgType}`);
           } else if (eventType === 'conversation.chat.failed') {
             hasError = true;
             const lastError = data.last_error || {};
@@ -835,26 +852,64 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
             return;
           }
           
-          addDebugLog(`流式完成，总长度: ${fullContent.length}`);
+          addDebugLog(`流式完成，回答内容长度: ${answerContent.length}`);
+          
+          // 如果answerContent为空，尝试从所有内容中提取
+          let contentToParse = answerContent;
+          if (!contentToParse || contentToParse.length < 10) {
+            addDebugLog('answer内容为空，尝试从完整内容中提取JSON');
+            // 这里我们无法获取完整内容了，因为之前过滤了
+            // 直接返回失败，让fallback处理
+            reject(new Error('未获取到有效的回答内容'));
+            return;
+          }
           
           // 尝试解析JSON
           try {
-            const result = JSON.parse(fullContent);
+            const result = JSON.parse(contentToParse);
             addDebugLog('JSON解析成功');
             resolve(result);
           } catch (e) {
-            // 尝试从文本中提取JSON
-            const m = fullContent.match(/\{[\s\S]*\}/);
-            if (m) {
+            // 尝试从文本中提取第一个完整的JSON对象
+            // 处理可能有多个JSON的情况（取第一个）
+            let jsonStr = contentToParse;
+            const firstBrace = jsonStr.indexOf('{');
+            const lastBrace = jsonStr.lastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace) {
+              jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+            }
+            
+            // 再尝试找第一个完整的JSON（用括号匹配法）
+            let depth = 0;
+            let start = -1;
+            let end = -1;
+            for (let i = 0; i < jsonStr.length; i++) {
+              if (jsonStr[i] === '{') {
+                if (depth === 0) start = i;
+                depth++;
+              } else if (jsonStr[i] === '}') {
+                depth--;
+                if (depth === 0 && start >= 0) {
+                  end = i;
+                  break;
+                }
+              }
+            }
+            
+            if (start >= 0 && end > start) {
+              const extracted = jsonStr.substring(start, end + 1);
               try {
-                const result = JSON.parse(m[0]);
-                addDebugLog('从文本提取JSON成功');
+                const result = JSON.parse(extracted);
+                addDebugLog('提取第一个JSON对象成功');
                 resolve(result);
                 return;
-              } catch (e2) {}
+              } catch (e2) {
+                addDebugLog('提取的JSON解析失败: ' + e2.message);
+              }
             }
+            
             addDebugLog('JSON解析失败: ' + e.message);
-            addDebugLog('原始内容前200字: ' + fullContent.substring(0, 200));
+            addDebugLog('内容前300字: ' + contentToParse.substring(0, 300));
             reject(new Error('返回内容不是有效的JSON格式'));
           }
         },
