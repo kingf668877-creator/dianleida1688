@@ -2400,7 +2400,92 @@ async function callDianLeiDaAPI(action, params) {
   return resp.json();
 }
 
-// ===== 智谱AI大模型搜索分析 =====
+// ===== 扣子智能体API搜索分析（优先使用）=====
+const USE_COZE_AGENT = true;
+const COZE_BOT_ID = '7660723428240588815';
+const COZE_API_TOKEN = 'cztei_q98CMST2V6w6gCJ2df12pqDnhbVFzyhvYmxq0cHM7OsUtOFXe2yhNLd3GiF93AsyB';
+const COZE_API_URL = 'https://api.coze.cn/v3/chat';
+const COZE_MSG_URL = 'https://api.coze.cn/v3/chat/message/list';
+
+// 调用扣子智能体API进行搜索分析
+async function callCozeSearchAnalysis(query) {
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN || !COZE_BOT_ID) return null;
+
+  try {
+    // Step 1: 发起对话
+    const chatResp = await fetch(COZE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + COZE_API_TOKEN
+      },
+      body: JSON.stringify({
+        bot_id: COZE_BOT_ID,
+        user_id: 'dianleida_web_' + Date.now(),
+        stream: false,
+        additional_messages: [
+          { role: 'user', content: query, content_type: 'text' }
+        ]
+      })
+    });
+
+    if (!chatResp.ok) {
+      const errText = await chatResp.text().catch(() => '');
+      throw new Error('扣子API错误 ' + chatResp.status + ': ' + errText);
+    }
+
+    const chatData = await chatResp.json();
+    const conversationId = chatData.data.conversation_id;
+    const chatId = chatData.data.id;
+
+    // Step 2: 轮询获取结果（最多20秒）
+    let result = null;
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 1500));
+      
+      const msgUrl = COZE_MSG_URL + '?conversation_id=' + conversationId + '&chat_id=' + chatId;
+      const msgResp = await fetch(msgUrl, {
+        headers: {
+          'Authorization': 'Bearer ' + COZE_API_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!msgResp.ok) continue;
+      
+      const msgData = await msgResp.json();
+      const messages = msgData.data || [];
+      
+      // 找type=answer的assistant消息
+      const answerMsgs = messages.filter(m => m.role === 'assistant' && m.type === 'answer');
+      
+      if (answerMsgs.length > 0) {
+        const content = answerMsgs[0].content;
+        // 尝试解析JSON
+        try {
+          result = JSON.parse(content);
+        } catch (e) {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            result = JSON.parse(jsonMatch[0]);
+          }
+        }
+        break;
+      }
+    }
+
+    if (!result) {
+      throw new Error('扣子智能体未返回有效结果');
+    }
+
+    return result;
+  } catch (e) {
+    console.warn('[Coze AI] 调用失败:', e.message);
+    return null;
+  }
+}
+
+// ===== 智谱AI大模型搜索分析（备用）=====
 const USE_ZHIPU_AI = true;
 const ZHIPU_API_KEY = '48507e7734c94be7b4fa468a5ff2d0f2.v3dQklLAxlJZmU1f';
 const ZHIPU_MODEL = 'glm-4-flash';
@@ -3100,13 +3185,27 @@ async function doSearch() {
   step1El.innerHTML = `
     <span class="ai-step-icon">🧠</span>
     <div class="ai-step-content">
-      <div class="ai-step-title">Step 1: 调用智谱AI大模型分析</div>
-      <div class="ai-step-detail">正在调用 ${ZHIPU_MODEL} 模型深度分析关键词："${escapeHtml(query)}"...</div>
+      <div class="ai-step-title">Step 1: 调用扣子AI智能体分析</div>
+      <div class="ai-step-detail">正在调用店雷达AI智能体深度分析关键词："${escapeHtml(query)}"...</div>
     </div>`;
   stepsContainer.appendChild(step1El);
 
-  // 调用智谱AI大模型分析
-  const aiResult = await callZhipuSearchAnalysis(query);
+  // 优先调用扣子智能体API，失败降级到智谱AI，最后降级到规则引擎
+  let aiResult = null;
+  let aiSource = 'none';
+  
+  // 先尝试扣子智能体
+  if (USE_COZE_AGENT) {
+    aiResult = await callCozeSearchAnalysis(query);
+    if (aiResult) aiSource = 'coze';
+  }
+  
+  // 扣子失败，尝试智谱AI
+  if (!aiResult && USE_ZHIPU_AI) {
+    aiResult = await callZhipuSearchAnalysis(query);
+    if (aiResult) aiSource = 'zhipu';
+  }
+
   let aiAnalysisData = null;
   let useRuleEngine = false;
 
@@ -3115,13 +3214,16 @@ async function doSearch() {
     // AI分析成功，更新Step 1显示
     const intentText = aiResult.intent || '明确找品';
     const catText = aiResult.category ? (aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '')) : '未识别';
+    const sourceLabel = aiSource === 'coze' ? '扣子AI智能体' : '智谱AI大模型';
+    const sourceColor = aiSource === 'coze' ? '#6366F1' : '#00A868';
+    const sourceBg = aiSource === 'coze' ? '#EEF2FF' : '#E8F7F0';
     step1El.innerHTML = `
       <span class="ai-step-icon">✅</span>
       <div class="ai-step-content">
-        <div class="ai-step-title">Step 1: 智谱AI大模型分析完成</div>
+        <div class="ai-step-title">Step 1: ${sourceLabel}分析完成</div>
         <div class="ai-step-detail">意图识别：${escapeHtml(intentText)} · 类目预测：${escapeHtml(catText)} · ${escapeHtml(aiResult.analysisSummary || '分析完成')}</div>
         <div class="ai-step-tokens">
-          <span class="ai-token" style="background:#E8F7F0;color:#00A868;">AI驱动</span>
+          <span class="ai-token" style="background:${sourceBg};color:${sourceColor};">AI驱动</span>
           <span class="ai-token">${escapeHtml(intentText)}</span>
           ${aiResult.category && aiResult.category.mainCategory ? `<span class="ai-token">${escapeHtml(aiResult.category.mainCategory)}</span>` : ''}
         </div>
@@ -3132,7 +3234,7 @@ async function doSearch() {
       <span class="ai-step-icon">⚙️</span>
       <div class="ai-step-content">
         <div class="ai-step-title">Step 1: AI暂不可用，切换规则引擎</div>
-        <div class="ai-step-detail">智谱AI调用失败，已自动降级到本地规则引擎分析关键词</div>
+        <div class="ai-step-detail">AI智能体调用失败，已自动降级到本地规则引擎分析关键词</div>
         <div class="ai-step-tokens">
           <span class="ai-token" style="background:#FFF3E0;color:#FF6D00;">规则引擎</span>
         </div>
