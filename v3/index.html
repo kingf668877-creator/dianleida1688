@@ -656,9 +656,8 @@ async function callDianLeiDaAPI(action, params) {
 // ===== 扣子智能体API配置 =====
 const USE_COZE_AGENT = true;
 const COZE_BOT_ID = '7660723428240588815';
-const COZE_API_TOKEN = 'cztei_q98CMST2V6w6gCJ2df12pqDnhbVFzyhvYmxq0cHM7OsUtOFXe2yhNLd3GiF93AsyB';
+const COZE_API_TOKEN = 'pat_a7fOrJTPOZZoGQ6ZiSN9MRtQB6J4FBBzGCOKO4pTrqWAdbTEfgjNcWx5DGLIZkOL';
 const COZE_API_URL = 'https://api.coze.cn/v3/chat';
-const COZE_MSG_URL = 'https://api.coze.cn/v3/chat/message/list';
 
 // ===== 智谱AI配置（备用）=====
 const USE_ZHIPU_AI = true;
@@ -708,7 +707,7 @@ const ZHIPU_SEARCH_SYSTEM_PROMPT = `你是1688电商选品搜索分析专家。�
   "analysisSummary": ""
 }`;
 
-// ===== 调用扣子智能体API =====
+// ===== 调用扣子智能体API（流式） =====
 // 全局调试日志
 let COZE_DEBUG_LOG = [];
 function addDebugLog(msg) {
@@ -718,99 +717,58 @@ function addDebugLog(msg) {
   console.log('[Coze Debug]', msg);
 }
 
-// CORS代理服务（按优先级排序）
-// 注意：带Authorization header的POST请求，大部分免费CORS代理不支持
-const CORS_PROXIES = [
-  {
-    name: '直连',
-    url: '',
-    method: 'direct'
-  },
-  {
-    name: 'allorigins',
-    url: 'https://api.allorigins.win/post?url=',
-    method: 'allorigins'
-  },
-  {
-    name: 'corsproxy.io',
-    url: 'https://corsproxy.io/?',
-    method: 'passthrough'
-  },
-  {
-    name: 'codetabs',
-    url: 'https://api.codetabs.com/v1/proxy/?quest=',
-    method: 'passthrough'
-  },
-];
-
-async function fetchCozeAPI(url, options) {
-  const errors = [];
+// 流式解析SSE响应
+function parseSSE(response, onMessage, onComplete, onError) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let eventType = null;
   
-  for (const proxy of CORS_PROXIES) {
-    try {
-      addDebugLog(`尝试 ${proxy.name}...`);
-      
-      let resp;
-      
-      if (proxy.method === 'direct') {
-        resp = await fetch(url, options);
-      } else if (proxy.method === 'allorigins') {
-        // allorigins POST方式
-        const proxyUrl = proxy.url + encodeURIComponent(url);
-        const formData = new FormData();
-        formData.append('data', options.body || '');
-        const proxyOptions = {
-          method: 'POST',
-          body: formData,
-        };
-        resp = await fetch(proxyUrl, proxyOptions);
-      } else {
-        // passthrough方式：直接转发请求
-        const proxyUrl = proxy.url + encodeURIComponent(url);
-        const proxyOptions = {
-          ...options,
-          headers: {
-            ...options.headers,
-          },
-        };
-        resp = await fetch(proxyUrl, proxyOptions);
+  function processLine(line) {
+    if (line.startsWith('event:')) {
+      eventType = line.substring(6).trim();
+    } else if (line.startsWith('data:')) {
+      const dataStr = line.substring(5).trim();
+      if (dataStr === '[DONE]') {
+        onComplete && onComplete();
+        return;
       }
-      
-      if (resp.ok) {
-        let text = await resp.text();
-        
-        // allorigins返回格式是 {contents: "..."}
-        if (proxy.method === 'allorigins') {
-          try {
-            const json = JSON.parse(text);
-            if (json.contents) {
-              text = json.contents;
-            }
-          } catch (e) {}
-        }
-        
-        addDebugLog(`${proxy.name} 成功`);
-        return {
-          ok: true,
-          json: async () => JSON.parse(text),
-          text: async () => text,
-          status: resp.status,
-        };
-      } else {
-        const errText = await resp.text().catch(() => '');
-        errors.push(`${proxy.name}: HTTP ${resp.status} ${errText.substring(0, 100)}`);
-        addDebugLog(`${proxy.name} 失败: HTTP ${resp.status}`);
+      try {
+        const data = JSON.parse(dataStr);
+        onMessage && onMessage(eventType, data);
+      } catch (e) {
+        // 忽略解析失败的行
       }
-    } catch (e) {
-      errors.push(`${proxy.name}: ${e.message}`);
-      addDebugLog(`${proxy.name} 失败: ${e.message}`);
     }
   }
   
-  throw new Error('所有代理都失败: ' + errors.join('; '));
+  function read() {
+    reader.read().then(({ done, value }) => {
+      if (done) {
+        onComplete && onComplete();
+        return;
+      }
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        if (line.trim()) {
+          processLine(line.trim());
+        }
+      }
+      
+      read();
+    }).catch(err => {
+      onError && onError(err);
+    });
+  }
+  
+  read();
 }
 
-async function callCozeSearchAnalysis(query) {
+async function callCozeSearchAnalysis(query, onStreamDelta) {
   if (!USE_COZE_AGENT || !COZE_API_TOKEN || !COZE_BOT_ID) return null;
   
   COZE_DEBUG_LOG = [];
@@ -820,75 +778,94 @@ async function callCozeSearchAnalysis(query) {
     const chatBody = JSON.stringify({
       bot_id: COZE_BOT_ID,
       user_id: 'dianleida_web_' + Date.now(),
-      stream: false,
+      stream: true,
+      auto_save_history: true,
       additional_messages: [
         { role: 'user', content: query, content_type: 'text' }
       ]
     });
     
-    addDebugLog('发起对话请求...');
-    const chatResp = await fetchCozeAPI(COZE_API_URL, {
+    addDebugLog('发起流式对话请求...');
+    
+    const response = await fetch(COZE_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + COZE_API_TOKEN
+        'Authorization': 'Bearer ' + COZE_API_TOKEN,
+        'Accept': 'text/event-stream'
       },
       body: chatBody
     });
     
-    const chatData = await chatResp.json();
-    addDebugLog(`对话创建成功: ${JSON.stringify(chatData).substring(0, 200)}`);
-    
-    const data = chatData.data || chatData;
-    const conversationId = data.conversation_id;
-    const chatId = data.id;
-    
-    if (!conversationId || !chatId) {
-      throw new Error('扣子API返回格式异常: ' + JSON.stringify(chatData).substring(0, 200));
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error('HTTP ' + response.status + ': ' + errText.substring(0, 200));
     }
     
-    addDebugLog(`conversation_id: ${conversationId}, chat_id: ${chatId}`);
-
-    // 轮询获取结果
-    for (let i = 0; i < 15; i++) {
-      await new Promise(r => setTimeout(r, 1500));
-      const msgUrl = COZE_MSG_URL + '?conversation_id=' + conversationId + '&chat_id=' + chatId;
-      try {
-        const msgResp = await fetchCozeAPI(msgUrl, {
-          headers: {
-            'Authorization': 'Bearer ' + COZE_API_TOKEN,
-            'Content-Type': 'application/json'
+    return new Promise((resolve, reject) => {
+      let fullContent = '';
+      let hasError = false;
+      let errorMsg = '';
+      
+      parseSSE(
+        response,
+        // onMessage
+        (eventType, data) => {
+          addDebugLog(`事件: ${eventType}`);
+          
+          if (eventType === 'conversation.message.delta') {
+            const content = data.content || '';
+            fullContent += content;
+            if (onStreamDelta) {
+              onStreamDelta(content, fullContent);
+            }
+          } else if (eventType === 'conversation.message.completed') {
+            // 消息完成
+          } else if (eventType === 'conversation.chat.failed') {
+            hasError = true;
+            const lastError = data.last_error || {};
+            errorMsg = lastError.msg || '未知错误';
+            addDebugLog(`对话失败: ${errorMsg}`);
           }
-        });
-        
-        const msgData = await msgResp.json();
-        const messages = msgData.data || [];
-        addDebugLog(`第${i+1}次轮询: ${messages.length}条消息`);
-        
-        const answerMsgs = messages.filter(m => m.role === 'assistant' && m.type === 'answer');
-        if (answerMsgs.length > 0) {
-          const content = answerMsgs[0].content;
-          addDebugLog(`收到回答: ${content.substring(0, 150)}...`);
-          try { 
-            const result = JSON.parse(content);
+        },
+        // onComplete
+        () => {
+          if (hasError) {
+            reject(new Error(errorMsg || '扣子智能体调用失败'));
+            return;
+          }
+          
+          addDebugLog(`流式完成，总长度: ${fullContent.length}`);
+          
+          // 尝试解析JSON
+          try {
+            const result = JSON.parse(fullContent);
             addDebugLog('JSON解析成功');
-            return result;
+            resolve(result);
           } catch (e) {
-            const m = content.match(/\{[\s\S]*\}/);
+            // 尝试从文本中提取JSON
+            const m = fullContent.match(/\{[\s\S]*\}/);
             if (m) {
-              const result = JSON.parse(m[0]);
-              addDebugLog('从文本提取JSON成功');
-              return result;
+              try {
+                const result = JSON.parse(m[0]);
+                addDebugLog('从文本提取JSON成功');
+                resolve(result);
+                return;
+              } catch (e2) {}
             }
             addDebugLog('JSON解析失败: ' + e.message);
+            addDebugLog('原始内容前200字: ' + fullContent.substring(0, 200));
+            reject(new Error('返回内容不是有效的JSON格式'));
           }
-          break;
+        },
+        // onError
+        (err) => {
+          addDebugLog('流式读取失败: ' + err.message);
+          reject(err);
         }
-      } catch (e) {
-        addDebugLog(`第${i+1}次轮询失败: ${e.message}`);
-      }
-    }
-    throw new Error('扣子智能体未返回有效结果（超时）');
+      );
+    });
+    
   } catch (e) {
     addDebugLog('最终失败: ' + e.message);
     console.warn('[Coze AI] 调用失败:', e.message);
@@ -1185,7 +1162,18 @@ async function doSearch() {
   let aiResult = null;
   let aiSource = 'none';
   
-  aiResult = await callCozeSearchAnalysis(query);
+  // 流式回调：实时更新分析内容
+  function onAnalysisDelta(delta, fullText) {
+    // 尝试从已有的内容中提取JSON并更新步骤
+    try {
+      const partial = fullText.substring(0, Math.min(fullText.length, 500));
+      updateStep(step1, '🧠', 'Step 1: AI智能体分析中...', 
+        '正在生成分析结果... ' + partial.replace(/[{\[\]"\\]/g, '').substring(0, 100) + '...'
+      );
+    } catch (e) {}
+  }
+  
+  aiResult = await callCozeSearchAnalysis(query, onAnalysisDelta);
   if (aiResult) aiSource = 'coze';
   
   if (!aiResult) {
