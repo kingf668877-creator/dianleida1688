@@ -1202,13 +1202,13 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
 
 // ===== 类目匹配表 =====
 const CATEGORY_MAP = {
-  '箱包皮具': { categoryId: 1001, matchKeywords: ['包', '袋', '箱', '箱包', '包包', '手提包', '单肩包', '双肩包', '钱包'] },
-  '手机配件': { categoryId: 2001, matchKeywords: ['手机壳', '手机套', '手机配件', '钢化膜', '手机支架', '数据线', '充电器'] },
-  '男装': { categoryId: 3001, matchKeywords: ['男士', '男装', '男款', '男式', '男外套', '男t恤', '男裤', '男衬衫'] },
-  '女装': { categoryId: 3002, matchKeywords: ['女士', '女装', '女款', '女式', '连衣裙', '女外套', '女t恤', '女裤', '半身裙'] },
-  '服装': { categoryId: 3003, matchKeywords: ['外套', 't恤', '上衣', '裤子', '裙子', '衬衫', '卫衣', '毛衣', '针织衫'] },
-  '饰品': { categoryId: 4001, matchKeywords: ['饰品', '耳环', '项链', '手链', '戒指', '手镯', '胸针'] },
-  '家居百货': { categoryId: 5001, matchKeywords: ['家居', '日用品', '收纳', '厨房', '卫浴', '清洁'] },
+  '箱包皮具': { categoryId: 1001, matchKeywords: ['包', '袋', '箱', '箱包', '包包', '手提包', '单肩包', '双肩包', '钱包'], fallbackKeywords: ['女包', '包包', '时尚女包'] },
+  '手机配件': { categoryId: 2001, matchKeywords: ['手机壳', '手机套', '手机配件', '钢化膜', '手机支架', '数据线', '充电器'], fallbackKeywords: ['手机壳', '手机配件'] },
+  '男装': { categoryId: 3001, matchKeywords: ['男士', '男装', '男款', '男式', '男外套', '男t恤', '男裤', '男衬衫'], fallbackKeywords: ['男装', '男士外套'] },
+  '女装': { categoryId: 3002, matchKeywords: ['女士', '女装', '女款', '女式', '连衣裙', '女外套', '女t恤', '女裤', '半身裙'], fallbackKeywords: ['女装', '连衣裙'] },
+  '服装': { categoryId: 3003, matchKeywords: ['外套', 't恤', '上衣', '裤子', '裙子', '衬衫', '卫衣', '毛衣', '针织衫'], fallbackKeywords: ['t恤', '外套'] },
+  '饰品': { categoryId: 4001, matchKeywords: ['饰品', '耳环', '项链', '手链', '戒指', '手镯', '胸针'], fallbackKeywords: ['饰品', '耳环'] },
+  '家居百货': { categoryId: 5001, matchKeywords: ['家居', '日用品', '收纳', '厨房', '卫浴', '清洁'], fallbackKeywords: ['家居用品', '日用品'] },
 };
 
 function matchCategory(query) {
@@ -1229,29 +1229,70 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
   const required = (requiredKeywords || []).map(k => k.toLowerCase());
   const core = coreProduct ? coreProduct.toLowerCase() : '';
   
+  // 提取核心名词（用于宽松匹配）
+  let coreNoun = '';
+  const nounPatterns = [
+    /手机壳|手机套|保护壳|保护套/,
+    /包包|女包|男包|箱包|手提包|双肩包|单肩包|钱包|背包/,
+    /包|袋|箱/,
+    /t恤|衬衫|外套|裤子|裙子|衣服|服装/,
+    /鞋|靴/,
+    /饰品|耳环|项链|手链|戒指/,
+  ];
+  for (const pattern of nounPatterns) {
+    const match = core.match(pattern);
+    if (match) { coreNoun = match[0]; break; }
+  }
+  
+  // 常见不相关词黑名单（用于过滤明显不相关的结果）
+  const blacklistPatterns = [
+    // 纸巾/卫生纸类（带"包"但不是箱包）
+    /抽纸|纸巾|卫生纸|面巾纸|餐巾纸|卷纸|手帕纸|擦手纸|纸抽/,
+    // 食品类
+    /零食|饼干|糖果|巧克力|坚果|干货|调料|饮料|牛奶/,
+    // 工业/五金类
+    /轴承|齿轮|螺丝|螺母|螺栓|弹簧|密封|阀门|管件|焊条/,
+    // 包装材料
+    /打包袋|包装袋|包装盒|纸箱|泡沫|气泡膜/,
+  ];
+  
   for (const item of items) {
     const title = (item.title || '').toLowerCase();
     const levelName = item.levelName || '';
     
-    // 排除词过滤（排除词必须完整出现在标题中才排除）
+    // 排除词过滤
     let skip = false;
     for (const ex of excluded) {
-      // 只有当排除词是一个完整的词时才排除，避免误杀
-      if (ex.length >= 3 && title.includes(ex)) { skip = true; break; }
+      if (ex.length >= 2 && title.includes(ex)) { skip = true; break; }
     }
     if (skip) continue;
     
-    // 必选词检查：只要包含核心商品词就算匹配，不要求所有必选词都有
-    if (core && !title.includes(core)) {
-      // 如果核心词也不匹配，再检查有没有其他必选词
-      let hasRequired = false;
-      for (const rq of required) {
-        if (rq.length >= 2 && title.includes(rq)) { hasRequired = true; break; }
-      }
-      if (!hasRequired && required.length > 0) continue;
-      // 如果没有必选词但有核心词，用核心词判断
-      if (!hasRequired && required.length === 0) continue;
+    // 黑名单过滤：明显不相关的直接排除
+    let inBlacklist = false;
+    for (const pattern of blacklistPatterns) {
+      if (pattern.test(title)) { inBlacklist = true; break; }
     }
+    if (inBlacklist) continue;
+    
+    // 核心词匹配检查
+    let hasCoreMatch = false;
+    
+    // 1. 完全匹配核心产品词
+    if (core && title.includes(core)) {
+      hasCoreMatch = true;
+    }
+    // 2. 匹配核心名词（如"异形包" → 匹配"包"）
+    else if (coreNoun && title.includes(coreNoun)) {
+      hasCoreMatch = true;
+    }
+    // 3. 匹配必选词
+    else if (required.length > 0) {
+      for (const rq of required) {
+        if (rq && title.includes(rq)) { hasCoreMatch = true; break; }
+      }
+    }
+    
+    if (!hasCoreMatch) continue;
     
     result.push({
       id: String(item.offerId || ''),
@@ -1346,6 +1387,55 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       }
     } catch (e) {
       console.warn('搜索"' + searchKW + '"失败:', e.message);
+    }
+  }
+  
+  // ===== 兜底策略：如果结果太少，用类目关键词补充搜索 =====
+  if (allProducts.length < 10 && catConfig && catConfig.categoryId) {
+    // 优先用类目表中的兜底关键词
+    let fallbackKeywords = [];
+    for (const [name, cfg] of Object.entries(CATEGORY_MAP)) {
+      if (cfg.categoryId === catConfig.categoryId && cfg.fallbackKeywords) {
+        fallbackKeywords = cfg.fallbackKeywords;
+        break;
+      }
+    }
+    // 没有的话用类目关键词
+    if (fallbackKeywords.length === 0 && catConfig.categoryKeywords) {
+      fallbackKeywords = catConfig.categoryKeywords.slice(0, 2);
+    }
+    
+    for (const kw of fallbackKeywords) {
+      if (allProducts.length >= 20) break;
+      try {
+        const params = {
+          pageSize: 30,
+          keyWord: kw,
+          searchType: '1',
+          sortField: 'orderCount30d',
+          sortType: 'desc',
+          cycle: 30,
+          pageIndex: 1,
+          categoryIdList: [catConfig.categoryId]
+        };
+        const result = await callDianLeiDaAPI('search', params);
+        if (result.code === 200 && result.result && result.result.list) {
+          const products = processAPIProducts(
+            result.result.list,
+            aiResult ? aiResult.excludedKeywords : [],
+            aiResult ? aiResult.requiredKeywords : [],
+            aiResult ? aiResult.coreProduct : keyword
+          );
+          for (const p of products) {
+            if (!seenIds.has(p.id)) {
+              seenIds.add(p.id);
+              allProducts.push(p);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('兜底搜索"' + kw + '"失败:', e.message);
+      }
     }
   }
   
