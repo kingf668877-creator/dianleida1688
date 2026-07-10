@@ -1087,13 +1087,19 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     catConfig = matchCategory(keyword);
   }
   
-  // 搜索词策略：主关键词 + AI扩展的前2个
+  // 搜索词策略：主关键词 + AI扩展的关键词（前5个） + 二级查询词
   const searchQueries = [keyword];
-  if (aiResult && aiResult.searchStrategy && aiResult.searchStrategy.secondaryQueries) {
-    searchQueries.push(...aiResult.searchStrategy.secondaryQueries.slice(0, 2));
+  if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
+    // 添加扩展关键词（最多5个）
+    searchQueries.push(...aiResult.expandedKeywords.slice(0, 5));
   }
+  if (aiResult && aiResult.searchStrategy && aiResult.searchStrategy.secondaryQueries) {
+    searchQueries.push(...aiResult.searchStrategy.secondaryQueries.slice(0, 3));
+  }
+  // 去重
+  const uniqueQueries = [...new Set(searchQueries)];
   
-  for (const searchKW of searchQueries) {
+  for (const searchKW of uniqueQueries) {
     try {
       const params = {
         pageSize: pageSize,
@@ -1245,9 +1251,10 @@ async function doSearch() {
   const intentText = aiResult.intent || '明确找品';
   const catText = aiResult.category ? (aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '')) : '未识别';
   const summary = aiResult.analysisSummary || '分析完成';
+  const confidence = aiResult.intentConfidence ? '（置信度 ' + aiResult.intentConfidence + '）' : '';
   
   updateStep(step1, '✅', 'Step 1: ' + sourceLabel + '分析完成', 
-    '意图：' + intentText + ' · 类目：' + catText + ' · ' + summary,
+    '意图：' + intentText + confidence + ' · 类目：' + catText + ' · ' + summary,
     [sourceLabel, intentText, aiResult.category?.mainCategory || ''].filter(Boolean)
   );
 
