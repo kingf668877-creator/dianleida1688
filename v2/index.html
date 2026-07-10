@@ -875,7 +875,7 @@ body {
     <div class="input-wrap">
       <textarea id="chat-input" rows="1" placeholder="试试AI智能搜：近30天增长快的真皮女包" onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
     </div>
-    <button id="send-btn" onclick="doSearch()" title="AI智能搜">
+    <button id="send-btn" onclick="doSearchSafe()" title="AI智能搜">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
     </button>
   </div>
@@ -2251,6 +2251,10 @@ const ZHIPU_SEARCH_SYSTEM_PROMPT = `你是店雷达的AI选品助手，专为电
 async function callZhipuSearchAnalysis(query) {
   if (!USE_ZHIPU_AI || !ZHIPU_API_KEY) return null;
   
+  // 超时控制：10秒后自动降级
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  
   try {
     const response = await fetch(ZHIPU_API_URL, {
       method: 'POST',
@@ -2266,15 +2270,23 @@ async function callZhipuSearchAnalysis(query) {
         ],
         temperature: 0.3,
         response_format: { type: 'json_object' }
-      })
+      }),
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error('Zhipu API error: ' + response.status);
+      const errText = await response.text().catch(() => '');
+      throw new Error('API错误 ' + response.status + ': ' + (errText || response.statusText));
     }
     
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+    
+    if (!content) {
+      throw new Error('API返回内容为空');
+    }
     
     // 尝试解析JSON
     let result;
@@ -2286,13 +2298,18 @@ async function callZhipuSearchAnalysis(query) {
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error('Failed to parse Zhipu response');
+        throw new Error('返回内容不是有效的JSON格式');
       }
     }
     
     return result;
   } catch (e) {
-    console.warn('[Zhipu AI] Analysis failed:', e.message);
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      console.warn('[Zhipu AI] 请求超时，降级到规则引擎');
+    } else {
+      console.warn('[Zhipu AI] 分析失败:', e.message);
+    }
     return null; // 失败返回null，降级到规则引擎
   }
 }
@@ -2750,7 +2767,7 @@ function autoResize(el) {
 function handleInputKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    doSearch();
+    doSearchSafe();
   }
 }
 
@@ -3295,6 +3312,28 @@ async function doSearch() {
   document.getElementById('send-btn').disabled = false;
 }
 
+// doSearch的全局错误捕获
+async function doSearchSafe() {
+  try {
+    await doSearch();
+  } catch (e) {
+    console.error('[搜索错误]', e);
+    isSearching = false;
+    document.getElementById('send-btn').disabled = false;
+    
+    // 在聊天区显示错误
+    const bubble = addAIMessage();
+    setAIContent(bubble, `
+      <div class="error-msg" style="padding:16px;background:#FFF2F0;border-radius:12px;color:#FF4D4F;">
+        <div style="font-weight:600;margin-bottom:8px;">⚠️ 搜索出错了</div>
+        <div style="font-size:13px;line-height:1.6;">${escapeHtml(e.message || '未知错误')}</div>
+        <div style="font-size:12px;color:#999;margin-top:8px;">已自动降级到规则引擎，你可以重新搜索试试</div>
+      </div>
+    `);
+    scrollToBottom();
+  }
+}
+
 // 选择歧义选项
 function selectAmbiguityOption(idx) {
   const pending = window._pendingAmbiguity;
@@ -3328,7 +3367,7 @@ function selectAmbiguityOption(idx) {
     // 用新关键词重新搜索
     const input = document.getElementById('chat-input');
     input.value = newQuery;
-    doSearch();
+    doSearchSafe();
   }
 }
 
@@ -3647,7 +3686,7 @@ function quickSearch(keyword) {
   const input = document.getElementById('chat-input');
   input.value = keyword;
   autoResize(input);
-  doSearch();
+  doSearchSafe();
 }
 
 // 页面初始化
