@@ -492,6 +492,70 @@ body {
 .badge-hot { background: #FFF1F0; color: #FF4D4F; }
 .badge-top { background: #FCF5E5; color: #D48806; }
 
+/* 分页样式 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.page-btn {
+  padding: 8px 16px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.page-numbers {
+  display: flex;
+  gap: 4px;
+}
+.page-num {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.page-num:hover {
+  background: #F3F4F6;
+}
+.page-num.active {
+  background: #6366F1;
+  color: #fff;
+  border-color: #6366F1;
+}
+.page-num.ellipsis {
+  cursor: default;
+}
+.page-num.ellipsis:hover {
+  background: transparent;
+}
+.page-info {
+  font-size: 13px;
+  color: #9CA3AF;
+  margin-left: 8px;
+}
+
 /* Loading */
 .loading-dots {
   display: inline-flex;
@@ -620,6 +684,13 @@ body {
   </div>
   <div class="product-grid" id="product-grid">
     <div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">正在搜索商品...</div>
+  </div>
+  <!-- 分页组件 -->
+  <div class="pagination" id="pagination" style="display:none;">
+    <button class="page-btn" id="prev-btn" onclick="changePage(-1)">上一页</button>
+    <div class="page-numbers" id="page-numbers"></div>
+    <button class="page-btn" id="next-btn" onclick="changePage(1)">下一页</button>
+    <span class="page-info" id="page-info"></span>
   </div>
 </div>
 
@@ -1147,6 +1218,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
 // ===== 状态 =====
 let currentResults = [];
 let isSearching = false;
+let currentPage = 1;
+const PAGE_SIZE = 24;
 
 // ===== 添加分析步骤 =====
 function addStep(icon, title, detail, tokens) {
@@ -1359,17 +1432,31 @@ async function doSearch() {
 }
 
 // ===== 渲染商品 =====
-function renderProducts(products) {
-  document.getElementById('products-count').textContent = (products?.length || 0) + ' 件';
+function renderProducts(products, page) {
+  const total = products?.length || 0;
+  document.getElementById('products-count').textContent = total + ' 件';
   const grid = document.getElementById('product-grid');
-  grid.innerHTML = '';
+  const paginationEl = document.getElementById('pagination');
   
   if (!products || products.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">暂无相关商品，请尝试其他关键词</div>';
+    paginationEl.style.display = 'none';
     return;
   }
   
-  products.forEach(p => {
+  // 分页计算
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (!page) page = 1;
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  currentPage = page;
+  
+  const start = (page - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const pageProducts = products.slice(start, end);
+  
+  grid.innerHTML = '';
+  pageProducts.forEach(p => {
     const card = document.createElement('a');
     card.className = 'product-card';
     card.href = p.link || '#';
@@ -1396,6 +1483,82 @@ function renderProducts(products) {
     `;
     grid.appendChild(card);
   });
+  
+  // 渲染分页
+  renderPagination(total, totalPages, page);
+  
+  // 滚动到商品区域顶部
+  grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== 渲染分页组件 =====
+function renderPagination(total, totalPages, currentPage) {
+  const paginationEl = document.getElementById('pagination');
+  const pageNumbersEl = document.getElementById('page-numbers');
+  const pageInfoEl = document.getElementById('page-info');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  
+  if (totalPages <= 1) {
+    paginationEl.style.display = 'none';
+    return;
+  }
+  
+  paginationEl.style.display = 'flex';
+  
+  // 上一页按钮
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+  
+  // 页码信息
+  pageInfoEl.textContent = `共 ${total} 件 · 第 ${currentPage}/${totalPages} 页`;
+  
+  // 生成页码
+  let pages = [];
+  const showPages = 5; // 显示多少个页码
+  
+  if (totalPages <= showPages + 2) {
+    // 页数不多，全部显示
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    // 页数多，显示省略号
+    if (currentPage <= 3) {
+      // 当前页在前面
+      pages = [1, 2, 3, 4, '...', totalPages];
+    } else if (currentPage >= totalPages - 2) {
+      // 当前页在后面
+      pages = [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    } else {
+      // 当前页在中间
+      pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+    }
+  }
+  
+  pageNumbersEl.innerHTML = '';
+  pages.forEach(p => {
+    const span = document.createElement('span');
+    if (p === '...') {
+      span.className = 'page-num ellipsis';
+      span.textContent = '...';
+    } else {
+      span.className = 'page-num' + (p === currentPage ? ' active' : '');
+      span.textContent = p;
+      span.onclick = () => goToPage(p);
+    }
+    pageNumbersEl.appendChild(span);
+  });
+}
+
+// ===== 翻页 =====
+function changePage(delta) {
+  goToPage(currentPage + delta);
+}
+
+function goToPage(page) {
+  if (!currentResults || currentResults.length === 0) return;
+  renderProducts(currentResults, page);
 }
 
 // ===== 快捷搜索 =====
@@ -1423,7 +1586,8 @@ document.getElementById('sort-filter').addEventListener('click', function(e) {
   if (sort === 'sales') sorted.sort((a, b) => (b.sales || 0) - (a.sales || 0));
   else if (sort === 'price-low') sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
   else if (sort === 'price-high') sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
-  renderProducts(sorted);
+  currentResults = sorted;
+  renderProducts(sorted, 1);
 });
 </script>
 
