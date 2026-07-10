@@ -1106,6 +1106,78 @@ function ruleBasedAnalysis(query) {
   };
 }
 
+// ===== 扩展词相关性过滤 =====
+function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
+  if (!expandedKeywords || expandedKeywords.length === 0) return [];
+  
+  const core = coreProduct || '';
+  const cat = categoryName || '';
+  
+  // 提取核心产品的关键词（去掉修饰词，保留核心名词）
+  let coreNouns = [];
+  
+  // 常见核心名词模式
+  const nounPatterns = [
+    /手机壳|手机套|保护壳|保护套/,
+    /包|袋|箱/,
+    /衣服|服装|外套|t恤|衬衫|裤子|裙子/,
+    /鞋|靴/,
+    /帽|围巾|手套/,
+    /饰品|耳环|项链|手链|戒指/,
+    /数码|电子|配件/,
+  ];
+  
+  for (const pattern of nounPatterns) {
+    const match = core.match(pattern);
+    if (match) {
+      coreNouns.push(match[0]);
+      break;
+    }
+  }
+  
+  // 如果没匹配到，就用整个coreProduct作为核心词
+  if (coreNouns.length === 0 && core) {
+    coreNouns.push(core);
+  }
+  
+  // 过滤规则：扩展词必须包含至少一个核心名词，或者与类目相关
+  const filtered = expandedKeywords.filter(kw => {
+    const lowerKw = kw.toLowerCase();
+    
+    // 必须包含核心产品词的一部分
+    let hasCoreWord = false;
+    for (const noun of coreNouns) {
+      if (lowerKw.includes(noun.toLowerCase())) {
+        hasCoreWord = true;
+        break;
+      }
+    }
+    
+    // 或者包含完整搜索词
+    if (!hasCoreWord && core && lowerKw.includes(core.toLowerCase())) {
+      hasCoreWord = true;
+    }
+    
+    // 手机壳类特殊过滤：排除手机膜、数据线、充电器等完全不相关的
+    if (core.match(/手机壳|手机套|保护壳|保护套/)) {
+      const unrelatedPatterns = [/手机膜/, /钢化膜/, /数据线/, /充电器/, /充电线/, /耳机/, /充电宝/];
+      for (const p of unrelatedPatterns) {
+        if (lowerKw.match(p)) return false;
+      }
+    }
+    
+    // 箱包类特殊过滤：排除完全不相关的
+    if (core.match(/包|袋/) && cat.match(/箱包|包/)) {
+      const unrelatedPatterns = [/书包|背包|钱包|卡包/];
+      // 这些是相关的，不过滤
+    }
+    
+    return hasCoreWord;
+  });
+  
+  return filtered.length > 0 ? filtered : expandedKeywords.slice(0, 3);
+}
+
 // ===== 类目匹配表 =====
 const CATEGORY_MAP = {
   '箱包皮具': { categoryId: 1001, matchKeywords: ['包', '袋', '箱', '箱包', '包包', '手提包', '单肩包', '双肩包', '钱包'] },
@@ -1193,14 +1265,22 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     catConfig = matchCategory(keyword);
   }
   
-  // 搜索词策略：主关键词 + AI扩展的关键词（前5个） + 二级查询词
+  // 搜索词策略：主关键词 + AI扩展的关键词（前5个，过滤掉不相关的） + 二级查询词
   const searchQueries = [keyword];
   if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
+    // 过滤掉不相关的扩展词
+    const catName = aiResult.category?.mainCategory || '';
+    const filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName);
     // 添加扩展关键词（最多5个）
-    searchQueries.push(...aiResult.expandedKeywords.slice(0, 5));
+    searchQueries.push(...filteredExpanded.slice(0, 5));
+    // 更新aiResult中的扩展词（用于展示）
+    aiResult.expandedKeywords = filteredExpanded;
   }
   if (aiResult && aiResult.searchStrategy && aiResult.searchStrategy.secondaryQueries) {
-    searchQueries.push(...aiResult.searchStrategy.secondaryQueries.slice(0, 3));
+    // 同样过滤二级查询词
+    const catName = aiResult.category?.mainCategory || '';
+    const filteredSecondary = filterRelevantKeywords(aiResult.searchStrategy.secondaryQueries, aiResult.coreProduct || keyword, catName);
+    searchQueries.push(...filteredSecondary.slice(0, 3));
   }
   // 去重
   const uniqueQueries = [...new Set(searchQueries)];
