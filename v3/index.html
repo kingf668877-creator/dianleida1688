@@ -976,24 +976,17 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
             addDebugLog('JSON解析成功');
             resolve(result);
           } catch (e) {
-            // 尝试从文本中提取第一个完整的JSON对象
-            // 处理可能有多个JSON的情况（取第一个）
-            let jsonStr = contentToParse;
-            const firstBrace = jsonStr.indexOf('{');
-            const lastBrace = jsonStr.lastIndexOf('}');
-            if (firstBrace >= 0 && lastBrace > firstBrace) {
-              jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
-            }
+            addDebugLog('直接解析失败，尝试提取第一个完整JSON...');
             
-            // 再尝试找第一个完整的JSON（用括号匹配法）
+            // 用括号匹配法找第一个完整的JSON对象
             let depth = 0;
             let start = -1;
             let end = -1;
-            for (let i = 0; i < jsonStr.length; i++) {
-              if (jsonStr[i] === '{') {
+            for (let i = 0; i < contentToParse.length; i++) {
+              if (contentToParse[i] === '{') {
                 if (depth === 0) start = i;
                 depth++;
-              } else if (jsonStr[i] === '}') {
+              } else if (contentToParse[i] === '}') {
                 depth--;
                 if (depth === 0 && start >= 0) {
                   end = i;
@@ -1003,10 +996,10 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
             }
             
             if (start >= 0 && end > start) {
-              const extracted = jsonStr.substring(start, end + 1);
+              const extracted = contentToParse.substring(start, end + 1);
               try {
                 const result = JSON.parse(extracted);
-                addDebugLog('提取第一个JSON对象成功');
+                addDebugLog('提取第一个JSON对象成功，长度: ' + extracted.length);
                 resolve(result);
                 return;
               } catch (e2) {
@@ -1014,8 +1007,37 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
               }
             }
             
-            addDebugLog('JSON解析失败: ' + e.message);
-            addDebugLog('内容前300字: ' + contentToParse.substring(0, 300));
+            // 如果第一个JSON解析失败，尝试最后一个
+            addDebugLog('尝试提取最后一个JSON...');
+            let lastStart = -1;
+            let lastEnd = -1;
+            depth = 0;
+            for (let i = contentToParse.length - 1; i >= 0; i--) {
+              if (contentToParse[i] === '}') {
+                if (depth === 0) lastEnd = i;
+                depth++;
+              } else if (contentToParse[i] === '{') {
+                depth--;
+                if (depth === 0 && lastEnd >= 0) {
+                  lastStart = i;
+                  break;
+                }
+              }
+            }
+            
+            if (lastStart >= 0 && lastEnd > lastStart) {
+              const extracted = contentToParse.substring(lastStart, lastEnd + 1);
+              try {
+                const result = JSON.parse(extracted);
+                addDebugLog('提取最后一个JSON对象成功，长度: ' + extracted.length);
+                resolve(result);
+                return;
+              } catch (e3) {
+                addDebugLog('最后一个JSON解析也失败: ' + e3.message);
+              }
+            }
+            
+            addDebugLog('所有JSON解析尝试失败，原始内容前300字: ' + contentToParse.substring(0, 300));
             reject(new Error('返回内容不是有效的JSON格式'));
           }
         },
@@ -1441,12 +1463,12 @@ async function doSearch() {
   const summary = aiResult.analysisSummary || '分析完成';
   const confidence = aiResult.intentConfidence ? '（置信度 ' + aiResult.intentConfidence + '）' : '';
   
-  updateStep(step1, '✅', 'Step 1: ' + sourceLabel + '分析完成', 
-    '意图：' + intentText + confidence + ' · 类目：' + catText + ' · ' + summary,
-    [sourceLabel, intentText, aiResult.category?.mainCategory || ''].filter(Boolean)
+  updateStep(step1, '✅', 'Step 1: ' + sourceLabel + '意图识别完成', 
+    '意图：' + intentText + confidence + ' · 类目：' + catText,
+    [sourceLabel, intentText].filter(Boolean)
   );
 
-  // ===== Step 2: 智能分词 =====
+  // ===== Step 2: 核心词提取 =====
   await new Promise(r => setTimeout(r, 200));
   const coreProduct = aiResult.coreProduct || query;
   const modifiers = aiResult.modifiers || {};
@@ -1455,23 +1477,48 @@ async function doSearch() {
   if (modifiers.material) allModifiers.push(...modifiers.material);
   if (modifiers.crowd) allModifiers.push(...modifiers.crowd);
   if (modifiers.scene) allModifiers.push(...modifiers.scene);
+  if (modifiers.other) allModifiers.push(...modifiers.other);
   const tokens = allModifiers.length > 0 ? [coreProduct, ...allModifiers] : [coreProduct];
+  const requiredKws = aiResult.requiredKeywords || [];
   
-  addStep('✂️', 'Step 2: 智能分词', 
-    '拆分为 ' + tokens.length + ' 个核心词：' + tokens.join(' + '),
-    tokens
-  );
+  let step2Detail = '核心产品：' + coreProduct;
+  if (allModifiers.length > 0) step2Detail += ' · 修饰词：' + allModifiers.join('、');
+  if (requiredKws.length > 0) step2Detail += ' · 必含词：' + requiredKws.join('、');
+  
+  addStep('🎯', 'Step 2: 核心词提取', step2Detail, tokens);
 
-  // ===== Step 3: 关键词扩展 =====
+  // ===== Step 3: 关键词扩展与排除 =====
   await new Promise(r => setTimeout(r, 300));
   const expanded = aiResult.expandedKeywords || [];
+  const excluded = aiResult.excludedKeywords || [];
+  
+  let step3Detail = '';
+  let step3Tokens = [];
+  
   if (expanded.length > 0) {
-    addStep('🔗', 'Step 3: 关键词扩展', 
-      '智能扩展 ' + expanded.length + ' 个电商搜索常用变体',
-      expanded.slice(0, 8)
-    );
+    step3Detail += '智能扩展 ' + expanded.length + ' 个搜索变体';
+    step3Tokens = expanded.slice(0, 8);
   } else {
-    addStep('🔗', 'Step 3: 关键词扩展', '当前关键词无需额外扩展');
+    step3Detail += '无需额外扩展';
+  }
+  if (excluded.length > 0) {
+    step3Detail += ' · 排除 ' + excluded.length + ' 个不相关词';
+  }
+  
+  addStep('🔗', 'Step 3: 关键词扩展与排除', step3Detail, step3Tokens);
+  
+  // 展示排除词（如果有的话）
+  if (excluded.length > 0) {
+    const excludedEl = document.createElement('div');
+    excludedEl.style.cssText = 'margin-top:8px;font-size:12px;color:#9CA3AF;';
+    excludedEl.innerHTML = '<span style="color:#9CA3AF;">排除词：</span>' + 
+      excluded.slice(0, 6).map(k => '<span style="display:inline-block;padding:2px 8px;margin:2px;background:#FEF2F2;color:#EF4444;border-radius:10px;font-size:11px;">' + escapeHtml(k) + '</span>').join('');
+    // 添加到最后一个步骤里
+    const lastStep = document.getElementById('ai-steps').lastElementChild;
+    if (lastStep) {
+      const contentEl = lastStep.querySelector('.ai-step-content');
+      if (contentEl) contentEl.appendChild(excludedEl);
+    }
   }
 
   // ===== Step 4: 类目预测 =====
@@ -1498,7 +1545,7 @@ async function doSearch() {
     addStep('✅', 'Step 5: 歧义检测', '未检测到歧义词汇，搜索指向明确');
   }
 
-  // ===== Step 6: 筛选条件提取 =====
+  // ===== Step 6: 搜索策略生成 =====
   await new Promise(r => setTimeout(r, 200));
   const filters = [];
   if (modifiers.priceRange && (modifiers.priceRange.min || modifiers.priceRange.max)) {
@@ -1508,11 +1555,17 @@ async function doSearch() {
   if (modifiers.crowd && modifiers.crowd.length > 0) filters.push('人群: ' + modifiers.crowd.join('、'));
   if (modifiers.scene && modifiers.scene.length > 0) filters.push('场景: ' + modifiers.scene.join('、'));
   
-  if (filters.length > 0) {
-    addStep('🔍', 'Step 6: 筛选条件提取', '识别到 ' + filters.length + ' 个筛选条件', filters);
+  const searchStrategy = aiResult.searchStrategy || {};
+  let step6Detail = '';
+  if (searchStrategy.filterHints) {
+    step6Detail = searchStrategy.filterHints;
+  } else if (filters.length > 0) {
+    step6Detail = '识别到 ' + filters.length + ' 个筛选条件';
   } else {
-    addStep('🔍', 'Step 6: 筛选条件提取', '未指定筛选条件，返回综合排序结果');
+    step6Detail = '未指定筛选条件，返回综合排序结果';
   }
+  
+  addStep('📋', 'Step 6: 搜索策略生成', step6Detail, filters.length > 0 ? filters : (searchStrategy.secondaryQueries || []).slice(0, 4));
 
   // ===== Step 7: 调用店雷达API获取商品 =====
   const step7 = addLoadingStep('📡', 'Step 7: 实时商品搜索');
@@ -1536,7 +1589,7 @@ async function doSearch() {
   
   // 隐藏顶部loading
   document.getElementById('analysis-loading').style.display = 'none';
-  document.getElementById('analysis-sub').textContent = '七步分析完成，已为您精准匹配商品';
+  document.getElementById('analysis-sub').textContent = 'AI智能分析完成，已为您精准匹配商品';
 
   // ===== 渲染商品 =====
   currentResults = products;
