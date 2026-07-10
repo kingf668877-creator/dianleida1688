@@ -3046,16 +3046,18 @@ async function doSearch() {
     firstCard.classList.add('done');
     const aiLabel = analysisSource === 'zhipu' ? '智谱AI大模型' : '规则引擎';
     const aiIcon = analysisSource === 'zhipu' ? '🧠' : '⚙️';
-    firstCard.querySelector('.skill-card-title').innerHTML = `${aiIcon} AI智能分析 · ${aiLabel}`;
-    firstCard.querySelector('.skill-card-desc').textContent = 
+    const titleEl = firstCard.querySelector('.skill-title');
+    const descEl = firstCard.querySelector('.skill-detail');
+    if (titleEl) titleEl.innerHTML = `${aiIcon} AI智能分析 · ${aiLabel}`;
+    if (descEl) descEl.textContent = 
       analysisSource === 'zhipu' ? '大模型已完成七步深度分析' : '规则引擎快速分析（大模型暂不可用）';
   }
   scrollToBottom();
   
   // 更新思考区域
-  const thinkingBlock = bubble.querySelector('.thinking-block');
-  if (thinkingBlock) {
-    thinkingBlock.innerHTML = thinkingLines.map(l => `<div class="thinking-line">${l}</div>`).join('');
+  const thinkingBody = bubble.querySelector('.thinking-body');
+  if (thinkingBody) {
+    thinkingBody.innerHTML = thinkingLines.map(l => `<div class="think-line">${l}</div>`).join('');
   }
   
   // Step 1: 预处理
