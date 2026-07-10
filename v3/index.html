@@ -556,6 +556,36 @@ body {
   color: #9CA3AF;
   margin-left: 8px;
 }
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6B7280;
+  margin-left: 16px;
+}
+.page-jump input {
+  width: 50px;
+  height: 32px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.page-jump input:focus {
+  border-color: #6366F1;
+}
+.page-jump input::-webkit-outer-spin-button,
+.page-jump input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.page-jump-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+}
 
 /* Loading */
 .loading-dots {
@@ -692,6 +722,10 @@ body {
     <div class="page-numbers" id="page-numbers"></div>
     <button class="page-btn" id="next-btn" onclick="changePage(1)">下一页</button>
     <span class="page-info" id="page-info"></span>
+    <div class="page-jump">
+      跳至 <input type="number" id="jump-input" min="1" value="1"> 页
+      <button class="page-btn page-jump-btn" onclick="jumpToPage()">确定</button>
+    </div>
   </div>
 </div>
 
@@ -1514,6 +1548,13 @@ function renderPagination(total, totalPages, currentPage) {
   // 页码信息
   pageInfoEl.textContent = `共 ${total} 件 · 第 ${currentPage}/${totalPages} 页`;
   
+  // 更新跳转输入框的值和最大值
+  const jumpInput = document.getElementById('jump-input');
+  if (jumpInput) {
+    jumpInput.value = currentPage;
+    jumpInput.max = totalPages;
+  }
+  
   // 生成页码
   let pages = [];
   const showPages = 5; // 显示多少个页码
@@ -1562,6 +1603,19 @@ function goToPage(page) {
   renderProducts(currentResults, page);
 }
 
+// ===== 跳转到指定页 =====
+function jumpToPage() {
+  const input = document.getElementById('jump-input');
+  if (!input) return;
+  const page = parseInt(input.value);
+  const totalPages = Math.ceil(currentResults.length / pageSize);
+  if (!isNaN(page) && page >= 1 && page <= totalPages) {
+    goToPage(page);
+  } else {
+    input.value = currentPage;
+  }
+}
+
 // ===== 快捷搜索 =====
 function quickSearch(keyword) {
   document.getElementById('search-input').value = keyword;
@@ -1573,6 +1627,19 @@ document.getElementById('search-input').addEventListener('keydown', function(e) 
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     doSearch();
+  }
+});
+
+// ===== 跳转输入框回车跳转 =====
+document.addEventListener('DOMContentLoaded', function() {
+  const jumpInput = document.getElementById('jump-input');
+  if (jumpInput) {
+    jumpInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        jumpToPage();
+      }
+    });
   }
 });
 
