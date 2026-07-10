@@ -1798,8 +1798,14 @@ function searchProducts(query, priceFilter, sortBy) {
   return searchProductsInArray(query, PRODUCTS, priceFilter, sortBy);
 }
 
-function searchProductsInArray(query, productArray, priceFilter, sortBy) {
-  const { tokens, expandedTerms, isCompound, ambiguousChars, properNoun, category } = smartTokenize(query);
+function searchProductsInArray(query, productArray, priceFilter, sortBy, overrideAnalysis) {
+  let analysis;
+  if (overrideAnalysis) {
+    analysis = overrideAnalysis;
+  } else {
+    analysis = smartTokenize(query);
+  }
+  const { tokens, expandedTerms, isCompound, ambiguousChars, properNoun, category } = analysis;
   if (tokens.length === 0) return [];
 
   // === Query Intervention: Get per-query rules ===
@@ -1809,6 +1815,10 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
   if (intervention && intervention.extraSynonyms) {
     expandedTerms.push(...intervention.extraSynonyms);
   }
+
+  // === AI分析的排除词和必选词 ===
+  const aiExcludedKeywords = analysis.excludedKeywords || [];
+  const aiRequiredKeywords = analysis.requiredKeywords || [];
 
   const requireAllTokens = isCompound && tokens.length >= 2;
   const hasAmbiguous = ambiguousChars.length > 0;
@@ -1837,9 +1847,26 @@ function searchProductsInArray(query, productArray, priceFilter, sortBy) {
       }
     }
 
+    // --- AI分析的排除词 ---
+    if (aiExcludedKeywords.length > 0) {
+      for (const kw of aiExcludedKeywords) {
+        if (titleLower.includes(kw.toLowerCase())) {
+          return null;
+        }
+      }
+    }
+
     // --- Query Intervention: Required keywords ---
     if (intervention && intervention.requiredKeywords && intervention.requiredKeywords.length > 0) {
       const hasAnyRequired = intervention.requiredKeywords.some(kw => 
+        titleLower.includes(kw.toLowerCase()) || shopLower.includes(kw.toLowerCase())
+      );
+      if (!hasAnyRequired) return null;
+    }
+
+    // --- AI分析的必选词 ---
+    if (aiRequiredKeywords.length > 0) {
+      const hasAnyRequired = aiRequiredKeywords.some(kw => 
         titleLower.includes(kw.toLowerCase()) || shopLower.includes(kw.toLowerCase())
       );
       if (!hasAnyRequired) return null;
@@ -2244,6 +2271,164 @@ async function callDianLeiDaAPI(action, params) {
   return resp.json();
 }
 
+// ===== 智谱AI大模型搜索分析 =====
+const USE_ZHIPU_AI = true;
+const ZHIPU_API_KEY = '48507e7734c94be7b4fa468a5ff2d0f2.v3dQklLAxlJZmU1f';
+const ZHIPU_MODEL = 'glm-4-flash';
+const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+// 智谱AI System Prompt - 输出结构化JSON
+const ZHIPU_SEARCH_SYSTEM_PROMPT = `你是1688电商选品搜索分析专家。用户输入搜索关键词后，你需要进行深度语义分析，输出严格的JSON格式结果。
+
+【重要规则】
+1. 只输出JSON，不要任何解释、Markdown、代码块标记或额外文字
+2. 所有字段必须存在，值为空时用空字符串或空数组
+3. 包包类商品识别：用户搜"XX包"时，90%以上情况是指箱包/包包/袋类，不是麻将本身/包装/材料包
+
+【输出格式】
+{
+  "intent": "明确找品",
+  "intentConfidence": 0.9,
+  "category": {
+    "mainCategory": "箱包皮具",
+    "subCategory": "女士包袋",
+    "categoryId": "1001",
+    "categoryKeywords": ["女包", "箱包"]
+  },
+  "coreProduct": "麻将包",
+  "modifiers": {
+    "style": ["麻将图案", "创意"],
+    "material": [],
+    "crowd": [],
+    "scene": ["日常", "穿搭"],
+    "priceRange": { "min": null, "max": null },
+    "other": []
+  },
+  "expandedKeywords": ["麻将图案女包", "发财包包", "幺鸡包", "创意个性女包", "中国风包包"],
+  "excludedKeywords": ["麻将牌", "麻将机", "麻将桌", "麻将垫", "麻将收纳", "材料包", "贴纸包", "配件包"],
+  "requiredKeywords": ["包"],
+  "ambiguity": {
+    "hasAmbiguity": true,
+    "ambiguousTerms": ["包"],
+    "resolutionStrategy": "上下文验证：确认是箱包类，排除麻将用品/包装类"
+  },
+  "searchStrategy": {
+    "primaryQuery": "麻将包 女包",
+    "secondaryQueries": ["麻将图案包包", "创意女包"],
+    "filterHints": "优先选择箱包皮具类目商品"
+  },
+  "analysisSummary": "用户搜索麻将包，意图为寻找带有麻将图案或设计的女士包包，属于箱包皮具类目"
+}
+
+【类目ID参考】
+- 箱包皮具 / 女士包袋: categoryId = "1001"
+- 箱包皮具 / 男士包袋: categoryId = "1002"
+- 服饰配件 / 遮阳帽/沙滩帽: categoryId = "200035008"
+- 3C数码配件 / 手机保护套/壳: categoryId = "200009003"
+- 居家日用 / 防晒: categoryId = "200016294"
+
+【分析要点】
+1. 意图识别：明确找品/趋势选品/场景选品/选品推荐/比价找货/货源对比
+2. 类目预测：优先匹配最精准的1688类目
+3. 关键词扩展：给出5-8个电商搜索常用变体
+4. 排除词：识别并排除不相关的歧义词汇
+5. 必选词：核心商品词必须出现在标题中
+6. 歧义检测：对多义词给出消歧策略`;
+
+// 带超时控制的智谱AI调用
+async function callZhipuSearchAnalysis(query) {
+  if (!USE_ZHIPU_AI || !ZHIPU_API_KEY) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(ZHIPU_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + ZHIPU_API_KEY
+      },
+      body: JSON.stringify({
+        model: ZHIPU_MODEL,
+        messages: [
+          { role: 'system', content: ZHIPU_SEARCH_SYSTEM_PROMPT },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error('API错误 ' + response.status + ': ' + (errText || response.statusText));
+    }
+
+    const data = await response.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+
+    if (!content) throw new Error('API返回内容为空');
+
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (e) {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('返回内容不是有效的JSON格式');
+      }
+    }
+
+    return result;
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      console.warn('[Zhipu AI] 请求超时，降级到规则引擎');
+    } else {
+      console.warn('[Zhipu AI] 分析失败:', e.message);
+    }
+    return null;
+  }
+}
+
+// 将智谱AI分析结果转换为规则引擎可用的格式
+function zhipuResultToRuleFormat(aiResult, query) {
+  if (!aiResult) return null;
+
+  const tokens = [];
+  if (aiResult.coreProduct) tokens.push(aiResult.coreProduct);
+  if (aiResult.modifiers) {
+    ['style', 'material', 'crowd', 'scene'].forEach(k => {
+      if (aiResult.modifiers[k] && Array.isArray(aiResult.modifiers[k])) {
+        tokens.push(...aiResult.modifiers[k].slice(0, 2));
+      }
+    });
+  }
+
+  const expandedTerms = aiResult.expandedKeywords || [];
+  const ambiguousChars = aiResult.ambiguity && aiResult.ambiguity.hasAmbiguity
+    ? (aiResult.ambiguity.ambiguousTerms || []).join('').split('').filter(c => c === '包')
+    : [];
+
+  return {
+    tokens: tokens.length > 0 ? tokens : [query],
+    expandedTerms,
+    isCompound: tokens.length > 1,
+    ambiguousChars,
+    aiResult: aiResult,
+    excludedKeywords: aiResult.excludedKeywords || [],
+    requiredKeywords: aiResult.requiredKeywords || [],
+    category: aiResult.category || {},
+    searchStrategy: aiResult.searchStrategy || {}
+  };
+}
+
 // ===== Query Intervention System (Query级黑白名单/干预规则) =====
 // Per-query configuration for precise relevance control.
 // Matches when the search query CONTAINS the key (case-insensitive).
@@ -2537,13 +2722,13 @@ function shouldExcludeByCategory(levelName, title, catConfig) {
 // Uses concurrent requests for speed (5 pages at a time)
 // Multi-query strategy: when keyword is "descriptor + category" (e.g. "异形包"),
 // also search with just the descriptor ("异形") to get more relevant results
-async function fetchProductsFromAPI(keyword) {
+async function fetchProductsFromAPI(keyword, overrideCatConfig) {
   const allProducts = [];
   const seenOfferIds = new Set(); // For deduplication
   const pageSize = 100;
   
   // Universal category matching: find the best category for this keyword
-  const catConfig = matchCategory(keyword);
+  const catConfig = overrideCatConfig || matchCategory(keyword);
   const hasCategoryFilter = catConfig !== null;
   
   // === Multi-query strategy ===
@@ -2745,20 +2930,68 @@ async function doSearch() {
   const stepsContainer = document.getElementById('ai-steps');
   stepsContainer.innerHTML = '';
 
-  // Step 1: Keyword understanding
+  // Step 1: Keyword understanding + 智谱AI大模型分析
   const step1El = document.createElement('div');
   step1El.className = 'ai-step show';
   step1El.innerHTML = `
     <span class="ai-step-icon">🧠</span>
     <div class="ai-step-content">
-      <div class="ai-step-title">Step 1: 关键词理解</div>
-      <div class="ai-step-detail">接收用户输入："${escapeHtml(query)}"</div>
+      <div class="ai-step-title">Step 1: 调用智谱AI大模型分析</div>
+      <div class="ai-step-detail">正在调用 ${ZHIPU_MODEL} 模型深度分析关键词："${escapeHtml(query)}"...</div>
     </div>`;
   stepsContainer.appendChild(step1El);
 
-  // Step 2: Smart tokenization
-  const { tokens, expandedTerms, isCompound, ambiguousChars } = smartTokenize(query);
-  await sleep(350);
+  // 调用智谱AI大模型分析
+  const aiResult = await callZhipuSearchAnalysis(query);
+  let aiAnalysisData = null;
+  let useRuleEngine = false;
+
+  if (aiResult) {
+    aiAnalysisData = zhipuResultToRuleFormat(aiResult, query);
+    // AI分析成功，更新Step 1显示
+    const intentText = aiResult.intent || '明确找品';
+    const catText = aiResult.category ? (aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '')) : '未识别';
+    step1El.innerHTML = `
+      <span class="ai-step-icon">✅</span>
+      <div class="ai-step-content">
+        <div class="ai-step-title">Step 1: 智谱AI大模型分析完成</div>
+        <div class="ai-step-detail">意图识别：${escapeHtml(intentText)} · 类目预测：${escapeHtml(catText)} · ${escapeHtml(aiResult.analysisSummary || '分析完成')}</div>
+        <div class="ai-step-tokens">
+          <span class="ai-token" style="background:#E8F7F0;color:#00A868;">AI驱动</span>
+          <span class="ai-token">${escapeHtml(intentText)}</span>
+          ${aiResult.category && aiResult.category.mainCategory ? `<span class="ai-token">${escapeHtml(aiResult.category.mainCategory)}</span>` : ''}
+        </div>
+      </div>`;
+  } else {
+    useRuleEngine = true;
+    step1El.innerHTML = `
+      <span class="ai-step-icon">⚙️</span>
+      <div class="ai-step-content">
+        <div class="ai-step-title">Step 1: AI暂不可用，切换规则引擎</div>
+        <div class="ai-step-detail">智谱AI调用失败，已自动降级到本地规则引擎分析关键词</div>
+        <div class="ai-step-tokens">
+          <span class="ai-token" style="background:#FFF3E0;color:#FF6D00;">规则引擎</span>
+        </div>
+      </div>`;
+  }
+
+  // Step 2: 智能分词（优先使用AI结果，降级到规则引擎）
+  let tokens, expandedTerms, isCompound, ambiguousChars, excludedKeywords = [], requiredKeywords = [];
+  if (aiAnalysisData) {
+    tokens = aiAnalysisData.tokens;
+    expandedTerms = aiAnalysisData.expandedTerms;
+    isCompound = aiAnalysisData.isCompound;
+    ambiguousChars = aiAnalysisData.ambiguousChars;
+    excludedKeywords = aiAnalysisData.excludedKeywords || [];
+    requiredKeywords = aiAnalysisData.requiredKeywords || [];
+  } else {
+    const ruleResult = smartTokenize(query);
+    tokens = ruleResult.tokens;
+    expandedTerms = ruleResult.expandedTerms;
+    isCompound = ruleResult.isCompound;
+    ambiguousChars = ruleResult.ambiguousChars;
+  }
+  await sleep(200);
   const step2El = document.createElement('div');
   step2El.className = 'ai-step show';
   let splitDetail;
@@ -2823,12 +3056,23 @@ async function doSearch() {
   stepsContainer.appendChild(step4El);
 
   // Step 5: Fetch products from API (or local)
-  await sleep(350);
+  await sleep(200);
   const step5El = document.createElement('div');
   step5El.className = 'ai-step show';
-  const catConfig = matchCategory(query);
+  // 优先使用AI分析的类目，降级到规则引擎
+  let catConfig;
+  if (aiAnalysisData && aiAnalysisData.category && aiAnalysisData.category.categoryId) {
+    catConfig = {
+      categoryId: parseInt(aiAnalysisData.category.categoryId) || null,
+      categoryName: aiAnalysisData.category.mainCategory || '',
+      matchKeywords: aiAnalysisData.category.categoryKeywords || []
+    };
+  } else {
+    catConfig = matchCategory(query);
+  }
+  const catSource = (aiAnalysisData && aiAnalysisData.category && aiAnalysisData.category.categoryId) ? 'AI预测' : '规则匹配';
   const catFilterDesc = catConfig
-    ? `已匹配1688类目(ID:${catConfig.categoryId})，仅返回该类目商品`
+    ? `[${catSource}] 已匹配类目${catConfig.categoryName ? '（' + catConfig.categoryName + '）' : ''}(ID:${catConfig.categoryId})，仅返回该类目商品`
     : '未匹配到特定类目，返回全量搜索结果';
   step5El.innerHTML = `
     <span class="ai-step-icon">📡</span>
@@ -2842,7 +3086,7 @@ async function doSearch() {
   let apiError = null;
   try {
     if (API_MODE === 'api') {
-      apiProducts = await fetchProductsFromAPI(query);
+      apiProducts = await fetchProductsFromAPI(query, catConfig);
     } else {
       apiProducts = PRODUCTS;
     }
@@ -2881,7 +3125,8 @@ async function doSearch() {
     </div>`;
 
   // Now do local matching on the fetched products
-  let results = searchProductsInArray(query, apiProducts, priceFilter, sortBy);
+  const analysisForSearch = aiAnalysisData || null;
+  let results = searchProductsInArray(query, apiProducts, priceFilter, sortBy, analysisForSearch);
 
   // Fallback: if API returned products but local matching filtered all out,
   // show API products directly (sorted by sales, with price filter applied)
