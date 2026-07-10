@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店雷达 AI选品助手</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script>
+// 内置MD5实现（备用，防止CDN加载失败）
+(function() {
+  function safeAdd(x, y) {
+    var lsw = (x & 0xFFFF) + (y & 0xFFFF);
+    var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+    return (msw << 16) | (lsw & 0xFFFF);
+  }
+  function bitRol(num, cnt) {
+    return (num << cnt) | (num >>> (32 - cnt));
+  }
+  function md5cmn(q, a, b, x, s, t) {
+    return safeAdd(bitRol(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
+  }
+  function md5ff(a, b, c, d, x, s, t) { return md5cmn((b & c) | ((~b) & d), a, b, x, s, t); }
+  function md5gg(a, b, c, d, x, s, t) { return md5cmn((b & d) | (c & (~d)), a, b, x, s, t); }
+  function md5hh(a, b, c, d, x, s, t) { return md5cmn(b ^ c ^ d, a, b, x, s, t); }
+  function md5ii(a, b, c, d, x, s, t) { return md5cmn(c ^ (b | (~d)), a, b, x, s, t); }
+  function coreMD5(x, len) {
+    x[len >> 5] |= 0x80 << (len % 32);
+    x[(((len + 64) >>> 9) << 4) + 14] = len;
+    var a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+    for (var i = 0; i < x.length; i += 16) {
+      var olda = a, oldb = b, oldc = c, oldd = d;
+      a = md5ff(a, b, c, d, x[i], 7, -680876936);
+      d = md5ff(d, a, b, c, x[i+1], 12, -389564586);
+      c = md5ff(c, d, a, b, x[i+2], 17, 606105819);
+      b = md5ff(b, c, d, a, x[i+3], 22, -1044525330);
+      a = md5ff(a, b, c, d, x[i+4], 7, -176418897);
+      d = md5ff(d, a, b, c, x[i+5], 12, 1200080426);
+      c = md5ff(c, d, a, b, x[i+6], 17, -1473231341);
+      b = md5ff(b, c, d, a, x[i+7], 22, -45705983);
+      a = md5ff(a, b, c, d, x[i+8], 7, 1770035416);
+      d = md5ff(d, a, b, c, x[i+9], 12, -1958414417);
+      c = md5ff(c, d, a, b, x[i+10], 17, -42063);
+      b = md5ff(b, c, d, a, x[i+11], 22, -1990404162);
+      a = md5ff(a, b, c, d, x[i+12], 7, 1804603682);
+      d = md5ff(d, a, b, c, x[i+13], 12, -40341101);
+      c = md5ff(c, d, a, b, x[i+14], 17, -1502002290);
+      b = md5ff(b, c, d, a, x[i+15], 22, 1236535329);
+      a = md5gg(a, b, c, d, x[i+1], 5, -165796510);
+      d = md5gg(d, a, b, c, x[i+6], 9, -1069501632);
+      c = md5gg(c, d, a, b, x[i+11], 14, 643717713);
+      b = md5gg(b, c, d, a, x[i], 20, -373897302);
+      a = md5gg(a, b, c, d, x[i+5], 5, -701558691);
+      d = md5gg(d, a, b, c, x[i+10], 9, 38016083);
+      c = md5gg(c, d, a, b, x[i+15], 14, -660478335);
+      b = md5gg(b, c, d, a, x[i+4], 20, -405537848);
+      a = md5gg(a, b, c, d, x[i+9], 5, 568446438);
+      d = md5gg(d, a, b, c, x[i+14], 9, -1019803690);
+      c = md5gg(c, d, a, b, x[i+3], 14, -187363961);
+      b = md5gg(b, c, d, a, x[i+8], 20, 1163531501);
+      a = md5gg(a, b, c, d, x[i+13], 5, -1444681467);
+      d = md5gg(d, a, b, c, x[i+2], 9, -51403784);
+      c = md5gg(c, d, a, b, x[i+7], 14, 1735328473);
+      b = md5gg(b, c, d, a, x[i+12], 20, -1926607734);
+      a = md5hh(a, b, c, d, x[i+5], 4, -378558);
+      d = md5hh(d, a, b, c, x[i+8], 11, -2022574463);
+      c = md5hh(c, d, a, b, x[i+11], 16, 1839030562);
+      b = md5hh(b, c, d, a, x[i+14], 23, -35309556);
+      a = md5hh(a, b, c, d, x[i+1], 4, -1530992060);
+      d = md5hh(d, a, b, c, x[i+4], 11, 1272893353);
+      c = md5hh(c, d, a, b, x[i+7], 16, -155497632);
+      b = md5hh(b, c, d, a, x[i+10], 23, -1094730640);
+      a = md5hh(a, b, c, d, x[i+13], 4, 681279174);
+      d = md5hh(d, a, b, c, x[i], 11, -358537222);
+      c = md5hh(c, d, a, b, x[i+3], 16, -722521979);
+      b = md5hh(b, c, d, a, x[i+6], 23, 76029189);
+      a = md5hh(a, b, c, d, x[i+9], 4, -640364487);
+      d = md5hh(d, a, b, c, x[i+12], 11, -421815835);
+      c = md5hh(c, d, a, b, x[i+15], 16, 530742520);
+      b = md5hh(b, c, d, a, x[i+2], 23, -995338651);
+      a = md5ii(a, b, c, d, x[i], 6, -198630844);
+      d = md5ii(d, a, b, c, x[i+7], 10, 1126891415);
+      c = md5ii(c, d, a, b, x[i+14], 15, -1416354905);
+      b = md5ii(b, c, d, a, x[i+5], 21, -57434055);
+      a = md5ii(a, b, c, d, x[i+12], 6, 1700485571);
+      d = md5ii(d, a, b, c, x[i+3], 10, -1894986606);
+      c = md5ii(c, d, a, b, x[i+10], 15, -1051523);
+      b = md5ii(b, c, d, a, x[i+1], 21, -2054922799);
+      a = md5ii(a, b, c, d, x[i+8], 6, 1873313359);
+      d = md5ii(d, a, b, c, x[i+15], 10, -30611744);
+      c = md5ii(c, d, a, b, x[i+6], 15, -1560198380);
+      b = md5ii(b, c, d, a, x[i+13], 21, 1309151649);
+      a = md5ii(a, b, c, d, x[i+4], 6, -145523070);
+      d = md5ii(d, a, b, c, x[i+11], 10, -1120210379);
+      c = md5ii(c, d, a, b, x[i+2], 15, 718787259);
+      b = md5ii(b, c, d, a, x[i+9], 21, -343485551);
+      a = safeAdd(a, olda); b = safeAdd(b, oldb);
+      c = safeAdd(c, oldc); d = safeAdd(d, oldd);
+    }
+    return [a, b, c, d];
+  }
+  function md5cycle(x) {
+    var k = [], AA, BB, CC, DD;
+    x = x.replace(/[\x80-\xFF]/g, function(c) {
+      return '%u00' + c.charCodeAt(0).toString(16);
+    });
+    x = unescape(encodeURIComponent(x));
+    for (var i = 0; i < x.length * 8; i += 8)
+      k[i >> 5] |= (x.charCodeAt(i / 8) & 0xFF) << (i % 32);
+    var res = coreMD5(k, x.length * 8);
+    var hex_chr = '0123456789abcdef';
+    var str = '';
+    for (var j = 0; j < res.length * 4; j++) {
+      str += hex_chr.charAt((res[j >> 2] >> ((j % 4) * 8 + 4)) & 0x0F) +
+             hex_chr.charAt((res[j >> 2] >> ((j % 4) * 8)) & 0x0F);
+    }
+    return str;
+  }
+  window._MD5 = md5cycle;
+})();
+
+// 统一的MD5函数
+function getMD5(str) {
+  if (typeof CryptoJS !== 'undefined' && CryptoJS.MD5) {
+    return CryptoJS.MD5(str).toString();
+  }
+  return window._MD5(str);
+}
+</script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #fff;
+  color: #333;
+  min-height: 100vh;
+}
+
+/* ===== Hero Section ===== */
+.hero-section {
+  text-align: center;
+  padding: 80px 20px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle, #f0f0f0 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hero-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+  position: relative;
+}
+.hero-subtitle {
+  font-size: 18px;
+  color: #888;
+  margin-bottom: 48px;
+  position: relative;
+}
+
+/* ===== Search Box ===== */
+.search-box-container {
+  max-width: 880px;
+  margin: 0 auto;
+  position: relative;
+}
+.search-box {
+  background: #fff;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+.search-box:focus-within {
+  border-color: #6366F1;
+  box-shadow: 0 4px 32px rgba(99, 102, 241, 0.15);
+}
+.search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #333;
+  background: transparent;
+  resize: none;
+  min-height: 60px;
+  line-height: 1.6;
+  font-family: inherit;
+}
+.search-input::placeholder {
+  color: #bbb;
+}
+.search-box-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.search-box-left {
+  display: flex;
+  gap: 8px;
+}
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+.icon-btn:hover {
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+.search-box-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mode-toggle {
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.search-btn {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+.search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== Tip Banner ===== */
+.tip-banner {
+  max-width: 880px;
+  margin: 16px auto 0;
+  background: linear-gradient(90deg, #D1FAE5 0%, #ECFDF5 50%, #F0FDF4 100%);
+  border-radius: 0 0 16px 16px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #065F46;
+  margin-top: -1px;
+  border-top: none;
+  border-radius: 12px;
+}
+.tip-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tip-banner-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ===== Quick Tools ===== */
+.quick-tools {
+  max-width: 880px;
+  margin: 48px auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative;
+}
+.tool-item:hover {
+  transform: translateY(-4px);
+}
+.tool-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.tool-name {
+  font-size: 13px;
+  color: #555;
+}
+.tool-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: linear-gradient(135deg, #FF6B6B, #FF4757);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* ===== Results Section ===== */
+.results-section {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: none;
+}
+.results-section.active {
+  display: block;
+}
+
+/* Analysis Card */
+.analysis-card {
+  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.analysis-header-icon {
+  width: 36px;
+  height: 36px;
+  background: #6366F1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+}
+.analysis-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4C1D95;
+}
+.analysis-header-sub {
+  font-size: 13px;
+  color: #7C3AED;
+}
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.analysis-item {
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.analysis-item-label {
+  font-size: 12px;
+  color: #8B5CF6;
+  margin-bottom: 4px;
+}
+.analysis-item-value {
+  font-size: 14px;
+  color: #4C1D95;
+  font-weight: 500;
+}
+.analysis-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.analysis-tag {
+  font-size: 12px;
+  padding: 3px 8px;
+  background: #fff;
+  border-radius: 6px;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+}
+
+/* Product Grid */
+.products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.products-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.products-count {
+  font-size: 14px;
+  color: #999;
+  font-weight: 400;
+}
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-label {
+  font-size: 13px;
+  color: #888;
+}
+.chip-group {
+  display: flex;
+  gap: 6px;
+}
+.chip {
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chip:hover {
+  background: #eee;
+}
+.chip.active {
+  background: #6366F1;
+  color: #fff;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.product-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: #f5f5f5;
+}
+.product-info {
+  padding: 12px;
+}
+.product-title {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FF4D4F;
+  margin-bottom: 8px;
+}
+.product-price span {
+  font-size: 12px;
+  font-weight: 400;
+}
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
+}
+.product-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+.badge-new { background: #E6F7FF; color: #1890FF; }
+.badge-hot { background: #FFF1F0; color: #FF4D4F; }
+.badge-top { background: #FCF5E5; color: #D48806; }
+
+/* Loading */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  background: #6366F1;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-title { font-size: 28px; }
+  .hero-subtitle { font-size: 15px; }
+  .quick-tools { gap: 24px; }
+  .tool-icon { width: 48px; height: 48px; font-size: 24px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<div class="hero-section">
+  <h1 class="hero-title">店雷达 AI 选品助手</h1>
+  <p class="hero-subtitle">数据、选品、调研、分析...</p>
+
+  <div class="search-box-container">
+    <div class="search-box">
+      <textarea 
+        class="search-input" 
+        id="search-input" 
+        placeholder="想找什么类目商品？输入关键词，AI帮你智能分析选品，比如：麻将包、异形包、苹果手机壳..."
+        rows="2"
+      ></textarea>
+      <div class="search-box-footer">
+        <div class="search-box-left">
+          <button class="icon-btn" title="清空">📋</button>
+          <button class="icon-btn" title="语音">✏️</button>
+        </div>
+        <div class="search-box-right">
+          <span class="mode-toggle">专业模式 ⇧</span>
+          <button class="search-btn" id="search-btn" onclick="doSearch()">
+            <span>🔍</span> 智能选品
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tip-banner">
+      <div class="tip-banner-left">
+        <span>✨</span>
+        <span>AI智能分析关键词，精准匹配1688优质货源</span>
+      </div>
+      <div class="tip-banner-right">
+        <span>🛡️</span>
+        <span>免费体验</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Tools -->
+  <div class="quick-tools">
+    <div class="tool-item" onclick="quickSearch('麻将包')">
+      <div class="tool-badge">🔥 热门</div>
+      <div class="tool-icon">👜</div>
+      <span class="tool-name">箱包选品</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('手机壳')">
+      <div class="tool-icon">📱</div>
+      <span class="tool-name">3C配件</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('连衣裙')">
+      <div class="tool-icon">👗</div>
+      <span class="tool-name">服饰选品</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('饰品')">
+      <div class="tool-icon">💎</div>
+      <span class="tool-name">饰品选品</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('家居用品')">
+      <div class="tool-icon">🏠</div>
+      <span class="tool-name">家居百货</span>
+    </div>
+  </div>
+</div>
+
+<!-- Results Section -->
+<div class="results-section" id="results-section">
+  <!-- Analysis Card -->
+  <div class="analysis-card" id="analysis-card">
+    <div class="analysis-header">
+      <div class="analysis-header-icon">🧠</div>
+      <div>
+        <div class="analysis-header-title">AI关键词分析 <span class="loading-dots" id="analysis-loading"><span></span><span></span><span></span></span></div>
+        <div class="analysis-header-sub" id="analysis-sub">正在深度分析搜索意图...</div>
+      </div>
+    </div>
+    <div id="analysis-content" style="display:none;">
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <div class="analysis-item-label">搜索意图</div>
+          <div class="analysis-item-value" id="a-intent">-</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-item-label">预测类目</div>
+          <div class="analysis-item-value" id="a-category">-</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-item-label">核心商品</div>
+          <div class="analysis-item-value" id="a-core">-</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-item-label">分析摘要</div>
+          <div class="analysis-item-value" id="a-summary" style="font-size:13px;">-</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="analysis-item-label" style="color:#7C3AED;margin-bottom:8px;">扩展关键词</div>
+        <div class="analysis-tags" id="a-keywords"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products -->
+  <div class="products-header">
+    <div class="products-title">
+      推荐商品 <span class="products-count" id="products-count">0 件</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">排序：</span>
+      <div class="chip-group" id="sort-filter">
+        <span class="chip active" data-sort="score">综合</span>
+        <span class="chip" data-sort="sales">销量</span>
+        <span class="chip" data-sort="price-low">价格↓</span>
+        <span class="chip" data-sort="price-high">价格↑</span>
+      </div>
+    </div>
+  </div>
+  <div class="product-grid" id="product-grid">
+    <!-- Products will be rendered here -->
+  </div>
+</div>
+
+<script>
+// ===== 扣子智能体API配置 =====
+const USE_COZE_AGENT = true;
+const COZE_BOT_ID = '7660723428240588815';
+const COZE_API_TOKEN = 'cztei_q98CMST2V6w6gCJ2df12pqDnhbVFzyhvYmxq0cHM7OsUtOFXe2yhNLd3GiF93AsyB';
+const COZE_API_URL = 'https://api.coze.cn/v3/chat';
+const COZE_MSG_URL = 'https://api.coze.cn/v3/chat/message/list';
+
+// ===== 智谱AI配置（备用）=====
+const USE_ZHIPU_AI = true;
+const ZHIPU_API_KEY = '48507e7734c94be7b4fa468a5ff2d0f2.v3dQklLAxlJZmU1f';
+const ZHIPU_MODEL = 'glm-4-flash';
+const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+// ===== 智谱AI System Prompt =====
+const ZHIPU_SEARCH_SYSTEM_PROMPT = `你是1688电商选品搜索分析专家。用户输入搜索关键词后，你需要进行深度语义分析，输出严格的JSON格式结果。
+
+【重要规则】
+1. 只输出JSON，不要任何解释、Markdown、代码块标记或额外文字
+2. 所有字段必须存在，值为空时用空字符串或空数组
+3. 包包类商品识别：用户搜"XX包"时，90%以上情况是指箱包/包包/袋类，不是麻将本身/包装/材料包
+
+【输出格式】
+{
+  "intent": "明确找品",
+  "intentConfidence": 0.9,
+  "category": {
+    "mainCategory": "箱包皮具",
+    "subCategory": "女士包袋",
+    "categoryId": "1001",
+    "categoryKeywords": ["女包", "箱包"]
+  },
+  "coreProduct": "包包",
+  "modifiers": {
+    "style": [],
+    "material": [],
+    "crowd": [],
+    "scene": [],
+    "priceRange": {"min": null, "max": null},
+    "other": []
+  },
+  "expandedKeywords": [],
+  "excludedKeywords": [],
+  "requiredKeywords": [],
+  "ambiguity": {
+    "hasAmbiguity": false,
+    "ambiguousTerms": [],
+    "resolutionStrategy": ""
+  },
+  "searchStrategy": {
+    "primaryQuery": "",
+    "secondaryQueries": [],
+    "filterHints": ""
+  },
+  "analysisSummary": ""
+}`;
+
+// ===== 调用扣子智能体API =====
+async function callCozeSearchAnalysis(query) {
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN || !COZE_BOT_ID) return null;
+  try {
+    const chatResp = await fetch(COZE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + COZE_API_TOKEN
+      },
+      body: JSON.stringify({
+        bot_id: COZE_BOT_ID,
+        user_id: 'dianleida_web_' + Date.now(),
+        stream: false,
+        additional_messages: [
+          { role: 'user', content: query, content_type: 'text' }
+        ]
+      })
+    });
+    if (!chatResp.ok) throw new Error('扣子API错误 ' + chatResp.status);
+    const chatData = await chatResp.json();
+    const conversationId = chatData.data.conversation_id;
+    const chatId = chatData.data.id;
+
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 1500));
+      const msgUrl = COZE_MSG_URL + '?conversation_id=' + conversationId + '&chat_id=' + chatId;
+      const msgResp = await fetch(msgUrl, {
+        headers: {
+          'Authorization': 'Bearer ' + COZE_API_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!msgResp.ok) continue;
+      const msgData = await msgResp.json();
+      const messages = msgData.data || [];
+      const answerMsgs = messages.filter(m => m.role === 'assistant' && m.type === 'answer');
+      if (answerMsgs.length > 0) {
+        const content = answerMsgs[0].content;
+        try { return JSON.parse(content); } catch (e) {
+          const m = content.match(/\{[\s\S]*\}/);
+          if (m) return JSON.parse(m[0]);
+        }
+        break;
+      }
+    }
+    throw new Error('扣子智能体未返回有效结果');
+  } catch (e) {
+    console.warn('[Coze AI] 调用失败:', e.message);
+    return null;
+  }
+}
+
+// ===== 调用智谱AI（备用）=====
+async function callZhipuSearchAnalysis(query) {
+  if (!USE_ZHIPU_AI || !ZHIPU_API_KEY) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(ZHIPU_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + ZHIPU_API_KEY
+      },
+      body: JSON.stringify({
+        model: ZHIPU_MODEL,
+        messages: [
+          { role: 'system', content: ZHIPU_SEARCH_SYSTEM_PROMPT },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error('API错误 ' + response.status);
+    const data = await response.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+    if (!content) throw new Error('API返回内容为空');
+    try { return JSON.parse(content); } catch (e) {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+      throw new Error('返回内容不是有效的JSON格式');
+    }
+  } catch (e) {
+    clearTimeout(timeoutId);
+    console.warn('[Zhipu AI] 分析失败:', e.message);
+    return null;
+  }
+}
+
+// ===== 简单规则引擎（最后兜底）=====
+function ruleBasedAnalysis(query) {
+  const bagPatterns = ['包', '袋', '箱'];
+  const isBag = bagPatterns.some(p => query.includes(p));
+  
+  let mainCategory = '全部分类', subCategory = '';
+  let expanded = [query];
+  let excluded = [];
+  
+  if (isBag) {
+    mainCategory = '箱包皮具';
+    subCategory = '女士包袋';
+    expanded = [query + ' 女包', query + ' 箱包', '新款' + query, '时尚' + query];
+    excluded = ['材料包', '包装袋', '礼品袋', '工具包', '配件包', '压缩包'];
+  }
+  
+  return {
+    intent: '明确找品',
+    intentConfidence: 0.7,
+    category: { mainCategory, subCategory, categoryId: '', categoryKeywords: [] },
+    coreProduct: query,
+    modifiers: { style: [], material: [], crowd: [], scene: [], priceRange: {min:null,max:null}, other: [] },
+    expandedKeywords: expanded,
+    excludedKeywords: excluded,
+    requiredKeywords: [query],
+    ambiguity: { hasAmbiguity: isBag, ambiguousTerms: isBag ? ['包'] : [], resolutionStrategy: isBag ? '优先匹配箱包皮具类目' : '' },
+    searchStrategy: { primaryQuery: query, secondaryQueries: expanded, filterHints: '' },
+    analysisSummary: '基于规则引擎分析，正在匹配相关商品'
+  };
+}
+
+// ===== 数据和状态 =====
+let PRODUCTS = [];
+let currentResults = [];
+let isSearching = false;
+
+// ===== 模拟商品数据 =====
+const MOCK_PRODUCTS = [
+  { id: 1, title: '2024新款麻将包女斜挎链条小包网红同款时尚单肩包', price: 39.9, sales: 2580, img: '👜', badge: 'hot' },
+  { id: 2, title: '创意设计异形包包女ins个性手提包不规则造型单肩包', price: 68.0, sales: 1890, img: '🎒', badge: 'new' },
+  { id: 3, title: '中国风麻将图案手提包女士时尚手拿包晚宴包', price: 52.0, sales: 1320, img: '👜', badge: '' },
+  { id: 4, title: '网红麻将包链条斜挎包小众设计感女包', price: 45.9, sales: 3200, img: '👜', badge: 'hot' },
+  { id: 5, title: '个性异形云朵包女褶皱饺子包手拿包', price: 58.0, sales: 980, img: '👝', badge: 'new' },
+  { id: 6, title: '复古麻将印花托特包大容量通勤包', price: 79.0, sales: 756, img: '👜', badge: '' },
+  { id: 7, title: '甜酷辣妹异形包Y2K风格腋下包', price: 49.9, sales: 1560, img: '👛', badge: '' },
+  { id: 8, title: '迷你麻将包钥匙包挂件零钱包', price: 19.9, sales: 5680, img: '👜', badge: 'top' },
+  { id: 9, title: '设计师款异形贝壳包女真皮手提包', price: 168.0, sales: 420, img: '👜', badge: 'new' },
+  { id: 10, title: '国潮麻将元素双肩包男女同款背包', price: 89.0, sales: 890, img: '🎒', badge: '' },
+  { id: 11, title: '可爱卡通异形包软妹少女单肩斜挎包', price: 35.9, sales: 2100, img: '👜', badge: '' },
+  { id: 12, title: '高级感麻将包漆皮亮面小方包', price: 62.0, sales: 1450, img: '👝', badge: '' },
+];
+
+// ===== 搜索主函数 =====
+async function doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query || isSearching) return;
+
+  isSearching = true;
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true;
+
+  // 显示结果区域
+  const resultsSection = document.getElementById('results-section');
+  resultsSection.classList.add('active');
+  
+  // 显示分析加载状态
+  document.getElementById('analysis-loading').style.display = 'inline-flex';
+  document.getElementById('analysis-sub').textContent = '正在调用AI智能体深度分析关键词...';
+  document.getElementById('analysis-content').style.display = 'none';
+  document.getElementById('product-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">正在搜索商品...</div>';
+  
+  // 滚动到结果区
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // 1. AI分析（优先扣子 -> 智谱 -> 规则）
+  let aiResult = null;
+  aiResult = await callCozeSearchAnalysis(query);
+  if (!aiResult) aiResult = await callZhipuSearchAnalysis(query);
+  if (!aiResult) aiResult = ruleBasedAnalysis(query);
+
+  // 更新分析卡片
+  document.getElementById('analysis-loading').style.display = 'none';
+  document.getElementById('analysis-sub').textContent = aiResult.analysisSummary || '分析完成';
+  document.getElementById('analysis-content').style.display = 'block';
+  
+  document.getElementById('a-intent').textContent = aiResult.intent || '明确找品';
+  const cat = aiResult.category || {};
+  document.getElementById('a-category').textContent = cat.mainCategory + (cat.subCategory ? ' / ' + cat.subCategory : '');
+  document.getElementById('a-core').textContent = aiResult.coreProduct || query;
+  document.getElementById('a-summary').textContent = aiResult.analysisSummary || '';
+  
+  const kwContainer = document.getElementById('a-keywords');
+  kwContainer.innerHTML = '';
+  (aiResult.expandedKeywords || []).forEach(kw => {
+    const span = document.createElement('span');
+    span.className = 'analysis-tag';
+    span.textContent = kw;
+    kwContainer.appendChild(span);
+  });
+
+  // 2. 商品搜索（模拟）
+  await new Promise(r => setTimeout(r, 800));
+  
+  // 简单过滤：排除不相关商品
+  let results = MOCK_PRODUCTS.filter(p => {
+    const title = p.title.toLowerCase();
+    const q = query.toLowerCase();
+    // 排除词过滤
+    const excluded = aiResult.excludedKeywords || [];
+    for (let ex of excluded) {
+      if (title.includes(ex.toLowerCase())) return false;
+    }
+    // 至少包含核心词
+    return title.includes(q) || (aiResult.coreProduct && title.includes(aiResult.coreProduct.toLowerCase()));
+  });
+  
+  // 如果过滤后为空，返回全部
+  if (results.length === 0) results = MOCK_PRODUCTS;
+  
+  currentResults = results;
+  renderProducts(results);
+  
+  isSearching = false;
+  btn.disabled = false;
+}
+
+// ===== 渲染商品 =====
+function renderProducts(products) {
+  document.getElementById('products-count').textContent = products.length + ' 件';
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '';
+  
+  if (products.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">暂无相关商品</div>';
+    return;
+  }
+  
+  products.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    let badgeHtml = '';
+    if (p.badge === 'hot') badgeHtml = '<span class="product-badge badge-hot">热销</span>';
+    else if (p.badge === 'new') badgeHtml = '<span class="product-badge badge-new">新品</span>';
+    else if (p.badge === 'top') badgeHtml = '<span class="product-badge badge-top">TOP</span>';
+    
+    card.innerHTML = `
+      <div style="width:100%;height:200px;background:linear-gradient(135deg,#f5f5f5,#e8e8e8);display:flex;align-items:center;justify-content:center;font-size:80px;">${p.img}</div>
+      <div class="product-info">
+        <div class="product-title">${badgeHtml}${p.title}</div>
+        <div class="product-price">¥${p.price} <span>起批</span></div>
+        <div class="product-meta">
+          <span>销量 ${p.sales.toLocaleString()}</span>
+          <span>48h发货</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ===== 快捷搜索 =====
+function quickSearch(keyword) {
+  document.getElementById('search-input').value = keyword;
+  doSearch();
+}
+
+// ===== 回车搜索 =====
+document.getElementById('search-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    doSearch();
+  }
+});
+
+// ===== 排序切换 =====
+document.getElementById('sort-filter').addEventListener('click', function(e) {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('#sort-filter .chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  
+  const sort = e.target.dataset.sort;
+  let sorted = [...currentResults];
+  if (sort === 'sales') sorted.sort((a, b) => b.sales - a.sales);
+  else if (sort === 'price-low') sorted.sort((a, b) => a.price - b.price);
+  else if (sort === 'price-high') sorted.sort((a, b) => b.price - a.price);
+  renderProducts(sorted);
+});
+</script>
+
+</body>
+</html>
