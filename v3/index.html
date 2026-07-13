@@ -1344,17 +1344,19 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
             allRequiredMatch = false;
             break;
           }
-          // 检查是不是量词用法或特殊组合
+          // 检查是不是量词用法或非名词用法
           const prefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '大', '小', '这', '那', '半', '数'];
-          const suffixes = ['邮']; // "包邮"的包不是名词
+          const suffixes = ['邮', '头', '边', '角', '胶', '浆', '裹', '装']; // 包邮、包头、包边、包角、包胶、包浆、包裹、包装的"包"不是名词
+          const badPrefixPatterns = ['配', '带', '含', '送', '加']; // 配包、带包、含包、送包、加包 - 表示附带，主商品不是包
           
           const isBadMatch = (index) => {
-            // 检查前缀（量词）
+            // 检查前缀（量词或"配/带/含/送/加"等表示附带的词）
             if (index > 0) {
               const prevChar = title[index - 1];
               if (prefixes.includes(prevChar) || /\d/.test(prevChar)) return true;
+              if (badPrefixPatterns.includes(prevChar)) return true;
             }
-            // 检查后缀（包邮等）
+            // 检查后缀（非名词用法）
             if (index < title.length - 1) {
               const nextChar = title[index + 1];
               if (suffixes.includes(nextChar)) return true;
@@ -1414,6 +1416,32 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     
     if (!hasCoreMatch) continue;
     
+    // 计算相关性评分（用于排序）
+    let relevanceScore = 0;
+    // 完全匹配核心产品词 +10
+    if (core && title.includes(core)) relevanceScore += 10;
+    // 包含"XX包"这样的明确名词结构 +5
+    if (coreNoun && coreNoun.length === 1) {
+      // 单字核心名词，检查前面是否有修饰词组成"XX包"结构
+      const idx = title.indexOf(coreNoun);
+      if (idx > 0) {
+        const prevChar = title[idx - 1];
+        const prefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '大', '小', '这', '那', '半', '数', '配', '带', '含', '送', '加'];
+        const suffixes = ['邮', '头', '边', '角', '胶', '浆', '裹', '装'];
+        const nextChar = idx < title.length - 1 ? title[idx + 1] : '';
+        if (!prefixes.includes(prevChar) && !suffixes.includes(nextChar)) {
+          relevanceScore += 5;
+        }
+      }
+    } else if (coreNoun && coreNoun.length > 1 && title.includes(coreNoun)) {
+      relevanceScore += 5;
+    }
+    // 类目匹配 +3
+    if (categoryMatch) relevanceScore += 3;
+    // 销量分（归一化到0-2分）
+    const salesScore = Math.min(2, Math.log10((item.saleQuantity || item.orderCount || 0) + 1) / 3);
+    relevanceScore += salesScore;
+    
     result.push({
       id: String(item.offerId || ''),
       title: item.title || '',
@@ -1425,20 +1453,17 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       img: item.image || '',
       link: 'https://detail.1688.com/offer/' + item.offerId + '.html',
       category: levelName,
+      _relevance: relevanceScore,
       _raw: item
     });
   }
   
-  // 排序：类目匹配的排前面，然后按销量排序
-  if (levelNames.length > 0) {
-    result.sort((a, b) => {
-      const aMatch = levelNames.some(ln => (a.category || '').startsWith(ln));
-      const bMatch = levelNames.some(ln => (b.category || '').startsWith(ln));
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
-      return (b.sales || 0) - (a.sales || 0);
-    });
-  }
+  // 排序：先按相关性评分降序，再按销量降序
+  result.sort((a, b) => {
+    const scoreDiff = (b._relevance || 0) - (a._relevance || 0);
+    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+    return (b.sales || 0) - (a.sales || 0);
+  });
   
   return result;
 }
