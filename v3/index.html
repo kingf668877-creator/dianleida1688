@@ -1202,16 +1202,19 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
 
 // ===== 类目匹配表（根据levelName路径匹配） =====
 const CATEGORY_MAP = {
-  '箱包皮具': { 
-    matchKeywords: ['包', '袋', '箱', '箱包', '包包', '手提包', '单肩包', '双肩包', '钱包'],
-    levelNames: ['箱包皮具>'],
-    fallbackKeywords: ['女包', '包包', '时尚女包']
+  // 运动户外类（优先匹配，因为更具体）
+  '运动户外': { 
+    matchKeywords: ['钓鱼', '渔具', '垂钓', '路亚', '鱼竿', '鱼线', '鱼钩', '鱼护', '户外', '野营', '登山', '徒步', '运动', '健身', '瑜伽', '跑步', '篮球', '足球', '羽毛球', '乒乓球'],
+    levelNames: ['运动户外>'],
+    fallbackKeywords: ['钓鱼包', '渔具包', '户外运动']
   },
+  // 数码类
   '手机配件': { 
     matchKeywords: ['手机壳', '手机套', '手机配件', '钢化膜', '手机支架', '数据线', '充电器'],
     levelNames: ['数码、电脑>手机配件>', '数码、电脑>苹果专用配件>'],
     fallbackKeywords: ['手机壳', '手机配件']
   },
+  // 服装类
   '男装': { 
     matchKeywords: ['男士', '男装', '男款', '男式', '男外套', '男t恤', '男裤', '男衬衫'],
     levelNames: ['男装>'],
@@ -1227,27 +1230,43 @@ const CATEGORY_MAP = {
     levelNames: ['男装>', '女装>', '童装>'],
     fallbackKeywords: ['t恤', '外套']
   },
+  // 饰品类
   '饰品': { 
     matchKeywords: ['饰品', '耳环', '项链', '手链', '戒指', '手镯', '胸针'],
     levelNames: ['饰品>'],
     fallbackKeywords: ['饰品', '耳环']
   },
+  // 家居类
   '家居百货': { 
     matchKeywords: ['家居', '日用品', '收纳', '厨房', '卫浴', '清洁'],
     levelNames: ['家居>'],
     fallbackKeywords: ['家居用品', '日用品']
   },
+  // 箱包皮具（最后匹配，因为"包"字太泛）
+  '箱包皮具': { 
+    matchKeywords: ['包包', '女包', '男包', '箱包', '手提包', '单肩包', '双肩包', '钱包', '背包', '挎包', '斜挎包', '手拿包', '公文包', '书包', '包', '袋', '箱'],
+    levelNames: ['箱包皮具>'],
+    fallbackKeywords: ['女包', '包包', '时尚女包']
+  },
 };
 
 function matchCategory(query) {
+  let bestMatch = null;
+  let bestMatchLength = 0;
+  
   for (const [name, cfg] of Object.entries(CATEGORY_MAP)) {
     for (const kw of cfg.matchKeywords) {
       if (query.includes(kw)) {
-        return { categoryName: name, levelNames: cfg.levelNames, matchKeywords: cfg.matchKeywords, fallbackKeywords: cfg.fallbackKeywords };
+        // 取匹配到的最长关键词
+        if (kw.length > bestMatchLength) {
+          bestMatchLength = kw.length;
+          bestMatch = { categoryName: name, levelNames: cfg.levelNames, matchKeywords: cfg.matchKeywords, fallbackKeywords: cfg.fallbackKeywords, matchedKeyword: kw };
+        }
       }
     }
   }
-  return null;
+  
+  return bestMatch;
 }
 
 // ===== 根据类目名称获取levelName前缀 =====
@@ -1323,11 +1342,16 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     else if (coreNoun && title.includes(coreNoun)) {
       hasCoreMatch = true;
     }
-    // 3. 匹配必选词
+    // 3. 匹配必选词（多个必选词要求全部匹配，确保相关性）
     else if (required.length > 0) {
+      let allRequiredMatch = true;
       for (const rq of required) {
-        if (rq && title.includes(rq)) { hasCoreMatch = true; break; }
+        if (rq && !title.includes(rq)) { 
+          allRequiredMatch = false; 
+          break; 
+        }
       }
+      if (allRequiredMatch) hasCoreMatch = true;
     }
     
     // 如果指定了类目但类目不匹配，且核心词也不是强匹配，则排除
