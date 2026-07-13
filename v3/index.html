@@ -1399,7 +1399,7 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       hasCoreMatch = true;
     }
     // 2. 匹配核心名词（如"异形包" → 匹配"包"）
-    else if (coreNoun && title.includes(coreNoun)) {
+    else if (coreNoun && coreNoun.length > 1 && title.includes(coreNoun)) {
       hasCoreMatch = true;
     }
     // 3. 必选词已经全部满足，也算通过（兜底）
@@ -1413,6 +1413,51 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     }
     
     if (!hasCoreMatch) continue;
+    
+    // 容器类名词检查：如果核心产品是"XX包/袋/箱/盒"，商品标题必须包含容器类名词
+    // 且不能是量词用法（一包、两包等）
+    const containerWords = ['包', '袋', '箱', '盒', '套', '组'];
+    const isContainerProduct = containerWords.some(cw => core.includes(cw));
+    if (isContainerProduct) {
+      // 检查标题里有没有容器类名词（不是量词用法）
+      const measurePrefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '半', '数'];
+      const nonNounSuffixes = ['邮', '头', '边', '角', '胶', '浆', '裹', '装'];
+      
+      let hasContainerNoun = false;
+      for (const cw of containerWords) {
+        let searchFrom = 0;
+        while (searchFrom < title.length) {
+          const idx = title.indexOf(cw, searchFrom);
+          if (idx < 0) break;
+          
+          // 检查前缀（是否是量词）
+          let isMeasure = false;
+          if (idx > 0) {
+            const prevChar = title[idx - 1];
+            if (measurePrefixes.includes(prevChar) || /\d/.test(prevChar)) {
+              isMeasure = true;
+            }
+          }
+          // 检查后缀（是否是非名词用法）
+          let isNonNoun = false;
+          if (idx < title.length - 1) {
+            const nextChar = title[idx + 1];
+            if (nonNounSuffixes.includes(nextChar)) {
+              isNonNoun = true;
+            }
+          }
+          
+          if (!isMeasure && !isNonNoun) {
+            hasContainerNoun = true;
+            break;
+          }
+          searchFrom = idx + 1;
+        }
+        if (hasContainerNoun) break;
+      }
+      
+      if (!hasContainerNoun) continue;
+    }
     
     // 计算相关性评分（用于排序，不影响是否通过）
     let relevanceScore = 0;
