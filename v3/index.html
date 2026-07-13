@@ -1834,8 +1834,70 @@ async function doSearch() {
   
   addStep('📋', 'Step 6: 搜索策略生成', step6Detail, filters.length > 0 ? filters : (searchStrategy.secondaryQueries || []).slice(0, 4));
 
-  // ===== Step 7: 调用店雷达API获取商品 =====
-  const step7 = addLoadingStep('📡', 'Step 7: 实时商品搜索');
+  // ===== Step 7: 商品属性分析 =====
+  await new Promise(r => setTimeout(r, 200));
+  const productAttrs = aiResult.productAttrs || {};
+  const attrTags = [];
+  let attrDetail = '';
+  
+  if (productAttrs.style && productAttrs.style.length > 0) {
+    attrTags.push(...productAttrs.style);
+    attrDetail += '款式：' + productAttrs.style.join('、');
+  }
+  if (productAttrs.fabric && productAttrs.fabric.length > 0) {
+    attrTags.push(...productAttrs.fabric);
+    attrDetail += (attrDetail ? ' · ' : '') + '面料：' + productAttrs.fabric.join('、');
+  }
+  if (productAttrs.length && productAttrs.length.length > 0) {
+    attrTags.push(...productAttrs.length);
+    attrDetail += (attrDetail ? ' · ' : '') + '长度：' + productAttrs.length.join('、');
+  }
+  if (productAttrs.collarType && productAttrs.collarType.length > 0) {
+    attrTags.push(...productAttrs.collarType);
+    attrDetail += (attrDetail ? ' · ' : '') + '领型：' + productAttrs.collarType.join('、');
+  }
+  if (productAttrs.sleeveLength && productAttrs.sleeveLength.length > 0) {
+    attrTags.push(...productAttrs.sleeveLength);
+    attrDetail += (attrDetail ? ' · ' : '') + '袖长：' + productAttrs.sleeveLength.join('、');
+  }
+  if (productAttrs.pattern && productAttrs.pattern.length > 0) {
+    attrTags.push(...productAttrs.pattern);
+    attrDetail += (attrDetail ? ' · ' : '') + '图案：' + productAttrs.pattern.join('、');
+  }
+  if (productAttrs.season && productAttrs.season.length > 0) {
+    attrTags.push(...productAttrs.season);
+    attrDetail += (attrDetail ? ' · ' : '') + '季节：' + productAttrs.season.join('、');
+  }
+  if (productAttrs.fitType && productAttrs.fitType.length > 0) {
+    attrTags.push(...productAttrs.fitType);
+    attrDetail += (attrDetail ? ' · ' : '') + '版型：' + productAttrs.fitType.join('、');
+  }
+  if (productAttrs.designElements && productAttrs.designElements.length > 0) {
+    attrTags.push(...productAttrs.designElements);
+    attrDetail += (attrDetail ? ' · ' : '') + '设计元素：' + productAttrs.designElements.join('、');
+  }
+  
+  // 跨境属性
+  const cb = productAttrs.crossBorder;
+  if (cb && cb.isCrossBorder) {
+    const cbTags = [];
+    if (cb.targetMarket) cbTags.push('市场:' + cb.targetMarket);
+    if (cb.crossBorderStyle) cbTags.push('风格:' + cb.crossBorderStyle);
+    if (cbTags.length > 0) {
+      attrTags.push('跨境货源');
+      attrTags.push(...cbTags);
+      attrDetail += (attrDetail ? ' · ' : '') + '跨境：是' + (cb.targetMarket ? '（' + cb.targetMarket + '）' : '');
+    }
+  }
+  
+  if (attrDetail) {
+    addStep('🏷️', 'Step 7: 商品属性分析', attrDetail, attrTags.slice(0, 8));
+  } else {
+    addStep('🏷️', 'Step 7: 商品属性分析', '未识别到具体商品属性，将使用通用搜索策略');
+  }
+
+  // ===== Step 8: 调用店雷达API获取商品 =====
+  const step8 = addLoadingStep('📡', 'Step 8: 实时商品搜索');
   
   let products = [];
   try {
@@ -1849,12 +1911,12 @@ async function doSearch() {
     const searchWords = [query];
     if (aiResult && aiResult.expandedKeywords) searchWords.push(...aiResult.expandedKeywords.slice(0, 3));
     const displaySearch = searchWords.join('、');
-    updateStep(step7, '✅', 'Step 7: 实时商品搜索完成', 
+    updateStep(step8, '✅', 'Step 8: 实时商品搜索完成', 
       '搜索词：' + displaySearch + ' · 从1688实时获取 ' + products.length + ' 条商品数据',
       ['实时API', products.length + '件商品']
     );
   } else {
-    updateStep(step7, '⚠️', 'Step 7: 商品搜索', 
+    updateStep(step8, '⚠️', 'Step 8: 商品搜索', 
       '暂未获取到商品数据，请稍后重试或更换关键词');
   }
   
