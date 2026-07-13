@@ -1331,7 +1331,67 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       categoryMatch = levelNames.some(ln => levelName.startsWith(ln));
     }
     
-    // 核心词匹配检查
+    // 必选词优先检查：如果有必选词，必须全部满足
+    if (required.length > 0) {
+      let allRequiredMatch = true;
+      for (const rq of required) {
+        if (!rq) continue;
+        
+        // 单字必选词（如"包"）需要特殊处理，排除量词用法和"包邮"等
+        if (rq.length === 1) {
+          const charIndex = title.indexOf(rq);
+          if (charIndex < 0) {
+            allRequiredMatch = false;
+            break;
+          }
+          // 检查是不是量词用法或特殊组合
+          const prefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '大', '小', '这', '那', '半', '数'];
+          const suffixes = ['邮']; // "包邮"的包不是名词
+          
+          const isBadMatch = (index) => {
+            // 检查前缀（量词）
+            if (index > 0) {
+              const prevChar = title[index - 1];
+              if (prefixes.includes(prevChar) || /\d/.test(prevChar)) return true;
+            }
+            // 检查后缀（包邮等）
+            if (index < title.length - 1) {
+              const nextChar = title[index + 1];
+              if (suffixes.includes(nextChar)) return true;
+            }
+            return false;
+          };
+          
+          // 第一个出现的如果是坏匹配，继续找
+          if (isBadMatch(charIndex)) {
+            let found = false;
+            let searchFrom = charIndex + 1;
+            while (searchFrom < title.length) {
+              const nextIndex = title.indexOf(rq, searchFrom);
+              if (nextIndex < 0) break;
+              if (!isBadMatch(nextIndex)) {
+                found = true;
+                break;
+              }
+              searchFrom = nextIndex + 1;
+            }
+            if (!found) {
+              allRequiredMatch = false;
+              break;
+            }
+          }
+        } else {
+          // 多字词直接匹配
+          if (!title.includes(rq)) { 
+            allRequiredMatch = false; 
+            break; 
+          }
+        }
+      }
+      if (!allRequiredMatch) continue;
+    }
+    
+    // 核心词匹配检查（必选词已满足时，这里进一步确认相关性）
     let hasCoreMatch = false;
     
     // 1. 完全匹配核心产品词
@@ -1342,16 +1402,9 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     else if (coreNoun && title.includes(coreNoun)) {
       hasCoreMatch = true;
     }
-    // 3. 匹配必选词（多个必选词要求全部匹配，确保相关性）
+    // 3. 必选词已经全部满足，也算通过（兜底）
     else if (required.length > 0) {
-      let allRequiredMatch = true;
-      for (const rq of required) {
-        if (rq && !title.includes(rq)) { 
-          allRequiredMatch = false; 
-          break; 
-        }
-      }
-      if (allRequiredMatch) hasCoreMatch = true;
+      hasCoreMatch = true;
     }
     
     // 如果指定了类目但类目不匹配，且核心词也不是强匹配，则排除
