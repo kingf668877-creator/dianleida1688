@@ -1584,37 +1584,35 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   
   // ===== 兜底策略：如果结果太少，用类目热词补充搜索 =====
   if (allProducts.length < 10 && catConfig && catConfig.fallbackKeywords) {
-    for (const kw of catConfig.fallbackKeywords) {
-      if (allProducts.length >= 20) break;
-      try {
-        const params = {
-          pageSize: 30,
-          keyWord: kw,
-          searchType: '1',
-          sortField: 'orderCount30d',
-          sortType: 'desc',
-          cycle: 30,
-          pageIndex: 1
-        };
-        const result = await callDianLeiDaAPI('search', params);
-        if (result.code === 200 && result.result && result.result.list) {
-          const products = processAPIProducts(
-            result.result.list,
-            aiResult ? aiResult.excludedKeywords : [],
-            aiResult ? aiResult.requiredKeywords : [],
-            aiResult ? aiResult.coreProduct : keyword,
-            categoryLevelNames
-          );
-          for (const p of products) {
-            if (!seenIds.has(p.id)) {
-              seenIds.add(p.id);
-              allProducts.push(p);
-            }
+    const combinedFallback = catConfig.fallbackKeywords.join('、');
+    try {
+      const params = {
+        pageSize: 30,
+        keyWord: combinedFallback,
+        searchType: '1',
+        sortField: 'orderCount30d',
+        sortType: 'desc',
+        cycle: 30,
+        pageIndex: 1
+      };
+      const result = await callDianLeiDaAPI('search', params);
+      if (result.code === 200 && result.result && result.result.list) {
+        const products = processAPIProducts(
+          result.result.list,
+          aiResult ? aiResult.excludedKeywords : [],
+          aiResult ? aiResult.requiredKeywords : [],
+          aiResult ? aiResult.coreProduct : keyword,
+          categoryLevelNames
+        );
+        for (const p of products) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            allProducts.push(p);
           }
         }
-      } catch (e) {
-        console.warn('兜底搜索"' + kw + '"失败:', e.message);
       }
+    } catch (e) {
+      console.warn('兜底搜索失败:', e.message);
     }
   }
   
