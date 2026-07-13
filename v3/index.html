@@ -1547,38 +1547,39 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   }
   const uniqueQueries = [...new Set(searchQueries)];
   
-  for (const searchKW of uniqueQueries) {
-    try {
-      const params = {
-        pageSize: pageSize,
-        keyWord: searchKW,
-        searchType: '1',
-        sortField: 'orderCount30d',
-        sortType: 'desc',
-        cycle: 30,
-        pageIndex: 1
-      };
-      
-      const result = await callDianLeiDaAPI('search', params);
-      
-      if (result.code === 200 && result.result && result.result.list) {
-        const products = processAPIProducts(
-          result.result.list,
-          aiResult ? aiResult.excludedKeywords : [],
-          aiResult ? aiResult.requiredKeywords : [],
-          aiResult ? aiResult.coreProduct : keyword,
-          categoryLevelNames
-        );
-        for (const p of products) {
-          if (!seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            allProducts.push(p);
-          }
+  // 用顿号拼接所有搜索词，一次性传给API（与选品库关键词搜索一致）
+  const combinedKeyword = uniqueQueries.join('、');
+  
+  try {
+    const params = {
+      pageSize: 50,
+      keyWord: combinedKeyword,
+      searchType: '1',
+      sortField: 'orderCount30d',
+      sortType: 'desc',
+      cycle: 30,
+      pageIndex: 1
+    };
+    
+    const result = await callDianLeiDaAPI('search', params);
+    
+    if (result.code === 200 && result.result && result.result.list) {
+      const products = processAPIProducts(
+        result.result.list,
+        aiResult ? aiResult.excludedKeywords : [],
+        aiResult ? aiResult.requiredKeywords : [],
+        aiResult ? aiResult.coreProduct : keyword,
+        categoryLevelNames
+      );
+      for (const p of products) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          allProducts.push(p);
         }
       }
-    } catch (e) {
-      console.warn('搜索"' + searchKW + '"失败:', e.message);
     }
+  } catch (e) {
+    console.warn('搜索失败:', e.message);
   }
   
   // ===== 兜底策略：如果结果太少，用类目热词补充搜索 =====
@@ -1846,8 +1847,12 @@ async function doSearch() {
   }
   
   if (products.length > 0) {
+    // 构建搜索词展示
+    const searchWords = [query];
+    if (aiResult && aiResult.expandedKeywords) searchWords.push(...aiResult.expandedKeywords.slice(0, 3));
+    const displaySearch = searchWords.join('、');
     updateStep(step7, '✅', 'Step 7: 实时商品搜索完成', 
-      '从1688实时获取 ' + products.length + ' 条商品数据，已应用AI过滤策略',
+      '搜索词：' + displaySearch + ' · 从1688实时获取 ' + products.length + ' 条商品数据',
       ['实时API', products.length + '件商品']
     );
   } else {
