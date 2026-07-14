@@ -1402,64 +1402,66 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       categoryMatch = levelNames.some(ln => levelName.startsWith(ln));
     }
     
-    // 必选词优先检查：如果有必选词，必须全部满足
+    // 必选词检查：多词时采用"多数匹配"策略
+    // 1-2个必选词：必须全部满足
+    // 3+个必选词：只需满足其中 ceil(2/3) 个即可通过
     if (required.length > 0) {
-      let allRequiredMatch = true;
+      let matchCount = 0;
+      let totalRequired = 0;
+      
       for (const rq of required) {
         if (!rq) continue;
+        totalRequired++;
+        
+        let matched = false;
         
         // 单字必选词（如"包"）需要特殊处理，排除量词用法和"包邮"等
         if (rq.length === 1) {
           const charIndex = title.indexOf(rq);
-          if (charIndex < 0) {
-            allRequiredMatch = false;
-            break;
-          }
-          // 检查是不是量词用法或明显的非名词用法
-          const prefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '半', '数'];
-          const suffixes = ['邮']; // 包邮的"包"不是名词
-          
-          const isBadMatch = (index) => {
-            // 检查前缀（量词）
-            if (index > 0) {
-              const prevChar = title[index - 1];
-              if (prefixes.includes(prevChar) || /\d/.test(prevChar)) return true;
-            }
-            // 检查后缀（非名词用法）
-            if (index < title.length - 1) {
-              const nextChar = title[index + 1];
-              if (suffixes.includes(nextChar)) return true;
-            }
-            return false;
-          };
-          
-          // 第一个出现的如果是坏匹配，继续找
-          if (isBadMatch(charIndex)) {
-            let found = false;
-            let searchFrom = charIndex + 1;
-            while (searchFrom < title.length) {
-              const nextIndex = title.indexOf(rq, searchFrom);
-              if (nextIndex < 0) break;
-              if (!isBadMatch(nextIndex)) {
-                found = true;
-                break;
+          if (charIndex >= 0) {
+            const prefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '半', '数'];
+            const suffixes = ['邮'];
+            
+            const isBadMatch = (index) => {
+              if (index > 0) {
+                const prevChar = title[index - 1];
+                if (prefixes.includes(prevChar) || /\d/.test(prevChar)) return true;
               }
-              searchFrom = nextIndex + 1;
-            }
-            if (!found) {
-              allRequiredMatch = false;
-              break;
+              if (index < title.length - 1) {
+                const nextChar = title[index + 1];
+                if (suffixes.includes(nextChar)) return true;
+              }
+              return false;
+            };
+            
+            if (!isBadMatch(charIndex)) {
+              matched = true;
+            } else {
+              let searchFrom = charIndex + 1;
+              while (searchFrom < title.length) {
+                const nextIndex = title.indexOf(rq, searchFrom);
+                if (nextIndex < 0) break;
+                if (!isBadMatch(nextIndex)) {
+                  matched = true;
+                  break;
+                }
+                searchFrom = nextIndex + 1;
+              }
             }
           }
         } else {
           // 多字词直接匹配
-          if (!title.includes(rq)) { 
-            allRequiredMatch = false; 
-            break; 
+          if (title.includes(rq)) {
+            matched = true;
           }
         }
+        
+        if (matched) matchCount++;
       }
-      if (!allRequiredMatch) continue;
+      
+      // 判断是否通过：1-2个词要求全匹配，3+个词要求匹配至少 ceil(2/3)
+      const threshold = totalRequired <= 2 ? totalRequired : Math.ceil(totalRequired * 2 / 3);
+      if (matchCount < threshold) continue;
     }
     
     // 核心词匹配检查（必选词已满足时，这里进一步确认相关性）
