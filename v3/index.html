@@ -1475,10 +1475,9 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       hasCoreMatch = true;
     }
     
-    // 如果指定了类目但类目不匹配，且核心词也不是强匹配，则排除
-    if (levelNames.length > 0 && !categoryMatch && !title.includes(core)) {
-      continue;
-    }
+    // 类目不匹配时不直接排除，而是降低相关性评分
+    // （因为扣子返回的levelNames和店雷达实际类目路径可能不一致）
+    // 只有当类目完全不相关时才排除（通过黑名单处理）
     
     if (!hasCoreMatch) continue;
     
