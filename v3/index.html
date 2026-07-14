@@ -1536,13 +1536,20 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const searchQueries = [keyword];
   if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
     const catName = aiResult.category?.mainCategory || '';
-    const filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName);
+    let filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName);
+    // 如果过滤后剩余词太少（<3个），回退使用原始扩展词（避免搜索词太少导致没结果）
+    if (filteredExpanded.length < 3 && aiResult.expandedKeywords.length > filteredExpanded.length) {
+      filteredExpanded = aiResult.expandedKeywords.slice(0, 5);
+    }
     searchQueries.push(...filteredExpanded.slice(0, 5));
     aiResult.expandedKeywords = filteredExpanded;
   }
   if (aiResult && aiResult.searchStrategy && aiResult.searchStrategy.secondaryQueries) {
     const catName = aiResult.category?.mainCategory || '';
-    const filteredSecondary = filterRelevantKeywords(aiResult.searchStrategy.secondaryQueries, aiResult.coreProduct || keyword, catName);
+    let filteredSecondary = filterRelevantKeywords(aiResult.searchStrategy.secondaryQueries, aiResult.coreProduct || keyword, catName);
+    if (filteredSecondary.length < 2 && aiResult.searchStrategy.secondaryQueries.length > filteredSecondary.length) {
+      filteredSecondary = aiResult.searchStrategy.secondaryQueries.slice(0, 3);
+    }
     searchQueries.push(...filteredSecondary.slice(0, 3));
   }
   const uniqueQueries = [...new Set(searchQueries)];
@@ -1582,14 +1589,23 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     console.warn('搜索失败:', e.message);
   }
   
-  // ===== 兜底策略：如果结果太少，用类目热词补充搜索 =====
-  if (allProducts.length < 10 && catConfig && catConfig.fallbackKeywords) {
-    const combinedFallback = catConfig.fallbackKeywords.join('、');
-    try {
-      const params = {
-        pageSize: 30,
-        keyWord: combinedFallback,
-        searchType: '1',
+  // ===== 兜底策略：如果结果太少，用类目热词或智能体categoryKeywords补充搜索 =====
+  if (allProducts.length < 10) {
+    let fallbackKeywords = [];
+    if (catConfig && catConfig.fallbackKeywords) {
+      fallbackKeywords = catConfig.fallbackKeywords;
+    } else if (aiResult && aiResult.category && aiResult.category.categoryKeywords && aiResult.category.categoryKeywords.length > 0) {
+      // 没有类目配置时，用智能体返回的categoryKeywords做兜底
+      fallbackKeywords = aiResult.category.categoryKeywords;
+    }
+    
+    if (fallbackKeywords.length > 0) {
+      const combinedFallback = fallbackKeywords.join('、');
+      try {
+        const params = {
+          pageSize: 30,
+          keyWord: combinedFallback,
+          searchType: '1',
         sortField: 'orderCount30d',
         sortType: 'desc',
         cycle: 30,
@@ -1613,6 +1629,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       }
     } catch (e) {
       console.warn('兜底搜索失败:', e.message);
+    }
     }
   }
   
