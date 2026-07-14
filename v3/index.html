@@ -1857,52 +1857,45 @@ async function doSearch() {
   const attrTags = [];
   let attrDetail = '';
   
-  if (productAttrs.style && productAttrs.style.length > 0) {
-    attrTags.push(...productAttrs.style);
-    attrDetail += '款式：' + productAttrs.style.join('、');
+  // 兼容新的 tags 键值对结构
+  if (productAttrs.tags && Array.isArray(productAttrs.tags)) {
+    for (const tag of productAttrs.tags) {
+      if (tag.name && tag.values && tag.values.length > 0) {
+        const valuesStr = tag.values.join('、');
+        attrDetail += (attrDetail ? ' · ' : '') + tag.name + '：' + valuesStr;
+        // 跨境属性特殊处理
+        if (tag.name === '跨境属性' && tag.targetMarket) {
+          attrTags.push('跨境货源');
+          attrTags.push('市场:' + tag.targetMarket);
+        } else {
+          attrTags.push(...tag.values);
+        }
+      }
+    }
   }
-  if (productAttrs.fabric && productAttrs.fabric.length > 0) {
-    attrTags.push(...productAttrs.fabric);
-    attrDetail += (attrDetail ? ' · ' : '') + '面料：' + productAttrs.fabric.join('、');
-  }
-  if (productAttrs.length && productAttrs.length.length > 0) {
-    attrTags.push(...productAttrs.length);
-    attrDetail += (attrDetail ? ' · ' : '') + '长度：' + productAttrs.length.join('、');
-  }
-  if (productAttrs.collarType && productAttrs.collarType.length > 0) {
-    attrTags.push(...productAttrs.collarType);
-    attrDetail += (attrDetail ? ' · ' : '') + '领型：' + productAttrs.collarType.join('、');
-  }
-  if (productAttrs.sleeveLength && productAttrs.sleeveLength.length > 0) {
-    attrTags.push(...productAttrs.sleeveLength);
-    attrDetail += (attrDetail ? ' · ' : '') + '袖长：' + productAttrs.sleeveLength.join('、');
-  }
-  if (productAttrs.pattern && productAttrs.pattern.length > 0) {
-    attrTags.push(...productAttrs.pattern);
-    attrDetail += (attrDetail ? ' · ' : '') + '图案：' + productAttrs.pattern.join('、');
-  }
-  if (productAttrs.season && productAttrs.season.length > 0) {
-    attrTags.push(...productAttrs.season);
-    attrDetail += (attrDetail ? ' · ' : '') + '季节：' + productAttrs.season.join('、');
-  }
-  if (productAttrs.fitType && productAttrs.fitType.length > 0) {
-    attrTags.push(...productAttrs.fitType);
-    attrDetail += (attrDetail ? ' · ' : '') + '版型：' + productAttrs.fitType.join('、');
-  }
-  if (productAttrs.designElements && productAttrs.designElements.length > 0) {
-    attrTags.push(...productAttrs.designElements);
-    attrDetail += (attrDetail ? ' · ' : '') + '设计元素：' + productAttrs.designElements.join('、');
-  }
-  
-  // 跨境属性
-  const cb = productAttrs.crossBorder;
-  if (cb && cb.isCrossBorder) {
-    const cbTags = [];
-    if (cb.targetMarket) cbTags.push('市场:' + cb.targetMarket);
-    if (cb.crossBorderStyle) cbTags.push('风格:' + cb.crossBorderStyle);
-    if (cbTags.length > 0) {
+  // 兼容旧版结构（如果智能体还没更新提示词）
+  if (!productAttrs.tags && productAttrs.style) {
+    const oldFields = [
+      { key: 'style', label: '款式' },
+      { key: 'fabric', label: '面料' },
+      { key: 'length', label: '长度' },
+      { key: 'collarType', label: '领型' },
+      { key: 'sleeveLength', label: '袖长' },
+      { key: 'pattern', label: '图案' },
+      { key: 'season', label: '季节' },
+      { key: 'fitType', label: '版型' },
+      { key: 'designElements', label: '设计元素' }
+    ];
+    for (const field of oldFields) {
+      if (productAttrs[field.key] && productAttrs[field.key].length > 0) {
+        attrTags.push(...productAttrs[field.key]);
+        attrDetail += (attrDetail ? ' · ' : '') + field.label + '：' + productAttrs[field.key].join('、');
+      }
+    }
+    const cb = productAttrs.crossBorder;
+    if (cb && cb.isCrossBorder) {
       attrTags.push('跨境货源');
-      attrTags.push(...cbTags);
+      if (cb.targetMarket) attrTags.push('市场:' + cb.targetMarket);
       attrDetail += (attrDetail ? ' · ' : '') + '跨境：是' + (cb.targetMarket ? '（' + cb.targetMarket + '）' : '');
     }
   }
