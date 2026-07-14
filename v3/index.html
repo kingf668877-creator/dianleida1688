@@ -774,8 +774,11 @@ body {
     <div class="filter-row">
       <span class="filter-label">排序：</span>
       <div class="chip-group" id="sort-filter">
-        <span class="chip active" data-sort="score">综合</span>
-        <span class="chip" data-sort="sales">销量</span>
+        <span class="chip active" data-sort="score">综合相关</span>
+        <span class="chip" data-sort="sales">销量订单</span>
+        <span class="chip" data-sort="growth">7日增长率</span>
+        <span class="chip" data-sort="revenue">销售额</span>
+        <span class="chip" data-sort="newest">上架时间</span>
         <span class="chip" data-sort="price-low">价格↓</span>
         <span class="chip" data-sort="price-high">价格↑</span>
       </div>
@@ -2263,9 +2266,40 @@ document.getElementById('sort-filter').addEventListener('click', function(e) {
   
   const sort = e.target.dataset.sort;
   let sorted = [...currentResults];
-  if (sort === 'sales') sorted.sort((a, b) => (b.sales || 0) - (a.sales || 0));
-  else if (sort === 'price-low') sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
-  else if (sort === 'price-high') sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+  
+  if (sort === 'score') {
+    // 综合相关：按相关性评分降序，再按销量降序
+    sorted.sort((a, b) => {
+      const scoreDiff = (b._relevance || 0) - (a._relevance || 0);
+      if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+      return (b.sales || 0) - (a.sales || 0);
+    });
+  } else if (sort === 'sales') {
+    // 销量订单
+    sorted.sort((a, b) => (b.sales || 0) - (a.sales || 0));
+  } else if (sort === 'growth') {
+    // 7日增长率（用销量近似估算，有增长率数据则用增长率）
+    sorted.sort((a, b) => {
+      const aGrowth = a._raw && a._raw.growthRate7d ? a._raw.growthRate7d : 0;
+      const bGrowth = b._raw && b._raw.growthRate7d ? b._raw.growthRate7d : 0;
+      return bGrowth - aGrowth;
+    });
+  } else if (sort === 'revenue') {
+    // 销售额 = 价格 × 销量
+    sorted.sort((a, b) => ((b.price || 0) * (b.sales || 0)) - ((a.price || 0) * (a.sales || 0)));
+  } else if (sort === 'newest') {
+    // 上架时间（用商品ID或时间戳近似，越大的越新）
+    sorted.sort((a, b) => {
+      const aTime = a._raw && (a._raw.publishTime || a._raw.gmtCreate) ? (a._raw.publishTime || a._raw.gmtCreate) : '';
+      const bTime = b._raw && (b._raw.publishTime || b._raw.gmtCreate) ? (b._raw.publishTime || b._raw.gmtCreate) : '';
+      return bTime.localeCompare(aTime);
+    });
+  } else if (sort === 'price-low') {
+    sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+  } else if (sort === 'price-high') {
+    sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+  }
+  
   currentResults = sorted;
   renderProducts(sorted, 1);
 });
