@@ -1741,9 +1741,10 @@ function renderSearchHistory() {
     return;
   }
   container.style.display = 'block';
-  tagsContainer.innerHTML = history.map(kw =>
-    '<span class="history-tag" onclick="clickHistoryTag(\'' + kw.replace(/'/g, "\\'") + '\')">' + escapeHtml(kw) + '</span>'
-  ).join('');
+  tagsContainer.innerHTML = history.map(function(kw) {
+    var safeKw = kw.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return '<span class="history-tag" onclick="clickHistoryTag(\'' + safeKw + '\')">' + escapeHtml(kw) + '</span>';
+  }).join('');
 }
 
 function clickHistoryTag(keyword) {
