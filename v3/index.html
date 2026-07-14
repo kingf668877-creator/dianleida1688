@@ -1721,6 +1721,40 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     }
   }
   
+  // ===== 二次兜底：如果结果仍然为0，用原始关键词直接搜索 =====
+  if (allProducts.length === 0) {
+    try {
+      const params = {
+        pageSize: 30,
+        keyWord: keyword,
+        searchType: '1',
+        sortField: 'orderCount30d',
+        sortType: 'desc',
+        cycle: 30,
+        pageIndex: 1
+      };
+      const result = await callDianLeiDaAPI('search', params);
+      if (result.code === 200 && result.result && result.result.list) {
+        const products = processAPIProducts(
+          result.result.list,
+          aiResult ? aiResult.excludedKeywords : [],
+          [],  // 必选词放宽为空，避免过度过滤
+          aiResult ? aiResult.coreProduct : keyword,
+          categoryLevelNames,
+          aiResult ? aiResult.productAttrs : null
+        );
+        for (const p of products) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            allProducts.push(p);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('二次兜底搜索失败:', e.message);
+    }
+  }
+  
   return allProducts;
 }
 
