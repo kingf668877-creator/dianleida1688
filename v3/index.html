@@ -962,7 +962,11 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
       ]
     });
     
-    addDebugLog('发起流式对话请求...');
+    addDebugLog('发起流式对话请求（超时60秒）...');
+    
+    // 超时控制：60秒未完成则中断
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
     
     const response = await fetch(COZE_API_URL, {
       method: 'POST',
@@ -971,8 +975,11 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
         'Authorization': 'Bearer ' + COZE_API_TOKEN,
         'Accept': 'text/event-stream'
       },
-      body: chatBody
+      body: chatBody,
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
@@ -984,6 +991,23 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
       let hasError = false;
       let errorMsg = '';
       let answerStarted = false;
+      
+      // SSE解析超时：90秒未完成则强制结束
+      const sseTimeoutId = setTimeout(() => {
+        addDebugLog('SSE解析超时90秒，强制结束');
+        if (answerContent && answerContent.length > 10) {
+          // 超时但有内容，尝试用已有内容解析
+          try {
+            const json = extractJSON(answerContent);
+            if (json) {
+              addDebugLog('超时但提取到JSON，返回结果');
+              resolve(json);
+              return;
+            }
+          } catch(e) {}
+        }
+        reject(new Error('智能体分析超时（90秒），请重试'));
+      }, 90000);
       
       parseSSE(
         response,
@@ -1024,6 +1048,7 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
         },
         // onComplete
         () => {
+          clearTimeout(sseTimeoutId);
           if (hasError) {
             reject(new Error(errorMsg || '扣子智能体调用失败'));
             return;
