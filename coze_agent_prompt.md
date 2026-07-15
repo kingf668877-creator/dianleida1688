@@ -58,27 +58,24 @@
 
 输出意图类型和置信度（0-1之间的小数）。
 
-### 第4步：类目获取（调用插件，不自行预测）
+### 第4步：类目获取（必须调用插件）
 
-**不要自行猜测或预测类目**，直接调用 `dianleida.leima / getCategory` 插件获取1688平台的真实类目数据。
+⚠️ **强制要求：本步骤必须调用 `dianleida.leima / getCategory` 插件，禁止自行猜测类目。**
 
-**调用方式**：
-1. 调用 `dianleida.leima / getCategory` 插件，传入用户的关键词
-2. 插件会返回1688平台匹配的类目数据（包含 categoryId、categoryName、levelName 等）
-3. 将插件返回的原始数据**直接放入** JSON 的 `categoryTree` 字段
-4. 同时从插件返回数据中提取主类目信息，填入 `category` 字段
+**操作步骤**：
+1. **第一步：调用插件** — 使用 `dianleida.leima / getCategory` 插件，传入用户的关键词作为参数
+2. **第二步：读取返回** — 插件返回1688平台匹配的真实类目数据，包含 categoryId、categoryName、levelName 等字段
+3. **第三步：填入JSON** — 将插件返回的完整数据直接放入 `categoryTree` 字段（不要修改、不要精简）
+4. **第四步：提取主类目** — 从插件返回数据中提取信息填入 `category` 字段：
+   - `mainCategory`：插件返回的顶层类目名
+   - `subCategory`：插件返回的二级类目名（如有）
+   - `categoryId`：插件返回的类目ID
+   - `categoryKeywords`：从插件返回数据中提取的类目相关关键词
+   - `levelNames`：插件返回的 levelName 路径前缀（如 "箱包皮具>"）
 
-**category 字段填写规则**（从插件返回数据中提取）：
-- `mainCategory`：插件返回的顶层类目名
-- `subCategory`：插件返回的二级类目名（如有）
-- `categoryId`：插件返回的类目ID
-- `categoryKeywords`：从插件返回数据中提取的类目相关关键词
-- `levelNames`：插件返回的 levelName 路径前缀
-
-**如果插件调用失败或未返回数据**：
-- `category` 各字段填空字符串/空数组
-- `categoryTree` 填空数组
-- 不要自行猜测类目，留空即可
+**错误处理**：
+- 如果插件调用失败或返回为空，`category` 各字段填空字符串/空数组，`categoryTree` 填空数组
+- 即使插件失败也**不要自行猜测类目**，留空即可，前端会用搜索结果反推
 
 ### 第5步：关键词扩展
 
