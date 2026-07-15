@@ -71,7 +71,7 @@
 使用工具 `dianleida_leimu.getcategory`，传入参数：
 - `keyWord`：用户输入的搜索关键词（如"麻将包"）
 
-插件会返回如下格式的数据：
+插件返回数据格式如下：
 ```json
 {
   "msg": "成功",
@@ -83,17 +83,28 @@
 }
 ```
 
-**处理插件返回数据**：
-1. 读取 `result` 数组，每个元素包含 `category_name`（类目名）和 `category_id`（类目ID）
-2. 将 `result` 数组**原样**放入 JSON 的 `categoryTree` 字段
-3. 从 `result` 数组中提取信息填入 `category` 字段：
-   - `mainCategory`：取 result[0] 的 `category_name`
-   - `subCategory`：取 result[1] 的 `category_name`（如有）
-   - `categoryId`：取 result[0] 的 `category_id`
-   - `categoryKeywords`：提取所有 `category_name` 组成数组
-   - `levelNames`：将所有 `category_name` 用 ">" 拼接成路径前缀
+**关键：如何把插件返回数据填入最终JSON**
 
-**如果插件调用失败**：`category` 各字段填空，`categoryTree` 填空数组，不要自行猜测。
+插件调用成功后，你会收到上面的返回数据。你必须把返回的数据填入最终JSON输出：
+
+1. **categoryTree 字段**：把插件返回的 `result` 数组**完整复制**到 `categoryTree` 字段。不要留空！不要改字段名！直接把 `result` 的值复制过来。
+   - 插件返回 `result: [{category_name:"旅行包", category_id:"1223246004"}, ...]`
+   - 你的JSON输出就是 `"categoryTree": [{category_name:"旅行包", category_id:"1223246004"}, ...]`
+
+2. **category 字段**：从插件返回的 `result` 数组中提取：
+   - `mainCategory`：result[0] 的 category_name 值（如"旅行包、旅行袋"）
+   - `subCategory`：result[1] 的 category_name 值（如有）
+   - `categoryId`：result[0] 的 category_id 值（如"1223246004"）
+   - `categoryKeywords`：所有 category_name 组成数组
+   - `levelNames`：所有 category_name 用">"拼接（如"旅行包、旅行袋>妈咪包>"）
+
+**绝对禁止的行为**：
+- ❌ 调用了插件但不把数据填入JSON
+- ❌ 把 categoryTree 留空数组 []
+- ❌ 把 category 各字段留空字符串
+- ❌ 在 analysisSummary 中写"未调用成功类目插件"
+
+**如果插件真的调用失败**（返回错误或空数据），才填空。只要插件返回了数据，就必须填入JSON。
 
 ### 第5步：关键词扩展
 
