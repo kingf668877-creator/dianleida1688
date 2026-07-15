@@ -2146,48 +2146,6 @@ async function doSearch() {
       '搜索词：' + displaySearch + ' · 从1688实时获取 ' + products.length + ' 条商品数据',
       ['实时API', products.length + '件商品']
     );
-    
-    // 用商品返回的真实levelName反推类目，更新Step 4
-    const categoryStats = {};
-    for (const p of products) {
-      const raw = p._raw || {};
-      const levelName = raw.levelName || '';
-      if (levelName) {
-        categoryStats[levelName] = (categoryStats[levelName] || 0) + 1;
-      }
-    }
-    // 找出现次数最多的类目路径
-    let topCategory = '';
-    let topCount = 0;
-    for (const [cat, count] of Object.entries(categoryStats)) {
-      if (count > topCount) {
-        topCount = count;
-        topCategory = cat;
-      }
-    }
-    if (topCategory) {
-      // 解析类目路径，如 "箱包皮具>女士包袋>手提包"
-      const catParts = topCategory.split('>').filter(s => s.trim());
-      const mainCat = catParts[0] || '';
-      const subCat = catParts.length > 1 ? catParts[1] : '';
-      const allCats = Object.keys(categoryStats).sort((a, b) => categoryStats[b] - categoryStats[a]).slice(0, 5);
-      
-      // 更新Step 4的类目展示
-      const step4El = document.querySelectorAll('#ai-steps .ai-step')[3];
-      if (step4El) {
-        const titleEl = step4El.querySelector('.ai-step-title');
-        const detailEl = step4El.querySelector('.ai-step-detail');
-        const tokensEl = step4El.querySelector('.ai-step-tokens');
-        if (titleEl) titleEl.innerHTML = '📂 Step 4: 类目获取（1688真实类目）';
-        if (detailEl) detailEl.textContent = '真实类目：' + topCategory + '（' + topCount + '/' + products.length + '条商品属于此分类）· 数据来源：店雷达API返回的levelName';
-        if (tokensEl) {
-          tokensEl.innerHTML = allCats.map(cat => {
-            const parts = cat.split('>').filter(s => s.trim());
-            return '<span class="token">' + (parts[parts.length - 1] || cat) + '</span>';
-          }).join('');
-        }
-      }
-    }
   } else {
     updateStep(step8, '⚠️', 'Step 8: 商品搜索', 
       '暂未获取到商品数据，请稍后重试或更换关键词');
