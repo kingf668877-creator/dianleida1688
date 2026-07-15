@@ -62,6 +62,8 @@
 
 预测对应的1688商品类目。
 
+**调用 getCategory 插件获取类目数据**：在此步骤中，调用 `dianleida.leima / getCategory` 插件，传入用户的关键词，获取1688平台返回的类目树数据。将插件返回的类目信息整合到JSON输出的 `categoryTree` 字段中。
+
 **类目映射规则**（根据1688平台levelName类目路径）：
 
 | 关键词特征 | 类目名称 | levelName前缀 |
@@ -77,6 +79,8 @@
 **类目匹配优先级**：更长的关键词优先匹配。例："钓鱼工具包"中"钓鱼"（2字）优先于"包"（1字），应归到运动户外而非箱包皮具。
 
 **注意**：categoryId 字段填写参考值，但前端实际用 levelName 做类目过滤，不依赖 categoryId。
+
+**categoryTree 字段**：将 getCategory 插件返回的完整类目树数据放入此字段，前端会展示为可折叠的类目树。如果插件未返回数据，则填空数组。
 
 ### 第5步：关键词扩展
 
@@ -149,6 +153,21 @@
     "categoryKeywords": ["女包", "箱包"],
     "levelNames": ["箱包皮具>"]
   },
+  "categoryTree": [
+    {
+      "categoryId": "1001",
+      "categoryName": "箱包皮具",
+      "levelName": "箱包皮具",
+      "children": [
+        {
+          "categoryId": "100101",
+          "categoryName": "女士包袋",
+          "levelName": "箱包皮具>女士包袋",
+          "children": []
+        }
+      ]
+    }
+  ],
   "coreProduct": "麻将包",
   "modifiers": {
     "style": ["麻将图案", "创意"],

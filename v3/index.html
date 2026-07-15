@@ -2008,11 +2008,32 @@ async function doSearch() {
   // ===== Step 4: 类目预测 =====
   await new Promise(r => setTimeout(r, 250));
   if (aiResult.category && aiResult.category.mainCategory) {
-    addStep('📂', 'Step 4: 类目预测', 
-      '预测类目：' + aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '') +
-      (aiResult.category.categoryId ? '（ID: ' + aiResult.category.categoryId + '）' : ''),
-      aiResult.category.categoryKeywords || []
-    );
+    let catDetail = '预测类目：' + aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '') +
+      (aiResult.category.categoryId ? '（ID: ' + aiResult.category.categoryId + '）' : '');
+    
+    // 如果有类目树数据，展示类目树路径
+    if (aiResult.categoryTree && Array.isArray(aiResult.categoryTree) && aiResult.categoryTree.length > 0) {
+      catDetail += ' · 类目树来源：getCategory插件';
+      // 收集所有类目路径
+      const treeTags = [];
+      function collectTreePaths(nodes, prefix) {
+        for (const node of nodes) {
+          const name = node.categoryName || node.name || '';
+          if (name) treeTags.push(name);
+          if (node.children && node.children.length > 0) {
+            collectTreePaths(node.children, prefix + name + '>');
+          }
+        }
+      }
+      collectTreePaths(aiResult.categoryTree, '');
+      if (treeTags.length > 0) {
+        addStep('📂', 'Step 4: 类目预测', catDetail, treeTags.slice(0, 6));
+      } else {
+        addStep('📂', 'Step 4: 类目预测', catDetail, aiResult.category.categoryKeywords || []);
+      }
+    } else {
+      addStep('📂', 'Step 4: 类目预测', catDetail, aiResult.category.categoryKeywords || []);
+    }
   } else {
     addStep('📂', 'Step 4: 类目预测', '未匹配到明确类目，将进行全量搜索');
   }
