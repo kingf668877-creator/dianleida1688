@@ -58,24 +58,47 @@
 
 输出意图类型和置信度（0-1之间的小数）。
 
-### 第4步：类目获取（必须调用插件）
+### 第4步：类目获取（必须调用 getCategory 插件）
 
-⚠️ **强制要求：本步骤必须调用 `dianleida.leima / getCategory` 插件，禁止自行猜测类目。**
+⚠️ **强制要求：本步骤必须调用 getCategory 插件，禁止自行猜测类目。不调用插件直接输出类目是严重错误。**
+
+**插件信息**：
+- 插件名称：`getCategory`（店雷达类目获取）
+- 输入参数：`keyWord`（String类型，必填，传入用户输入的搜索关键词）
+- 输出格式：
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": [
+    { "category_name": "箱包皮具", "category_id": "1012" },
+    { "category_name": "女士包袋", "category_id": "101201" }
+  ]
+}
+```
 
 **操作步骤**：
-1. **第一步：调用插件** — 使用 `dianleida.leima / getCategory` 插件，传入用户的关键词作为参数
-2. **第二步：读取返回** — 插件返回1688平台匹配的真实类目数据，包含 categoryId、categoryName、levelName 等字段
-3. **第三步：填入JSON** — 将插件返回的完整数据直接放入 `categoryTree` 字段（不要修改、不要精简）
-4. **第四步：提取主类目** — 从插件返回数据中提取信息填入 `category` 字段：
-   - `mainCategory`：插件返回的顶层类目名
-   - `subCategory`：插件返回的二级类目名（如有）
-   - `categoryId`：插件返回的类目ID
-   - `categoryKeywords`：从插件返回数据中提取的类目相关关键词
-   - `levelNames`：插件返回的 levelName 路径前缀（如 "箱包皮具>"）
+1. **调用插件** — 调用 `getCategory` 插件，将用户输入的关键词传给 `keyWord` 参数
+2. **读取返回** — 读取插件返回的 `result` 数组，每个元素包含 `category_name`（类目名）和 `category_id`（类目ID）
+3. **填入 categoryTree** — 将插件返回的 `result` 数组直接放入 JSON 的 `categoryTree` 字段
+4. **填入 category** — 从插件返回数据中提取信息填入 `category` 字段：
+   - `mainCategory`：取 result 数组中第一个元素的 `category_name`
+   - `subCategory`：取 result 数组中第二个元素的 `category_name`（如有）
+   - `categoryId`：取 result 数组中第一个元素的 `category_id`
+   - `categoryKeywords`：从 result 数组中提取所有 `category_name` 组成数组
+   - `levelNames`：将 result 数组中的 `category_name` 用 ">" 拼接成路径前缀（如 "箱包皮具>女士包袋>"）
+
+**categoryTree 字段格式**（直接使用插件返回的字段名）：
+```json
+"categoryTree": [
+  { "category_name": "箱包皮具", "category_id": "1012" },
+  { "category_name": "女士包袋", "category_id": "101201" }
+]
+```
 
 **错误处理**：
 - 如果插件调用失败或返回为空，`category` 各字段填空字符串/空数组，`categoryTree` 填空数组
-- 即使插件失败也**不要自行猜测类目**，留空即可，前端会用搜索结果反推
+- 即使插件失败也**不要自行猜测类目**，留空即可
 
 ### 第5步：关键词扩展
 
@@ -144,26 +167,14 @@
   "category": {
     "mainCategory": "箱包皮具",
     "subCategory": "女士包袋",
-    "categoryId": "1001",
-    "categoryKeywords": ["女包", "箱包"],
-    "levelNames": ["箱包皮具>"]
+    "categoryId": "1012",
+    "categoryKeywords": ["箱包皮具", "女士包袋"],
+    "levelNames": ["箱包皮具>女士包袋>"]
   },
   "categoryTree": [
-    {
-      "categoryId": "1001",
-      "categoryName": "箱包皮具",
-      "levelName": "箱包皮具",
-      "children": [
-        {
-          "categoryId": "100101",
-          "categoryName": "女士包袋",
-          "levelName": "箱包皮具>女士包袋",
-          "children": []
-        }
-      ]
-    }
+    { "category_name": "箱包皮具", "category_id": "1012" },
+    { "category_name": "女士包袋", "category_id": "101201" }
   ],
-  "categoryNote": "以上类目数据由 getCategory 插件返回，非智能体自行预测",
   "coreProduct": "麻将包",
   "modifiers": {
     "style": ["麻将图案", "创意"],
