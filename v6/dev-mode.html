@@ -783,27 +783,7 @@
       <div class="panel-tab" onclick="switchLeftTab('slices', this)">切图</div>
     </div>
     <div class="version-list" id="layersPanel">
-      <div class="version-group">
-        <div class="version-folder" onclick="toggleFolder(this)">
-          <span class="arrow">▾</span> V1.0.0
-        </div>
-        <div class="version-item active" onclick="selectVersion(this, 'ai-analysis.html')">AI智能分析页面</div>
-      </div>
-      <div class="version-group">
-        <div class="version-folder collapsed" onclick="toggleFolder(this)">
-          <span class="arrow">▾</span> V1.0.1
-        </div>
-      </div>
-      <div class="version-group">
-        <div class="version-folder collapsed" onclick="toggleFolder(this)">
-          <span class="arrow">▾</span> V1.0.2
-        </div>
-      </div>
-      <div class="version-group">
-        <div class="version-folder collapsed" onclick="toggleFolder(this)">
-          <span class="arrow">▾</span> 3种风格对比
-        </div>
-      </div>
+      <!-- 动态生成版本列表 -->
     </div>
   </div>
 
@@ -1006,7 +986,84 @@ var currentCSS = '';
 var currentBgColor = {hex: '#000000', rgba: 'rgba(0,0,0,1)', type: 'transparent'};
 var currentTextColor = {hex: '#000000', rgba: 'rgba(0,0,0,1)'};
 
+// ====== 版本数据（可动态新增） ======
+var versionData = [
+  {
+    name: 'V2.9.0',
+    expanded: true,
+    pages: [
+      { name: 'AI智能分析页面', file: 'ai-analysis.html', active: true },
+      { name: '5种风格对比', file: 'style-compare.html', active: false }
+    ]
+  }
+];
+
+// 新增版本（可随时调用）
+function addVersion(name, pages) {
+  versionData.unshift({
+    name: name,
+    expanded: false,
+    pages: pages || []
+  });
+  renderVersionList();
+}
+
+// 渲染版本列表
+function renderVersionList() {
+  var panel = document.getElementById('layersPanel');
+  var html = '';
+  versionData.forEach(function(ver, vIdx) {
+    var folderClass = ver.expanded ? 'version-folder' : 'version-folder collapsed';
+    html += '<div class="version-group">';
+    html += '<div class="' + folderClass + '" onclick="toggleFolder(this, ' + vIdx + ')">';
+    html += '<span class="arrow">▾</span> ' + ver.name;
+    html += '</div>';
+    if (ver.expanded) {
+      ver.pages.forEach(function(page, pIdx) {
+        var itemClass = page.active ? 'version-item active' : 'version-item';
+        html += '<div class="' + itemClass + '" onclick="selectVersion(this, ' + vIdx + ', ' + pIdx + ')">' + page.name + '</div>';
+      });
+    }
+    html += '</div>';
+  });
+  panel.innerHTML = html;
+}
+
+// 切换文件夹展开/收起
+function toggleFolder(el, vIdx) {
+  versionData[vIdx].expanded = !versionData[vIdx].expanded;
+  renderVersionList();
+}
+
+// 选中版本页面
+function selectVersion(el, vIdx, pIdx) {
+  // 清除所有 active
+  versionData.forEach(function(v) {
+    v.pages.forEach(function(p) { p.active = false; });
+  });
+  versionData[vIdx].pages[pIdx].active = true;
+  var page = versionData[vIdx].pages[pIdx];
+
+  // 切换 iframe
+  var frame = document.getElementById('designFrame');
+  frame.src = page.file;
+
+  // 更新标题
+  document.getElementById('pageTitle').textContent = page.name;
+
+  // 重新渲染
+  renderVersionList();
+
+  // 重置选中状态
+  selectedEl = null;
+  document.getElementById('panelEmpty').style.display = 'flex';
+  document.getElementById('panelBody').style.display = 'none';
+}
+
 // ====== 初始化 ======
+// 先渲染版本列表
+renderVersionList();
+
 iframe.onload = function() {
   try {
     iDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -1749,23 +1806,6 @@ function switchMode(mode, el) {
 function switchLeftTab(tab, el) {
   document.querySelectorAll('.panel-tab').forEach(function(t) { t.classList.remove('active'); });
   el.classList.add('active');
-}
-
-// ====== 文件夹折叠 ======
-function toggleFolder(el) {
-  el.classList.toggle('collapsed');
-  var items = el.parentElement.querySelectorAll('.version-item');
-  items.forEach(function(item) {
-    item.style.display = el.classList.contains('collapsed') ? 'none' : '';
-  });
-}
-
-// ====== 选择版本 ======
-function selectVersion(el, url) {
-  document.querySelectorAll('.version-item').forEach(function(v) { v.classList.remove('active'); });
-  el.classList.add('active');
-  iframe.src = url;
-  document.getElementById('pageTitle').textContent = el.textContent.trim();
 }
 
 // ====== 缩放 ======
