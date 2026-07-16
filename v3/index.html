@@ -1372,61 +1372,49 @@ function getCategoryLevelNames(categoryName) {
   return cfg ? cfg.levelNames : [];
 }
 
-// ===== 从categoryTree派生类目过滤信息（基于getCategory插件返回数据）=====
+// ===== 从categoryTree派生类目过滤信息（基于getCategory插件返回的类目ID+名称）=====
+// 店雷达API返回的商品不含categoryId字段，只有levelName（类目名称路径如"运动户外>垂钓用品>钓鱼包"）
+// 因此通过getCategory插件返回的category_id对应的category_name，去精确匹配商品的levelName各级分类
 function deriveCategoryFilterFromTree(categoryTree) {
   if (!categoryTree || !Array.isArray(categoryTree) || categoryTree.length === 0) return null;
   
+  // 收集所有类目ID和对应的名称
+  const categoryIdMap = {};  // {category_id: category_name}
+  const categoryNames = [];   // 所有类目名称（拆分顿号后）
   const allowedPrefixes = new Set();
-  const categoryKeywords = [];
   
   for (const item of categoryTree) {
     const name = item.category_name || item.categoryName || '';
+    const id = item.category_id || item.categoryId || '';
     if (!name) continue;
     
-    // Split by 、 to get individual category names
-    const parts = name.split('、').map(p => p.trim()).filter(p => p);
-    categoryKeywords.push(...parts);
+    // 记录ID→名称映射
+    if (id) categoryIdMap[id] = name;
     
-    // Derive parent category from category name patterns
-    if (name.match(/包|袋|箱包|皮具/)) {
-      allowedPrefixes.add('箱包皮具');
-    }
-    if (name.match(/女装|连衣裙|半身裙|女外套|女t恤|女裤/)) {
-      allowedPrefixes.add('女装');
-    }
-    if (name.match(/男装|男士外套|男士t恤|男裤/)) {
-      allowedPrefixes.add('男装');
-    }
-    if (name.match(/童装|儿童/)) {
-      allowedPrefixes.add('童装');
-    }
-    if (name.match(/钓鱼|渔具|垂钓|路亚|户外|运动|健身/)) {
-      allowedPrefixes.add('运动户外');
-    }
-    if (name.match(/手机壳|手机套|手机配件|数码|电脑/)) {
-      allowedPrefixes.add('数码、电脑');
-    }
-    if (name.match(/饰品|耳环|项链|手链|戒指|手镯|胸针/)) {
-      allowedPrefixes.add('饰品');
-    }
-    if (name.match(/家居|收纳|厨房|卫浴|清洁|日用/)) {
-      allowedPrefixes.add('家居百货');
-      allowedPrefixes.add('家纺家饰');
-    }
-    if (name.match(/食品|零食|饮料|茶叶/)) {
-      allowedPrefixes.add('食品、饮料');
-    }
-    if (name.match(/玩具|益智/)) {
-      allowedPrefixes.add('玩具');
-    }
-    if (name.match(/办公|文具/)) {
-      allowedPrefixes.add('办公、文化');
-    }
+    // 拆分顿号（如"旅行包、旅行袋"→["旅行包","旅行袋"]）
+    const parts = name.split('、').map(p => p.trim()).filter(p => p);
+    categoryNames.push(...parts);
+    
+    // 根据类目名称推导所属的一级类目前缀（用于levelName匹配）
+    if (name.match(/包|袋|箱包|皮具/)) allowedPrefixes.add('箱包皮具');
+    if (name.match(/女装|连衣裙|半身裙|女外套|女t恤|女裤/)) allowedPrefixes.add('女装');
+    if (name.match(/男装|男士外套|男士t恤|男裤/)) allowedPrefixes.add('男装');
+    if (name.match(/童装|儿童/)) allowedPrefixes.add('童装');
+    if (name.match(/钓鱼|渔具|垂钓|路亚|户外|运动|健身/)) allowedPrefixes.add('运动户外');
+    if (name.match(/手机壳|手机套|手机配件|数码|电脑/)) allowedPrefixes.add('数码、电脑');
+    if (name.match(/饰品|耳环|项链|手链|戒指|手镯|胸针/)) allowedPrefixes.add('饰品');
+    if (name.match(/服饰配件/)) allowedPrefixes.add('服饰配件、饰品');
+    if (name.match(/家居|收纳|厨房|卫浴|清洁|日用/)) { allowedPrefixes.add('家居百货'); allowedPrefixes.add('家纺家饰'); }
+    if (name.match(/食品|零食|饮料|茶叶/)) allowedPrefixes.add('食品、饮料');
+    if (name.match(/玩具|益智/)) allowedPrefixes.add('玩具');
+    if (name.match(/办公|文具/)) allowedPrefixes.add('办公、文化');
+    if (name.match(/鞋|靴/)) allowedPrefixes.add('鞋');
   }
   
   return {
-    allowedPrefixes: Array.from(allowedPrefixes),
-    categoryKeywords: categoryKeywords
+    allowedPrefixes: Array.from(allowedPrefixes),  // 一级类目前缀，如["箱包皮具"]
+    categoryNames: categoryNames,                    // 所有类目名称，如["钓鱼包","其他垂钓用品"]
+    categoryIdMap: categoryIdMap                     // ID→名称映射，如{"1045354":"钓鱼包"}
   };
 }
 
@@ -1479,16 +1467,25 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     }
     if (inBlacklist) continue;
     
-    // 类目路径匹配（优先使用categoryTree严格过滤）
+    // 类目路径匹配（使用getCategory插件返回的类目ID对应名称进行精确过滤）
+    // 插件返回 category_id + category_name → 通过名称匹配商品的 levelName 各级分类
     let categoryMatch = true;
     if (levelName) {
       if (categoryTreeFilter && categoryTreeFilter.allowedPrefixes.length > 0) {
-        // 使用getCategory插件返回的类目数据进行严格过滤
+        // 将 levelName 按 ">" 拆分为各级类目（如 "运动户外>垂钓用品>钓鱼包" → ["运动户外","垂钓用品","钓鱼包"]）
+        const levelParts = levelName.split('>').map(s => s.trim()).filter(s => s);
+        
+        // 匹配方式1：一级类目前缀匹配（如 levelName 以 "箱包皮具" 或 "运动户外" 开头）
         categoryMatch = categoryTreeFilter.allowedPrefixes.some(prefix => levelName.startsWith(prefix));
-        // 如果类目前缀不匹配，检查是否包含类目关键词
-        if (!categoryMatch && categoryTreeFilter.categoryKeywords.length > 0) {
-          categoryMatch = categoryTreeFilter.categoryKeywords.some(kw => levelName.includes(kw));
+        
+        // 匹配方式2：插件返回的类目名精确匹配 levelName 的某一级
+        // （如插件返回"钓鱼包"(ID:1045354)，商品的 levelName 第三级是"钓鱼包"）
+        if (!categoryMatch && categoryTreeFilter.categoryNames.length > 0) {
+          categoryMatch = categoryTreeFilter.categoryNames.some(catName => 
+            levelParts.some(part => part === catName || part.includes(catName))
+          );
         }
+        
         // 有categoryTree时，严格排除不在目标类目中的商品
         if (!categoryMatch) continue;
       } else if (levelNames.length > 0) {
@@ -1793,8 +1790,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       fallbackKeywords = aiResult.category.categoryKeywords;
     }
     // 如果有categoryTree，用类目名补充兜底搜索词
-    if (categoryTreeFilter && categoryTreeFilter.categoryKeywords.length > 0) {
-      fallbackKeywords = [...fallbackKeywords, ...categoryTreeFilter.categoryKeywords.slice(0, 3)];
+    if (categoryTreeFilter && categoryTreeFilter.categoryNames.length > 0) {
+      fallbackKeywords = [...fallbackKeywords, ...categoryTreeFilter.categoryNames.slice(0, 3)];
     }
     
     if (fallbackKeywords.length > 0) {
