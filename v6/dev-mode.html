@@ -148,6 +148,13 @@
     height: calc(100vh - 44px);
   }
 
+  /* 标注主区域（左侧导航栏右侧的三栏区域） */
+  .dev-main {
+    flex: 1;
+    display: flex;
+    min-width: 0;
+  }
+
   /* ====== 左侧面板 ====== */
   .left-panel {
     width: 240px;
@@ -534,6 +541,175 @@
     color: var(--lanhu-text-light);
     font-family: 'JetBrains Mono', monospace;
   }
+
+  /* ====== 左侧导航栏（深色） ====== */
+  .sidebar {
+    width: 220px;
+    background: #1e1e2e;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .sidebar-header {
+    padding: 16px 14px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar-logo-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #2ed573, #1abc6c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .sidebar-logo-text {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .new-group-btn {
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all .2s;
+    border: 1px solid rgba(255,255,255,0.08);
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .new-group-btn:hover {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+  }
+
+  .sidebar-section { margin-bottom: 6px; }
+
+  .sidebar-section-title {
+    padding: 10px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-group-title {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .2s;
+  }
+
+  .sidebar-group-title:hover { color: rgba(255,255,255,0.85); }
+
+  .sidebar-page-item {
+    padding: 7px 14px 7px 32px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s;
+    position: relative;
+  }
+
+  .sidebar-page-item:hover {
+    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .sidebar-page-item.active {
+    color: #fff;
+    background: rgba(46,213,115,0.12);
+    font-weight: 600;
+  }
+
+  .sidebar-page-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: #2ed573;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .page-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .icon-pc { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .icon-style { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .icon-ozon { background: linear-gradient(135deg, #2ed573, #1abc6c); }
+  .icon-html { background: linear-gradient(135deg, #ff9500, #ff6b35); }
+  .icon-css { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .icon-js { background: linear-gradient(135deg, #f093fb, #a855f7); }
+  .icon-dev { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+
+  .page-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .page-tag {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -565,8 +741,61 @@
 
 <!-- 主体 -->
 <div class="main">
-  <!-- 左侧面板 -->
-  <div class="left-panel">
+  <!-- 左侧导航栏 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">雷</div>
+        <div class="sidebar-logo-text">店雷达</div>
+      </div>
+      <button class="new-group-btn">+ 新建</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">设计页面</div>
+      <div class="sidebar-group-title" onclick="toggleSidebarGroup(this)">
+        <span>▾</span> 1688产品库
+      </div>
+      <div class="sidebar-page-item" onclick="navigateTo('ai-analysis.html', this)">
+        <div class="page-icon icon-pc">PC</div>
+        <span class="page-label">AI智能分析页面</span>
+      </div>
+      <div class="sidebar-page-item" onclick="navigateTo('style-compare.html', this)">
+        <div class="page-icon icon-style">比</div>
+        <span class="page-label">3种风格对比</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">开发代码</div>
+      <div class="sidebar-page-item" onclick="navigateTo('code-html.html', this)">
+        <div class="page-icon icon-html">H</div>
+        <span class="page-label">HTML 代码</span>
+      </div>
+      <div class="sidebar-page-item" onclick="navigateTo('code-css.html', this)">
+        <div class="page-icon icon-css">C</div>
+        <span class="page-label">CSS 代码</span>
+      </div>
+      <div class="sidebar-page-item" onclick="navigateTo('code-js.html', this)">
+        <div class="page-icon icon-js">J</div>
+        <span class="page-label">JS 代码</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">设计工具</div>
+      <div class="sidebar-page-item active" onclick="navigateTo('dev-mode.html', this)">
+        <div class="page-icon icon-dev">F</div>
+        <span class="page-label">前端标注模式</span>
+        <span class="page-tag">HOT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 标注主区域 -->
+  <div class="dev-main">
+    <!-- 左侧面板 -->
+    <div class="left-panel">
     <div class="left-panel-header">
       <span class="title">全部</span>
       <span class="search">🔍</span>
@@ -759,6 +988,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <!-- Toast -->
@@ -1520,6 +1750,25 @@ function showToast(msg) {
   showToast.timer = setTimeout(function() {
     toast.classList.remove('show');
   }, 1500);
+}
+
+// ====== 左侧导航栏跳转 ======
+function navigateTo(page, el) {
+  if (page === 'dev-mode.html') return;
+  window.location.href = page;
+}
+
+function toggleSidebarGroup(el) {
+  var arrow = el.querySelector('span');
+  var parent = el.parentElement;
+  var items = parent.querySelectorAll('.sidebar-page-item');
+  if (arrow.textContent === '▾') {
+    arrow.textContent = '▸';
+    items.forEach(function(item) { item.style.display = 'none'; });
+  } else {
+    arrow.textContent = '▾';
+    items.forEach(function(item) { item.style.display = 'flex'; });
+  }
 }
 
 // ====== 模式切换 ======
