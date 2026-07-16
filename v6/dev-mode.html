@@ -246,11 +246,14 @@
   .version-folder.collapsed .arrow { transform: rotate(-90deg); }
 
   .version-item {
-    padding: 6px 14px 6px 32px;
+    padding: 7px 14px 7px 32px;
     font-size: 13px;
     color: var(--lanhu-text-sub);
     cursor: pointer;
     transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .version-item:hover {
@@ -262,6 +265,19 @@
     background: var(--lanhu-blue-light);
     color: var(--lanhu-blue);
     font-weight: 500;
+  }
+
+  .ver-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
   }
 
   /* ====== 中间画布 ====== */
@@ -805,7 +821,7 @@
 
     <div class="sidebar-section">
       <div class="sidebar-section-title">限时特惠活动</div>
-      <div class="sidebar-page-item" onclick="navigateTo('ai-analysis.html', this)">
+      <div class="sidebar-page-item active" onclick="navigateTo('PC端价格展示', this)">
         <div class="page-icon icon-pc">P</div>
         <span class="page-label">PC端价格展示</span>
       </div>
@@ -813,7 +829,7 @@
 
     <div class="sidebar-section">
       <div class="sidebar-section-title">风格方案</div>
-      <div class="sidebar-page-item" onclick="navigateTo('style-compare.html', this)">
+      <div class="sidebar-page-item" onclick="navigateTo('5种风格对比', this)">
         <div class="page-icon icon-style">S</div>
         <span class="page-label">5种风格对比</span>
       </div>
@@ -821,7 +837,7 @@
 
     <div class="sidebar-section">
       <div class="sidebar-section-title">OZON会员套餐</div>
-      <div class="sidebar-page-item" onclick="navigateTo('ai-analysis.html', this)">
+      <div class="sidebar-page-item" onclick="navigateTo('OZON会员价格', this)">
         <div class="page-icon icon-ozon">O</div>
         <span class="page-label">OZON会员价格</span>
       </div>
@@ -829,19 +845,19 @@
 
     <div class="sidebar-section">
       <div class="sidebar-section-title">前端开发</div>
-      <div class="sidebar-page-item" onclick="navigateTo('code-html.html', this)">
+      <div class="sidebar-page-item" onclick="navigateTo('HTML 代码', this)">
         <div class="page-icon icon-html">H</div>
         <span class="page-label">HTML 代码</span>
       </div>
-      <div class="sidebar-page-item" onclick="navigateTo('code-css.html', this)">
+      <div class="sidebar-page-item" onclick="navigateTo('CSS 代码', this)">
         <div class="page-icon icon-css">C</div>
         <span class="page-label">CSS 代码</span>
       </div>
-      <div class="sidebar-page-item" onclick="navigateTo('code-js.html', this)">
+      <div class="sidebar-page-item" onclick="navigateTo('JS 代码', this)">
         <div class="page-icon icon-js">J</div>
         <span class="page-label">JS 代码</span>
       </div>
-      <div class="sidebar-page-item active" onclick="navigateTo('dev-mode.html', this)">
+      <div class="sidebar-page-item" onclick="navigateTo('前端标注模式', this)">
         <div class="page-icon icon-dev">F</div>
         <span class="page-label">前端标注模式</span>
       </div>
@@ -858,6 +874,21 @@
     <!-- 折叠展开按钮（收起时显示） -->
     <div class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="toggleSidebar()" style="display:none;">
       <span>»</span>
+    </div>
+
+    <!-- 左侧版本面板 -->
+    <div class="left-panel">
+      <div class="left-panel-header">
+        <span class="title">全部</span>
+        <span class="search">🔍</span>
+      </div>
+      <div class="panel-tabs">
+        <div class="panel-tab active" onclick="switchLeftTab('layers', this)">图层</div>
+        <div class="panel-tab" onclick="switchLeftTab('slices', this)">切图</div>
+      </div>
+      <div class="version-list" id="layersPanel">
+        <!-- 动态生成版本列表 -->
+      </div>
     </div>
 
   <!-- 中间画布 -->
@@ -1065,8 +1096,13 @@ var versionData = [
     name: 'V2.9.0',
     expanded: true,
     pages: [
-      { name: 'AI智能分析页面', file: 'ai-analysis.html', active: true },
-      { name: '5种风格对比', file: 'style-compare.html', active: false }
+      { name: 'PC端价格展示', file: 'ai-analysis.html', active: true, icon: 'P', iconClass: 'icon-pc' },
+      { name: '5种风格对比', file: 'style-compare.html', active: false, icon: 'S', iconClass: 'icon-style' },
+      { name: 'OZON会员价格', file: 'ai-analysis.html', active: false, icon: 'O', iconClass: 'icon-ozon' },
+      { name: 'HTML 代码', file: 'code-html.html', active: false, icon: 'H', iconClass: 'icon-html' },
+      { name: 'CSS 代码', file: 'code-css.html', active: false, icon: 'C', iconClass: 'icon-css' },
+      { name: 'JS 代码', file: 'code-js.html', active: false, icon: 'J', iconClass: 'icon-js' },
+      { name: '前端标注模式', file: 'dev-mode.html', active: false, icon: 'F', iconClass: 'icon-dev' }
     ]
   }
 ];
@@ -1094,7 +1130,8 @@ function renderVersionList() {
     if (ver.expanded) {
       ver.pages.forEach(function(page, pIdx) {
         var itemClass = page.active ? 'version-item active' : 'version-item';
-        html += '<div class="' + itemClass + '" onclick="selectVersion(this, ' + vIdx + ', ' + pIdx + ')">' + page.name + '</div>';
+        var iconHtml = page.icon ? '<span class="ver-icon ' + (page.iconClass || '') + '">' + page.icon + '</span>' : '';
+        html += '<div class="' + itemClass + '" onclick="selectVersion(this, ' + vIdx + ', ' + pIdx + ')">' + iconHtml + page.name + '</div>';
       });
     }
     html += '</div>';
@@ -1123,6 +1160,16 @@ function selectVersion(el, vIdx, pIdx) {
 
   // 更新标题
   document.getElementById('pageTitle').textContent = page.name;
+
+  // 同步左侧导航栏选中状态
+  document.querySelectorAll('.sidebar-page-item').forEach(function(item) {
+    var label = item.querySelector('.page-label');
+    if (label && label.textContent === page.name) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
 
   // 重新渲染
   renderVersionList();
@@ -1861,9 +1908,21 @@ function showToast(msg) {
 }
 
 // ====== 左侧导航栏跳转 ======
-function navigateTo(page, el) {
-  if (page === 'dev-mode.html') return;
-  window.location.href = page;
+function navigateTo(pageName, el) {
+  // 在版本数据中查找对应的页面并切换
+  for (var v = 0; v < versionData.length; v++) {
+    for (var p = 0; p < versionData[v].pages.length; p++) {
+      if (versionData[v].pages[p].name === pageName) {
+        selectVersion(null, v, p);
+        // 更新左侧选中状态
+        document.querySelectorAll('.sidebar-page-item').forEach(function(item) {
+          item.classList.remove('active');
+        });
+        if (el) el.classList.add('active');
+        return;
+      }
+    }
+  }
 }
 
 // ====== 左侧导航栏折叠/展开 ======
