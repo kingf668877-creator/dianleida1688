@@ -153,6 +153,7 @@
     flex: 1;
     display: flex;
     min-width: 0;
+    position: relative;
   }
 
   /* ====== 左侧面板 ====== */
@@ -684,6 +685,83 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  /* 折叠按钮 */
+  .sidebar-collapse {
+    margin-top: auto;
+    padding: 10px 16px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.4);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    transition: all .2s;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .sidebar-collapse:hover {
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .collapse-icon {
+    font-size: 16px;
+    font-weight: 300;
+  }
+
+  /* 收起状态 */
+  .sidebar.collapsed {
+    width: 56px;
+  }
+
+  .sidebar.collapsed .sidebar-logo-text,
+  .sidebar.collapsed .new-group-btn,
+  .sidebar.collapsed .sidebar-section-title,
+  .sidebar.collapsed .page-label,
+  .sidebar.collapsed .sidebar-collapse {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-page-item {
+    justify-content: center;
+    padding: 10px 0;
+  }
+
+  .sidebar.collapsed .sidebar-header {
+    padding: 14px 0 12px;
+    justify-content: center;
+  }
+
+  .sidebar.collapsed .sidebar-logo {
+    justify-content: center;
+  }
+
+  /* 展开按钮（收起时显示在画布上） */
+  .sidebar-expand-btn {
+    position: absolute;
+    left: 56px;
+    top: 12px;
+    width: 24px;
+    height: 24px;
+    background: #fff;
+    border: 1px solid var(--lanhu-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 50;
+    color: var(--lanhu-text-sub);
+    font-size: 14px;
+    transition: all .2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .sidebar-expand-btn:hover {
+    color: var(--lanhu-blue);
+    border-color: var(--lanhu-blue);
+  }
 </style>
 </head>
 <body>
@@ -716,7 +794,7 @@
 <!-- 主体 -->
 <div class="main">
   <!-- 左侧导航栏 -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">店</div>
@@ -768,24 +846,19 @@
         <span class="page-label">前端标注模式</span>
       </div>
     </div>
+
+    <!-- 折叠按钮 -->
+    <div class="sidebar-collapse" onclick="toggleSidebar()">
+      <span class="collapse-icon">«</span>
+    </div>
   </div>
 
   <!-- 标注主区域 -->
   <div class="dev-main">
-    <!-- 左侧面板 -->
-    <div class="left-panel">
-    <div class="left-panel-header">
-      <span class="title">全部</span>
-      <span class="search">🔍</span>
+    <!-- 折叠展开按钮（收起时显示） -->
+    <div class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="toggleSidebar()" style="display:none;">
+      <span>»</span>
     </div>
-    <div class="panel-tabs">
-      <div class="panel-tab active" onclick="switchLeftTab('layers', this)">图层</div>
-      <div class="panel-tab" onclick="switchLeftTab('slices', this)">切图</div>
-    </div>
-    <div class="version-list" id="layersPanel">
-      <!-- 动态生成版本列表 -->
-    </div>
-  </div>
 
   <!-- 中间画布 -->
   <div class="canvas-wrap" id="canvasWrap">
@@ -1791,6 +1864,21 @@ function showToast(msg) {
 function navigateTo(page, el) {
   if (page === 'dev-mode.html') return;
   window.location.href = page;
+}
+
+// ====== 左侧导航栏折叠/展开 ======
+var sidebarCollapsed = false;
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  var sidebar = document.getElementById('sidebar');
+  var expandBtn = document.getElementById('sidebarExpandBtn');
+  if (sidebarCollapsed) {
+    sidebar.classList.add('collapsed');
+    expandBtn.style.display = 'flex';
+  } else {
+    sidebar.classList.remove('collapsed');
+    expandBtn.style.display = 'none';
+  }
 }
 
 // ====== 模式切换 ======
