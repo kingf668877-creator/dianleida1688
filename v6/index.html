@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店雷达 - 设计稿</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f5f7fa;
+    color: #1a1a2e;
+    font-size: 14px;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ========== 顶部栏 ========== */
+  .top-bar {
+    height: 48px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f5;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+
+  .top-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .back-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+
+  .back-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .breadcrumbs .sep {
+    color: #d1d5db;
+  }
+
+  .breadcrumbs .current {
+    color: #1f2937;
+    font-weight: 700;
+  }
+
+  .top-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+
+  .top-icon-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+
+  .share-btn {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ff9500, #ff6b35);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .share-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.35);
+  }
+
+  /* ========== 主布局 ========== */
+  .main-layout {
+    display: flex;
+    height: calc(100vh - 48px);
+    margin-top: 48px;
+  }
+
+  /* ========== 左侧边栏 ========== */
+  .sidebar {
+    width: 240px;
+    background: #1e1e2e;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    padding: 20px 16px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sidebar-logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2ed573, #1abc6c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+  }
+
+  .sidebar-logo-text {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .new-group-btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .new-group-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+
+  .sidebar-section {
+    margin-bottom: 8px;
+  }
+
+  .sidebar-section-title {
+    padding: 12px 16px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-group-title {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+
+  .sidebar-group-title:hover {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .sidebar-page-item {
+    padding: 10px 16px 10px 36px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .sidebar-page-item:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .sidebar-page-item.active {
+    color: #fff;
+    background: rgba(46, 213, 115, 0.15);
+    font-weight: 600;
+  }
+
+  .sidebar-page-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: #2ed573;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .page-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .icon-pc { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .icon-style { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .icon-ozon { background: linear-gradient(135deg, #2ed573, #1abc6c); }
+  .icon-html { background: linear-gradient(135deg, #ff9500, #ff6b35); }
+  .icon-css { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .icon-js { background: linear-gradient(135deg, #f093fb, #a855f7); }
+  .icon-dev { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+
+  .page-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .page-tag {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .page-tag.new {
+    background: rgba(46, 213, 115, 0.25);
+    color: #4ade80;
+  }
+
+  /* ========== 中间面板（页面列表） ========== */
+  .page-panel {
+    width: 280px;
+    background: #fff;
+    border-right: 1px solid #f0f0f5;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .page-panel-header {
+    padding: 16px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    border-bottom: 1px solid #f0f0f5;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+  }
+
+  .page-card-list {
+    padding: 12px;
+  }
+
+  .page-card {
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    margin-bottom: 12px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    background: #fff;
+  }
+
+  .page-card:hover {
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+  }
+
+  .page-card.active {
+    border-color: #2ed573;
+    box-shadow: 0 4px 12px rgba(46, 213, 115, 0.2);
+  }
+
+  .page-card-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-card-thumb.thumb-pc {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  .page-card-thumb.thumb-style {
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  }
+
+  .page-card-thumb.thumb-ozon {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  }
+
+  .page-card-thumb.thumb-html {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  }
+
+  .page-card-thumb.thumb-css {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  .page-card-thumb.thumb-js {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  }
+
+  .page-card-thumb.thumb-dev {
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  }
+
+  .page-card-thumb-icon {
+    font-size: 56px;
+  }
+
+  .page-card-info {
+    padding: 12px;
+    background: #fff;
+  }
+
+  .page-card-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+  }
+
+  .page-card-desc {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+
+  .page-card-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-pc { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .badge-style { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .badge-ozon { background: linear-gradient(135deg, #2ed573, #1abc6c); }
+  .badge-html { background: linear-gradient(135deg, #ff9500, #ff6b35); }
+  .badge-css { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .badge-js { background: linear-gradient(135deg, #f093fb, #a855f7); }
+  .badge-dev { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+
+  /* ========== 右侧预览区 ========== */
+  .preview-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f5f7fa;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .preview-frame-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: auto;
+    position: relative;
+  }
+
+  #pageFrame {
+    width: 100%;
+    height: 100%;
+    max-width: 1400px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  /* ========== 底部控制栏 ========== */
+  .bottom-bar {
+    height: 40px;
+    background: #fff;
+    border-top: 1px solid #f0f0f5;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+
+  .bottom-bar .saved {
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-left: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .zoom-btn {
+    width: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 16px;
+    font-weight: 700;
+    transition: all 0.2s;
+    background: #fff;
+    border: none;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .zoom-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+
+  .zoom-percent {
+    width: 70px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .canvas-size {
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .canvas-size .dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #d1d5db;
+  }
+
+  .current-time {
+    color: #9ca3af;
+  }
+
+  /* ========== 滚动条 ========== */
+  .sidebar::-webkit-scrollbar,
+  .page-panel::-webkit-scrollbar,
+  .preview-area::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+
+  .page-panel::-webkit-scrollbar-thumb,
+  .preview-area::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  /* ========== 响应式 ========== */
+  @media (max-width: 1200px) {
+    .page-panel { width: 240px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部栏 -->
+<div class="top-bar">
+  <div class="top-left">
+    <div class="back-btn">◀</div>
+    <div class="breadcrumbs">
+      <span>店雷达</span>
+      <span class="sep">/</span>
+      <span>产品</span>
+      <span class="sep">/</span>
+      <span class="current" id="crumbCurrent">1688 AI智能分析</span>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="top-icon-btn" title="评论">💬</div>
+    <div class="top-icon-btn" title="编辑">✏️</div>
+    <div class="top-icon-btn" title="链接">🔗</div>
+    <div class="top-icon-btn" title="预览">👁</div>
+    <div class="top-icon-btn" title="全屏">⛶</div>
+    <button class="share-btn">分享</button>
+  </div>
+</div>
+
+<!-- 主布局 -->
+<div class="main-layout">
+  <!-- 左侧边栏 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">雷</div>
+        <div class="sidebar-logo-text">店雷达</div>
+      </div>
+      <button class="new-group-btn">+ 新建分组</button>
+    </div>
+
+    <!-- AI 智能分析分组 -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">AI智能分析</div>
+      <div class="sidebar-group-title">📦 1688选品库AI</div>
+      <div class="sidebar-page-item active" data-page="pc" onclick="selectPage('pc', this)">
+        <span class="page-icon icon-pc">PC</span>
+        <span class="page-label">AI分析页面</span>
+        <span class="page-tag new">NEW</span>
+      </div>
+      <div class="sidebar-page-item" data-page="style" onclick="selectPage('style', this)">
+        <span class="page-icon icon-style">S</span>
+        <span class="page-label">3种风格对比</span>
+        <span class="page-tag">DEV</span>
+      </div>
+    </div>
+
+    <!-- 代码开发分组 -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">前端开发</div>
+      <div class="sidebar-page-item" data-page="html" onclick="selectPage('html', this)">
+        <span class="page-icon icon-html">H</span>
+        <span class="page-label">HTML 代码</span>
+        <span class="page-tag">HTML</span>
+      </div>
+      <div class="sidebar-page-item" data-page="css" onclick="selectPage('css', this)">
+        <span class="page-icon icon-css">C</span>
+        <span class="page-label">CSS 代码</span>
+        <span class="page-tag">CSS</span>
+      </div>
+      <div class="sidebar-page-item" data-page="js" onclick="selectPage('js', this)">
+        <span class="page-icon icon-js">J</span>
+        <span class="page-label">JS 代码</span>
+        <span class="page-tag">JS</span>
+      </div>
+    </div>
+
+    <!-- 前端开发分组 -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">工具</div>
+      <div class="sidebar-page-item" data-page="dev" onclick="selectPage('dev', this)">
+        <span class="page-icon icon-dev">F</span>
+        <span class="page-label">前端标注模式</span>
+        <span class="page-tag">DEV</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中间页面面板 -->
+  <div class="page-panel">
+    <div class="page-panel-header">页面列表</div>
+    <div class="page-card-list" id="pageCardList">
+      <!-- AI分析页面 -->
+      <div class="page-card active" data-page="pc" onclick="selectPage('pc', this, true)">
+        <div class="page-card-thumb thumb-pc">
+          <span class="page-card-thumb-icon">🧠</span>
+          <span class="page-card-badge badge-pc">PC</span>
+        </div>
+        <div class="page-card-info">
+          <div class="page-card-name">AI分析页面</div>
+          <div class="page-card-desc">1688选品库 AI智能分析交互</div>
+        </div>
+      </div>
+
+      <!-- 风格对比 -->
+      <div class="page-card" data-page="style" onclick="selectPage('style', this, true)">
+        <div class="page-card-thumb thumb-style">
+          <span class="page-card-thumb-icon">🎨</span>
+          <span class="page-card-badge badge-style">STYLES</span>
+        </div>
+        <div class="page-card-info">
+          <div class="page-card-name">3种风格对比</div>
+          <div class="page-card-desc">经典/科技/极简风格</div>
+        </div>
+      </div>
+
+      <!-- HTML代码 -->
+      <div class="page-card" data-page="html" onclick="selectPage('html', this, true)">
+        <div class="page-card-thumb thumb-html">
+          <span class="page-card-thumb-icon">&#60;/&#62;</span>
+          <span class="page-card-badge badge-html">HTML</span>
+        </div>
+        <div class="page-card-info">
+          <div class="page-card-name">HTML 代码</div>
+          <div class="page-card-desc">页面结构 · 一键复制</div>
+        </div>
+      </div>
+
+      <!-- CSS代码 -->
+      <div class="page-card" data-page="css" onclick="selectPage('css', this, true)">
+        <div class="page-card-thumb thumb-css">
+          <span class="page-card-thumb-icon">{ }</span>
+          <span class="page-card-badge badge-css">CSS</span>
+        </div>
+        <div class="page-card-info">
+          <div class="page-card-name">CSS 代码</div>
+          <div class="page-card-desc">样式定义 · 一键复制</div>
+        </div>
+      </div>
+
+      <!-- JS代码 -->
+      <div class="page-card" data-page="js" onclick="selectPage('js', this, true)">
+        <div class="page-card-thumb thumb-js">
+          <span class="page-card-thumb-icon">ƒ()</span>
+          <span class="page-card-badge badge-js">JS</span>
+        </div>
+        <div class="page-card-info">
+          <div class="page-card-name">JS 代码</div>
+          <div class="page-card-desc">交互逻辑 · 一键复制</div>
+        </div>
+      </div>
+
+      <!-- 前端标注 -->
+      <div class="page-card" data-page="dev" onclick="selectPage('dev', this, true)">
+        <div class="page-card-thumb thumb-dev">
+          <span class="page-card-thumb-icon">📐</span>
+          <span class="page-card-badge badge-dev">DEV</span>
+        </div>
+        <div class="page-card-info">
+          <div class="page-card-name">前端标注模式</div>
+          <div class="page-card-desc">悬停看尺寸 · 右键导出图片</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧预览区 -->
+  <div class="preview-area">
+    <div class="preview-frame-wrap">
+      <iframe id="pageFrame" src="ai-analysis.html"></iframe>
+    </div>
+
+    <!-- 底部控制栏 -->
+    <div class="bottom-bar">
+      <span class="saved">✓ 已保存</span>
+      <span style="color: #d1d5db;">|</span>
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <div class="zoom-percent" id="zoomPercent">100%</div>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+      </div>
+      <span style="color: #d1d5db;">|</span>
+      <span class="canvas-size">
+        <span id="canvasSize">1440 × 900</span>
+      </span>
+      <span style="color: #d1d5db;">|</span>
+      <span class="current-time" id="currentTime">18:05</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 页面映射
+  const pageMap = {
+    'pc': { url: 'ai-analysis.html', title: 'AI分析页面', size: '1440 × 900' },
+    'style': { url: 'style-compare.html', title: '3种风格对比', size: '1440 × 1000' },
+    'html': { url: 'code-html.html', title: 'HTML 代码', size: '1440 × 2000' },
+    'css': { url: 'code-css.html', title: 'CSS 代码', size: '1440 × 2500' },
+    'js': { url: 'code-js.html', title: 'JS 代码', size: '1440 × 1500' },
+    'dev': { url: 'dev-mode.html', title: '前端标注模式', size: '1440 × 900' }
+  };
+
+  let currentPage = 'pc';
+  let zoomLevel = 100;
+
+  // 选择页面
+  function selectPage(pageKey, el, fromCard) {
+    currentPage = pageKey;
+    const page = pageMap[pageKey];
+
+    // 更新 iframe
+    document.getElementById('pageFrame').src = page.url;
+
+    // 更新面包屑
+    document.getElementById('crumbCurrent').textContent = page.title;
+
+    // 更新画布尺寸
+    document.getElementById('canvasSize').textContent = page.size;
+
+    // 更新侧边栏激活状态
+    document.querySelectorAll('.sidebar-page-item').forEach(item => {
+      item.classList.remove('active');
+      if (item.dataset.page === pageKey) {
+        item.classList.add('active');
+      }
+    });
+
+    // 更新页面卡片激活状态
+    document.querySelectorAll('.page-card').forEach(card => {
+      card.classList.remove('active');
+      if (card.dataset.page === pageKey) {
+        card.classList.add('active');
+      }
+    });
+  }
+
+  // 缩放控制
+  function zoomIn() {
+    if (zoomLevel < 200) {
+      zoomLevel += 25;
+      updateZoom();
+    }
+  }
+
+  function zoomOut() {
+    if (zoomLevel > 50) {
+      zoomLevel -= 25;
+      updateZoom();
+    }
+  }
+
+  function updateZoom() {
+    document.getElementById('zoomPercent').textContent = zoomLevel + '%';
+    const frame = document.getElementById('pageFrame');
+    frame.style.transform = `scale(${zoomLevel / 100})`;
+    frame.style.transformOrigin = 'top center';
+  }
+
+  // 更新时间
+  function updateTime() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('currentTime').textContent = h + ':' + m;
+  }
+  updateTime();
+  setInterval(updateTime, 60000);
+</script>
+
+</body>
+</html>
