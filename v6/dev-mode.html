@@ -145,7 +145,7 @@
   /* ====== 主体三栏 ====== */
   .main {
     display: flex;
-    height: calc(100vh - 44px);
+    height: 100vh;
   }
 
   /* 标注主区域（左侧导航栏右侧的三栏区域） */
@@ -175,6 +175,31 @@
   }
 
   .left-panel-header .title { font-size: 13px; font-weight: 600; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .header-btn {
+    color: var(--lanhu-text-sub);
+    cursor: pointer;
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all .15s;
+  }
+
+  .header-btn:hover {
+    background: var(--lanhu-hover);
+    color: var(--lanhu-blue);
+  }
+
   .left-panel-header .search {
     color: var(--lanhu-text-sub);
     cursor: pointer;
@@ -782,31 +807,6 @@
 </head>
 <body>
 
-<!-- 顶部导航 -->
-<div class="navbar">
-  <div class="navbar-left">
-    <div class="nav-tab active" onclick="switchMode('dev', this)">
-      <span>📐</span>
-      <span>标注</span>
-    </div>
-    <div class="nav-tab" onclick="switchMode('code', this)">
-      <span>💻</span>
-      <span>代码</span>
-    </div>
-    <div class="nav-title" id="pageTitle">AI智能分析页面</div>
-  </div>
-  <div class="navbar-center">
-    <button class="nav-icon-btn" onclick="changeZoom(-10)" title="缩小">−</button>
-    <div class="zoom-display" id="zoomDisplay">100%</div>
-    <button class="nav-icon-btn" onclick="changeZoom(10)" title="放大">+</button>
-    <button class="nav-icon-btn" onclick="fitScreen()" title="适配屏幕">⛶</button>
-    <button class="nav-icon-btn" onclick="resetZoom()" title="重置">⟲</button>
-  </div>
-  <div class="navbar-right">
-    <button class="share-btn" onclick="showToast('链接已复制到剪贴板')">分享</button>
-  </div>
-</div>
-
 <!-- 主体 -->
 <div class="main">
   <!-- 左侧导航栏 -->
@@ -880,7 +880,10 @@
     <div class="left-panel">
       <div class="left-panel-header">
         <span class="title">全部</span>
-        <span class="search">🔍</span>
+        <div class="header-actions">
+          <span class="header-btn" onclick="toggleFullscreen()" title="全屏">⛶</span>
+          <span class="header-btn search" title="搜索">🔍</span>
+        </div>
       </div>
       <div class="panel-tabs">
         <div class="panel-tab active" onclick="switchLeftTab('layers', this)">图层</div>
@@ -1953,6 +1956,13 @@ function switchMode(mode, el) {
 function switchLeftTab(tab, el) {
   document.querySelectorAll('.panel-tab').forEach(function(t) { t.classList.remove('active'); });
   el.classList.add('active');
+}
+
+// ====== 全屏 ======
+function toggleFullscreen() {
+  // 获取当前页面的 URL，在新窗口全屏打开
+  var currentPage = document.getElementById('designFrame').src;
+  window.open(currentPage, '_blank');
 }
 
 // ====== 缩放 ======
