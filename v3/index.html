@@ -1467,19 +1467,22 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     }
     if (inBlacklist) continue;
     
-    // 类目路径匹配（使用getCategory插件返回的类目ID对应名称进行过滤）
-    // 店雷达API商品不含categoryId字段，只有levelName（类目名称路径）
-    // 因此通过插件返回的category_name去匹配商品的levelName各级分类
+    // 类目路径匹配（使用getCategory插件返回的三级类目ID对应名称进行过滤）
+    // 店雷达API不支持categoryId参数，商品也不含categoryId字段
+    // 通过插件返回的category_name匹配商品的levelName三级类目
     let categoryMatch = true;
     if (levelName) {
       if (categoryTreeFilter && categoryTreeFilter.categoryNames.length > 0) {
-        // 将 levelName 按 ">" 拆分为各级类目（如 "运动户外>垂钓用品>钓鱼包" → ["运动户外","垂钓用品","钓鱼包"]）
+        // 将 levelName 按 ">" 拆分为各级类目（如 "箱包皮具>化妆箱包>化妆包" → ["箱包皮具","化妆箱包","化妆包"]）
         const levelParts = levelName.split('>').map(s => s.trim()).filter(s => s);
         
-        // 匹配方式1：插件返回的类目名匹配 levelName 的任意一级
-        // （如插件返回"钓鱼包"，商品的 levelName 含"钓鱼包"这一级 → 匹配）
-        // 使用双向includes：类目名包含某级，或某级包含类目名
-        categoryMatch = categoryTreeFilter.categoryNames.some(catName => 
+        // 只用长度>=2的类目名匹配，过滤掉"袋"等单字（避免误匹配"塑料包装袋"等包装类）
+        const validCatNames = categoryTreeFilter.categoryNames.filter(n => n.length >= 2);
+        
+        // 匹配方式1：插件返回的三级类目名匹配 levelName 的末级（最精确）
+        // 如插件返回"化妆包"，商品的 levelName 末级是"化妆包" → 匹配
+        // 或插件返回"收纳袋"，商品的某级是"收纳袋、收纳包" → 匹配（双向includes）
+        categoryMatch = validCatNames.some(catName => 
           levelParts.some(part => part === catName || part.includes(catName) || catName.includes(part))
         );
         
@@ -1724,6 +1727,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   }
   
   // 搜索词策略：主关键词 + AI扩展的关键词（前5个，过滤掉不相关的） + 二级查询词
+  // + categoryTree三级类目名（让API返回目标类目的商品）
   const searchQueries = [keyword];
   if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
     const catName = aiResult.category?.mainCategory || '';
@@ -1742,6 +1746,12 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       filteredSecondary = aiResult.searchStrategy.secondaryQueries.slice(0, 3);
     }
     searchQueries.push(...filteredSecondary.slice(0, 3));
+  }
+  // 将categoryTree的三级类目名加入搜索词（只加前3个，避免搜索词过多导致API无结果）
+  if (categoryTreeFilter && categoryTreeFilter.categoryNames.length > 0) {
+    // 只用长度>=2的类目名，过滤掉"袋"等单字（避免误匹配包装类商品）
+    const validCatNames = categoryTreeFilter.categoryNames.filter(n => n.length >= 2).slice(0, 3);
+    searchQueries.push(...validCatNames);
   }
   const uniqueQueries = [...new Set(searchQueries)];
   
@@ -1832,8 +1842,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     }
   }
   
-  // ===== 二次兜底：如果结果太少（<3），放宽类目过滤重新搜索 =====
-  if (allProducts.length < 3) {
+  // ===== 二次兜底：如果结果太少（<10），放宽类目过滤重新搜索 =====
+  if (allProducts.length < 10) {
     try {
       const params = {
         pageSize: 50,
