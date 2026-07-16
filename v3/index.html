@@ -1726,38 +1726,27 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     }
   }
   
-  // 搜索词策略：主关键词 + AI扩展的关键词（前5个，过滤掉不相关的） + 二级查询词
-  // + categoryTree三级类目名（让API返回目标类目的商品）
+  // 搜索词策略：主关键词 + AI扩展的关键词（前2个）
+  // 注意：店雷达API搜索词不宜过多，控制在最多3个以内避免API返回400
   const searchQueries = [keyword];
   if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
     const catName = aiResult.category?.mainCategory || '';
     let filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName);
-    // 如果过滤后剩余词太少（<3个），回退使用原始扩展词（避免搜索词太少导致没结果）
-    if (filteredExpanded.length < 3 && aiResult.expandedKeywords.length > filteredExpanded.length) {
-      filteredExpanded = aiResult.expandedKeywords.slice(0, 5);
+    if (filteredExpanded.length < 2 && aiResult.expandedKeywords.length > filteredExpanded.length) {
+      filteredExpanded = aiResult.expandedKeywords.slice(0, 3);
     }
-    searchQueries.push(...filteredExpanded.slice(0, 5));
+    searchQueries.push(...filteredExpanded.slice(0, 2));
     aiResult.expandedKeywords = filteredExpanded;
   }
-  if (aiResult && aiResult.searchStrategy && aiResult.searchStrategy.secondaryQueries) {
-    const catName = aiResult.category?.mainCategory || '';
-    let filteredSecondary = filterRelevantKeywords(aiResult.searchStrategy.secondaryQueries, aiResult.coreProduct || keyword, catName);
-    if (filteredSecondary.length < 2 && aiResult.searchStrategy.secondaryQueries.length > filteredSecondary.length) {
-      filteredSecondary = aiResult.searchStrategy.secondaryQueries.slice(0, 3);
-    }
-    searchQueries.push(...filteredSecondary.slice(0, 3));
-  }
-  // 将categoryTree的三级类目名加入搜索词（只加前3个，避免搜索词过多导致API无结果）
-  if (categoryTreeFilter && categoryTreeFilter.categoryNames.length > 0) {
-    // 只用长度>=2的类目名，过滤掉"袋"等单字（避免误匹配包装类商品）
-    const validCatNames = categoryTreeFilter.categoryNames.filter(n => n.length >= 2).slice(0, 3);
-    searchQueries.push(...validCatNames);
-  }
-  const uniqueQueries = [...new Set(searchQueries)];
+  // 注意：不在搜索词中加入二级查询词和类目名，避免搜索词过多导致API返回400
+  // 类目过滤在processAPIProducts中通过categoryTreeFilter进行客户端过滤
+  // 限制总搜索词最多3个
+  const uniqueQueries = [...new Set(searchQueries)].slice(0, 3);
   
-  // 用顿号拼接所有搜索词，一次性传给API（与选品库关键词搜索一致）
+  // 用顿号拼接所有搜索词，一次性传给API
   const combinedKeyword = uniqueQueries.join('、');
   
+  // 第一轮搜索：使用组合关键词 + 类目过滤
   try {
     const params = {
       pageSize: 50,
@@ -1788,22 +1777,55 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         }
       }
     }
+    
+    // 如果API返回400或无结果，立即用单关键词重试（不启用类目过滤）
+    if (allProducts.length === 0) {
+      const retryParams = {
+        pageSize: 50,
+        keyWord: keyword,
+        searchType: '1',
+        sortField: 'orderCount30d',
+        sortType: 'desc',
+        cycle: 30,
+        pageIndex: 1
+      };
+      const retryResult = await callDianLeiDaAPI('search', retryParams);
+      if (retryResult.code === 200 && retryResult.result && retryResult.result.list) {
+        const products = processAPIProducts(
+          retryResult.result.list,
+          aiResult ? aiResult.excludedKeywords : [],
+          [],
+          aiResult ? aiResult.coreProduct : keyword,
+          categoryLevelNames,
+          aiResult ? aiResult.productAttrs : null,
+          null  // 不启用类目过滤
+        );
+        for (const p of products) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            allProducts.push(p);
+          }
+        }
+      }
+    }
   } catch (e) {
     console.warn('搜索失败:', e.message);
   }
   
-  // ===== 兜底策略：如果结果太少，用类目热词或智能体categoryKeywords补充搜索 =====
+  // ===== 兜底策略：如果结果太少，用二级查询词或类目热词补充搜索（不启用类目过滤）=====
   if (allProducts.length < 10) {
     let fallbackKeywords = [];
-    if (catConfig && catConfig.fallbackKeywords) {
-      fallbackKeywords = catConfig.fallbackKeywords;
-    } else if (aiResult && aiResult.category && aiResult.category.categoryKeywords && aiResult.category.categoryKeywords.length > 0) {
-      // 没有类目配置时，用智能体返回的categoryKeywords做兜底
-      fallbackKeywords = aiResult.category.categoryKeywords;
+    // 优先使用AI的二级查询词
+    if (aiResult && aiResult.searchStrategy && aiResult.searchStrategy.secondaryQueries) {
+      fallbackKeywords = aiResult.searchStrategy.secondaryQueries.slice(0, 2);
     }
-    // 如果有categoryTree，用类目名补充兜底搜索词
-    if (categoryTreeFilter && categoryTreeFilter.categoryNames.length > 0) {
-      fallbackKeywords = [...fallbackKeywords, ...categoryTreeFilter.categoryNames.slice(0, 3)];
+    // 其次用类目热词
+    if (fallbackKeywords.length === 0) {
+      if (catConfig && catConfig.fallbackKeywords) {
+        fallbackKeywords = catConfig.fallbackKeywords.slice(0, 2);
+      } else if (aiResult && aiResult.category && aiResult.category.categoryKeywords && aiResult.category.categoryKeywords.length > 0) {
+        fallbackKeywords = aiResult.category.categoryKeywords.slice(0, 2);
+      }
     }
     
     if (fallbackKeywords.length > 0) {
@@ -1820,14 +1842,15 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       };
       const result = await callDianLeiDaAPI('search', params);
       if (result.code === 200 && result.result && result.result.list) {
+        // 兜底搜索不启用类目过滤（categoryTreeFilter=null），仅靠排除词过滤
         const products = processAPIProducts(
           result.result.list,
           aiResult ? aiResult.excludedKeywords : [],
-          aiResult ? aiResult.requiredKeywords : [],
+          [],  // 必选词放宽
           aiResult ? aiResult.coreProduct : keyword,
           categoryLevelNames,
           aiResult ? aiResult.productAttrs : null,
-          categoryTreeFilter
+          null  // 不传categoryTreeFilter，放宽类目限制
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
