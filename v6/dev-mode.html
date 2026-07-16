@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店雷达 - 前端标注模式</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f5f7fa;
+    padding: 40px 32px;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  .dev-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .dev-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 6px;
+  }
+
+  .dev-desc {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .dev-tips {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .dev-tip {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dev-tip kbd {
+    padding: 2px 6px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ========== 标注模式下的 AI 卡片 ========== */
+  .demo-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+
+  .ai-card-dev {
+    position: relative;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border: 1px solid #ddd6fe;
+    border-radius: 20px;
+    overflow: visible;
+    padding: 24px;
+  }
+
+  /* 尺寸标注线 */
+  .dim-label {
+    position: absolute;
+    background: #6366f1;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  }
+
+  .dim-label::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .dim-label.top {
+    top: -36px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .dim-label.top::before {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #6366f1;
+  }
+
+  .dim-label.left {
+    left: -80px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .dim-label.left::before {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid #6366f1;
+  }
+
+  /* 标注线 */
+  .guide-line {
+    position: absolute;
+    background: rgba(99, 102, 241, 0.5);
+    z-index: 50;
+  }
+
+  .guide-line.horizontal {
+    height: 1px;
+    left: -40px;
+    right: -40px;
+  }
+
+  .guide-line.vertical {
+    width: 1px;
+    top: -20px;
+    bottom: -20px;
+  }
+
+  /* AI 卡片头部 */
+  .ai-card-header-dev {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ddd6fe;
+    margin-bottom: 20px;
+  }
+
+  .ai-icon-dev {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    position: relative;
+  }
+
+  .ai-title-dev {
+    flex: 1;
+  }
+
+  .ai-title-main {
+    font-size: 18px;
+    font-weight: 800;
+    color: #4c1d95;
+    margin-bottom: 2px;
+  }
+
+  .ai-title-sub {
+    font-size: 13px;
+    color: #7c3aed;
+    font-weight: 500;
+  }
+
+  .ai-action-dev {
+    font-size: 13px;
+    font-weight: 600;
+    color: #7c3aed;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.1);
+    cursor: pointer;
+  }
+
+  /* 步骤 */
+  .step-item-dev {
+    display: flex;
+    gap: 14px;
+    padding-bottom: 18px;
+    position: relative;
+  }
+
+  .step-item-dev:last-child {
+    padding-bottom: 0;
+  }
+
+  .step-dot-dev {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2ed573, #1abc6c);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(46, 213, 115, 0.35);
+  }
+
+  .step-content-dev {
+    flex: 1;
+    padding-top: 4px;
+  }
+
+  .step-title-dev {
+    font-size: 15px;
+    font-weight: 700;
+    color: #4c1d95;
+    margin-bottom: 6px;
+  }
+
+  .step-desc-dev {
+    font-size: 13px;
+    color: #6d28d9;
+    font-weight: 500;
+    line-height: 1.7;
+  }
+
+  .step-tags-dev {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .step-tag-dev {
+    padding: 5px 12px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #6d28d9;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #ddd6fe;
+  }
+
+  /* 标注区域高亮 */
+  .highlight-box {
+    position: relative;
+    outline: 2px dashed rgba(99, 102, 241, 0.5);
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  /* 间距标注 */
+  .spacing-label {
+    position: absolute;
+    background: #10b981;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    z-index: 100;
+  }
+
+  /* 色卡展示 */
+  .color-palette {
+    max-width: 900px;
+    margin: 40px auto 0;
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+
+  .palette-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 16px;
+  }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+
+  .color-swatch {
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .color-swatch:hover {
+    transform: translateY(-2px);
+  }
+
+  .color-preview {
+    height: 60px;
+  }
+
+  .color-info {
+    padding: 8px 10px;
+    background: #f9fafb;
+  }
+
+  .color-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 2px;
+  }
+
+  .color-hex {
+    font-size: 10px;
+    color: #9ca3af;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  /* 间距展示 */
+  .spacing-section {
+    max-width: 900px;
+    margin: 24px auto 0;
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+
+  .spacing-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+
+  .spacing-item {
+    text-align: center;
+    padding: 16px 8px;
+    background: #f9fafb;
+    border-radius: 10px;
+  }
+
+  .spacing-bar {
+    width: 100%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 4px;
+    margin: 0 auto 8px;
+  }
+
+  .spacing-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4f46e5;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .spacing-name {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<div class="dev-header">
+  <div class="dev-title">📐 前端标注模式</div>
+  <div class="dev-desc">悬停查看元素尺寸和间距，右键可导出设计标注图</div>
+</div>
+
+<div class="dev-tips">
+  <div class="dev-tip"><kbd>悬停</kbd> 查看尺寸</div>
+  <div class="dev-tip"><kbd>点击</kbd> 固定标注</div>
+  <div class="dev-tip"><kbd>右键</kbd> 导出图片</div>
+  <div class="dev-tip"><kbd>R</kbd> 重置视图</div>
+</div>
+
+<!-- 标注演示 -->
+<div class="demo-container">
+  <div class="ai-card-dev" style="margin: 40px 60px 20px;">
+    <!-- 整体尺寸标注 -->
+    <div class="dim-label top">852 × 320</div>
+    <div class="dim-label left">320px</div>
+
+    <!-- 头部 -->
+    <div class="ai-card-header-dev highlight-box">
+      <div class="ai-icon-dev">
+        🧠
+        <div class="spacing-label" style="top: -16px; right: -16px;">48×48</div>
+      </div>
+      <div class="ai-title-dev">
+        <div class="ai-title-main">AI 智能分析</div>
+        <div class="ai-title-sub">核心词提取完成（1/3）</div>
+      </div>
+      <div class="ai-action-dev">收起 ▾</div>
+      <div class="spacing-label" style="bottom: -24px; left: 50%; transform: translateX(-50%);">padding: 24px</div>
+    </div>
+
+    <!-- 步骤1 -->
+    <div class="step-item-dev">
+      <div class="step-dot-dev">✓</div>
+      <div class="step-content-dev">
+        <div class="step-title-dev">Step 1：核心词提取</div>
+        <div class="step-desc-dev">核心产品：蓝牙耳机 · 修饰词：通用 · 必含词：蓝牙耳机、耳机</div>
+        <div class="step-tags-dev">
+          <span class="step-tag-dev">核心：蓝牙耳机</span>
+          <span class="step-tag-dev">修饰：通用</span>
+          <span class="step-tag-dev">必含：耳机</span>
+        </div>
+      </div>
+      <div class="spacing-label" style="right: -70px; top: 8px;">gap: 14px</div>
+    </div>
+
+    <!-- 步骤2 -->
+    <div class="step-item-dev" style="opacity: 0.6;">
+      <div class="step-dot-dev" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">2</div>
+      <div class="step-content-dev">
+        <div class="step-title-dev">Step 2：关键词扩展与排除</div>
+        <div class="step-desc-dev">智能生成搜索变体词，排除不相关词汇</div>
+      </div>
+    </div>
+
+    <!-- 步骤3 -->
+    <div class="step-item-dev" style="opacity: 0.4;">
+      <div class="step-dot-dev" style="background: #fff; border: 2px solid #e5e7eb; color: #a8a29e; box-shadow: none;">3</div>
+      <div class="step-content-dev">
+        <div class="step-title-dev">Step 3：实时商品搜索完成</div>
+        <div class="step-desc-dev">汇总搜索结果，精准匹配优质货源</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 色卡 -->
+<div class="color-palette">
+  <div class="palette-title">🎨 设计色板</div>
+  <div class="palette-grid">
+    <div class="color-swatch">
+      <div class="color-preview" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);"></div>
+      <div class="color-info">
+        <div class="color-name">主色渐变</div>
+        <div class="color-hex">#8b5cf6</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #f5f3ff;"></div>
+      <div class="color-info">
+        <div class="color-name">卡片背景</div>
+        <div class="color-hex">#f5f3ff</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #4c1d95;"></div>
+      <div class="color-info">
+        <div class="color-name">标题文字</div>
+        <div class="color-hex">#4c1d95</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #2ed573;"></div>
+      <div class="color-info">
+        <div class="color-name">完成态</div>
+        <div class="color-hex">#2ed573</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #ef4444;"></div>
+      <div class="color-info">
+        <div class="color-name">排除词</div>
+        <div class="color-hex">#ef4444</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #1a1a2e;"></div>
+      <div class="color-info">
+        <div class="color-name">导航深色</div>
+        <div class="color-hex">#1a1a2e</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 间距规范 -->
+<div class="spacing-section">
+  <div class="palette-title">📏 间距规范</div>
+  <div class="spacing-grid">
+    <div class="spacing-item">
+      <div class="spacing-bar" style="height: 4px;"></div>
+      <div class="spacing-value">4px</div>
+      <div class="spacing-name">xs</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-bar" style="height: 8px;"></div>
+      <div class="spacing-value">8px</div>
+      <div class="spacing-name">sm</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-bar" style="height: 12px;"></div>
+      <div class="spacing-value">12px</div>
+      <div class="spacing-name">md</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-bar" style="height: 16px;"></div>
+      <div class="spacing-value">16px</div>
+      <div class="spacing-name">lg</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-bar" style="height: 24px;"></div>
+      <div class="spacing-value">24px</div>
+      <div class="spacing-name">xl</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-bar" style="height: 32px;"></div>
+      <div class="spacing-value">32px</div>
+      <div class="spacing-name">2xl</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 简单的交互：点击色卡复制颜色
+  document.querySelectorAll('.color-swatch').forEach(swatch => {
+    swatch.style.cursor = 'pointer';
+    swatch.addEventListener('click', () => {
+      const hex = swatch.querySelector('.color-hex').textContent;
+      navigator.clipboard.writeText(hex).then(() => {
+        const name = swatch.querySelector('.color-name');
+        const original = name.textContent;
+        name.textContent = '✓ 已复制';
+        name.style.color = '#10b981';
+        setTimeout(() => {
+          name.textContent = original;
+          name.style.color = '';
+        }, 1500);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
