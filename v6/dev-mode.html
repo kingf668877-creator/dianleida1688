@@ -977,7 +977,7 @@ function showMarginLabels(el) {
     return;
   }
   var parent = el.parentElement;
-  if (!parent || parent === iDoc.body) {
+  if (!parent) {
     hideMarginLabels();
     return;
   }
@@ -987,65 +987,210 @@ function showMarginLabels(el) {
   var scrollLeft = iDoc.documentElement.scrollLeft || iDoc.body.scrollLeft;
   var scrollTop = iDoc.documentElement.scrollTop || iDoc.body.scrollTop;
 
-  var cs = getComputedStyle(el);
-  var marginTop = parseInt(cs.marginTop) || 0;
-  var marginBottom = parseInt(cs.marginBottom) || 0;
-  var marginLeft = parseInt(cs.marginLeft) || 0;
-  var marginRight = parseInt(cs.marginRight) || 0;
+  // 计算到父容器四边的距离
+  var distTop = elRect.top - parentRect.top;
+  var distBottom = parentRect.bottom - elRect.bottom;
+  var distLeft = elRect.left - parentRect.left;
+  var distRight = parentRect.right - elRect.right;
 
-  // 上边距
+  var elLeft = elRect.left + scrollLeft;
+  var elTop = elRect.top + scrollTop;
+  var elRight = elRect.right + scrollLeft;
+  var elBottom = elRect.bottom + scrollTop;
+  var parentLeft = parentRect.left + scrollLeft;
+  var parentTop = parentRect.top + scrollTop;
+  var parentRight = parentRect.right + scrollLeft;
+  var parentBottom = parentRect.bottom + scrollTop;
+  var elCenterX = elLeft + elRect.width / 2;
+  var elCenterY = elTop + elRect.height / 2;
+
+  // ===== 上边距：元素顶部 → 父容器顶部 =====
   var topLine = iDoc.getElementById('__lh_margin_top');
   var topGuide = iDoc.getElementById('__lh_margin_guide_top');
   var topLabel = iDoc.getElementById('__lh_margin_label_top');
-  if (marginTop > 0) {
-    var topY = elRect.top + scrollTop - marginTop;
+  if (distTop > 2) {
     topLine.style.display = 'block';
-    topLine.style.left = (elRect.left + scrollLeft) + 'px';
-    topLine.style.top = topY + 'px';
-    topLine.style.width = elRect.width + 'px';
+    topLine.style.left = elCenterX + 'px';
+    topLine.style.top = parentTop + 'px';
+    topLine.style.width = '1px';
+    topLine.style.height = distTop + 'px';
+    topLine.style.borderLeft = '1px dashed #ff7d00';
+    topLine.style.borderTop = 'none';
+    // 上下两条横线
     topGuide.style.display = 'block';
-    topGuide.style.left = (elRect.left + scrollLeft + elRect.width / 2 - 0.5) + 'px';
-    topGuide.style.top = topY + 'px';
+    topGuide.style.left = (elLeft - 4) + 'px';
+    topGuide.style.top = elTop + 'px';
+    topGuide.style.width = (elRect.width + 8) + 'px';
+    topGuide.style.height = '1px';
+    topGuide.style.borderTop = '1px dashed #ff7d00';
+    topGuide.style.borderLeft = 'none';
+    // 顶部横线
+    var topGuide2 = iDoc.getElementById('__lh_margin_guide_top_extra');
+    if (!topGuide2) {
+      topGuide2 = iDoc.createElement('div');
+      topGuide2.id = '__lh_margin_guide_top_extra';
+      topGuide2.className = '__lh-margin-guide';
+      iDoc.body.appendChild(topGuide2);
+    }
+    topGuide2.style.display = 'block';
+    topGuide2.style.left = (elLeft - 4) + 'px';
+    topGuide2.style.top = parentTop + 'px';
+    topGuide2.style.width = (elRect.width + 8) + 'px';
+    topGuide2.style.height = '1px';
+    topGuide2.style.borderTop = '1px dashed #ff7d00';
+    // 标签
     topLabel.style.display = 'block';
-    topLabel.style.left = (elRect.left + scrollLeft + elRect.width / 2 - 15) + 'px';
-    topLabel.style.top = (topY - 18) + 'px';
-    topLabel.textContent = marginTop + 'px';
+    topLabel.style.left = (elCenterX + 6) + 'px';
+    topLabel.style.top = (parentTop + distTop / 2 - 10) + 'px';
+    topLabel.textContent = Math.round(distTop) + 'px';
   } else {
     topLine.style.display = 'none';
     topGuide.style.display = 'none';
+    var g2 = iDoc.getElementById('__lh_margin_guide_top_extra');
+    if (g2) g2.style.display = 'none';
     topLabel.style.display = 'none';
   }
 
-  // 左边距
+  // ===== 下边距：元素底部 → 父容器底部 =====
+  var bottomLine = iDoc.getElementById('__lh_margin_bottom');
+  var bottomGuide = iDoc.getElementById('__lh_margin_guide_bottom');
+  var bottomLabel = iDoc.getElementById('__lh_margin_label_bottom');
+  if (distBottom > 2) {
+    bottomLine.style.display = 'block';
+    bottomLine.style.left = elCenterX + 'px';
+    bottomLine.style.top = elBottom + 'px';
+    bottomLine.style.width = '1px';
+    bottomLine.style.height = distBottom + 'px';
+    bottomLine.style.borderLeft = '1px dashed #ff7d00';
+    bottomLine.style.borderTop = 'none';
+    // 元素底部横线
+    bottomGuide.style.display = 'block';
+    bottomGuide.style.left = (elLeft - 4) + 'px';
+    bottomGuide.style.top = elBottom + 'px';
+    bottomGuide.style.width = (elRect.width + 8) + 'px';
+    bottomGuide.style.height = '1px';
+    bottomGuide.style.borderTop = '1px dashed #ff7d00';
+    bottomGuide.style.borderLeft = 'none';
+    // 父容器底部横线
+    var bottomGuide2 = iDoc.getElementById('__lh_margin_guide_bottom_extra');
+    if (!bottomGuide2) {
+      bottomGuide2 = iDoc.createElement('div');
+      bottomGuide2.id = '__lh_margin_guide_bottom_extra';
+      bottomGuide2.className = '__lh-margin-guide';
+      iDoc.body.appendChild(bottomGuide2);
+    }
+    bottomGuide2.style.display = 'block';
+    bottomGuide2.style.left = (elLeft - 4) + 'px';
+    bottomGuide2.style.top = parentBottom + 'px';
+    bottomGuide2.style.width = (elRect.width + 8) + 'px';
+    bottomGuide2.style.height = '1px';
+    bottomGuide2.style.borderTop = '1px dashed #ff7d00';
+    // 标签
+    bottomLabel.style.display = 'block';
+    bottomLabel.style.left = (elCenterX + 6) + 'px';
+    bottomLabel.style.top = (elBottom + distBottom / 2 - 10) + 'px';
+    bottomLabel.textContent = Math.round(distBottom) + 'px';
+  } else {
+    bottomLine.style.display = 'none';
+    bottomGuide.style.display = 'none';
+    var bg2 = iDoc.getElementById('__lh_margin_guide_bottom_extra');
+    if (bg2) bg2.style.display = 'none';
+    bottomLabel.style.display = 'none';
+  }
+
+  // ===== 左边距：元素左边 → 父容器左边 =====
   var leftLine = iDoc.getElementById('__lh_margin_left');
   var leftGuide = iDoc.getElementById('__lh_margin_guide_left');
   var leftLabel = iDoc.getElementById('__lh_margin_label_left');
-  if (marginLeft > 0) {
-    var leftX = elRect.left + scrollLeft - marginLeft;
+  if (distLeft > 2) {
     leftLine.style.display = 'block';
-    leftLine.style.left = leftX + 'px';
-    leftLine.style.top = (elRect.top + scrollTop) + 'px';
-    leftLine.style.height = elRect.height + 'px';
+    leftLine.style.left = parentLeft + 'px';
+    leftLine.style.top = elCenterY + 'px';
+    leftLine.style.width = distLeft + 'px';
+    leftLine.style.height = '1px';
+    leftLine.style.borderTop = '1px dashed #ff7d00';
+    leftLine.style.borderLeft = 'none';
+    // 元素左边竖线
     leftGuide.style.display = 'block';
-    leftGuide.style.top = (elRect.top + scrollTop + elRect.height / 2 - 0.5) + 'px';
-    leftGuide.style.left = leftX + 'px';
+    leftGuide.style.left = elLeft + 'px';
+    leftGuide.style.top = (elTop - 4) + 'px';
+    leftGuide.style.width = '1px';
+    leftGuide.style.height = (elRect.height + 8) + 'px';
+    leftGuide.style.borderLeft = '1px dashed #ff7d00';
+    leftGuide.style.borderTop = 'none';
+    // 父容器左边竖线
+    var leftGuide2 = iDoc.getElementById('__lh_margin_guide_left_extra');
+    if (!leftGuide2) {
+      leftGuide2 = iDoc.createElement('div');
+      leftGuide2.id = '__lh_margin_guide_left_extra';
+      leftGuide2.className = '__lh-margin-guide';
+      iDoc.body.appendChild(leftGuide2);
+    }
+    leftGuide2.style.display = 'block';
+    leftGuide2.style.left = parentLeft + 'px';
+    leftGuide2.style.top = (elTop - 4) + 'px';
+    leftGuide2.style.width = '1px';
+    leftGuide2.style.height = (elRect.height + 8) + 'px';
+    leftGuide2.style.borderLeft = '1px dashed #ff7d00';
+    // 标签
     leftLabel.style.display = 'block';
-    leftLabel.style.top = (elRect.top + scrollTop + elRect.height / 2 - 10) + 'px';
-    leftLabel.style.left = (leftX - 30) + 'px';
-    leftLabel.textContent = marginLeft + 'px';
+    leftLabel.style.left = (parentLeft + distLeft / 2 - 15) + 'px';
+    leftLabel.style.top = (elCenterY - 16) + 'px';
+    leftLabel.textContent = Math.round(distLeft) + 'px';
   } else {
     leftLine.style.display = 'none';
     leftGuide.style.display = 'none';
+    var lg2 = iDoc.getElementById('__lh_margin_guide_left_extra');
+    if (lg2) lg2.style.display = 'none';
     leftLabel.style.display = 'none';
   }
 
-  // 下边距和右边距简单起见隐藏
-  iDoc.getElementById('__lh_margin_bottom').style.display = 'none';
-  iDoc.getElementById('__lh_margin_right').style.display = 'none';
-  iDoc.getElementById('__lh_margin_guide_bottom').style.display = 'none';
-  iDoc.getElementById('__lh_margin_guide_right').style.display = 'none';
-  iDoc.getElementById('__lh_margin_label_bottom').style.display = 'none';
-  iDoc.getElementById('__lh_margin_label_right').style.display = 'none';
+  // ===== 右边距：元素右边 → 父容器右边 =====
+  var rightLine = iDoc.getElementById('__lh_margin_right');
+  var rightGuide = iDoc.getElementById('__lh_margin_guide_right');
+  var rightLabel = iDoc.getElementById('__lh_margin_label_right');
+  if (distRight > 2) {
+    rightLine.style.display = 'block';
+    rightLine.style.left = elRight + 'px';
+    rightLine.style.top = elCenterY + 'px';
+    rightLine.style.width = distRight + 'px';
+    rightLine.style.height = '1px';
+    rightLine.style.borderTop = '1px dashed #ff7d00';
+    rightLine.style.borderLeft = 'none';
+    // 元素右边竖线
+    rightGuide.style.display = 'block';
+    rightGuide.style.left = elRight + 'px';
+    rightGuide.style.top = (elTop - 4) + 'px';
+    rightGuide.style.width = '1px';
+    rightGuide.style.height = (elRect.height + 8) + 'px';
+    rightGuide.style.borderLeft = '1px dashed #ff7d00';
+    rightGuide.style.borderTop = 'none';
+    // 父容器右边竖线
+    var rightGuide2 = iDoc.getElementById('__lh_margin_guide_right_extra');
+    if (!rightGuide2) {
+      rightGuide2 = iDoc.createElement('div');
+      rightGuide2.id = '__lh_margin_guide_right_extra';
+      rightGuide2.className = '__lh-margin-guide';
+      iDoc.body.appendChild(rightGuide2);
+    }
+    rightGuide2.style.display = 'block';
+    rightGuide2.style.left = parentRight + 'px';
+    rightGuide2.style.top = (elTop - 4) + 'px';
+    rightGuide2.style.width = '1px';
+    rightGuide2.style.height = (elRect.height + 8) + 'px';
+    rightGuide2.style.borderLeft = '1px dashed #ff7d00';
+    // 标签
+    rightLabel.style.display = 'block';
+    rightLabel.style.left = (elRight + distRight / 2 - 15) + 'px';
+    rightLabel.style.top = (elCenterY - 16) + 'px';
+    rightLabel.textContent = Math.round(distRight) + 'px';
+  } else {
+    rightLine.style.display = 'none';
+    rightGuide.style.display = 'none';
+    var rg2 = iDoc.getElementById('__lh_margin_guide_right_extra');
+    if (rg2) rg2.style.display = 'none';
+    rightLabel.style.display = 'none';
+  }
 }
 
 function hideMarginLabels() {
@@ -1053,9 +1198,11 @@ function hideMarginLabels() {
     var line = iDoc.getElementById('__lh_margin_' + dir);
     var guide = iDoc.getElementById('__lh_margin_guide_' + dir);
     var label = iDoc.getElementById('__lh_margin_label_' + dir);
+    var extra = iDoc.getElementById('__lh_margin_guide_' + dir + '_extra');
     if (line) line.style.display = 'none';
     if (guide) guide.style.display = 'none';
     if (label) label.style.display = 'none';
+    if (extra) extra.style.display = 'none';
   });
 }
 
