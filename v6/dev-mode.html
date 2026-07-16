@@ -557,95 +557,80 @@
   .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
   .sidebar-header {
-    padding: 16px 14px 12px;
+    padding: 14px 16px 12px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-direction: column;
+    gap: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
   }
 
   .sidebar-logo {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .sidebar-logo-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #2ed573, #1abc6c);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .sidebar-logo-text {
     color: #fff;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
   }
 
   .new-group-btn {
-    height: 28px;
-    padding: 0 10px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.6);
-    font-size: 11px;
-    font-weight: 600;
+    width: 100%;
+    height: 36px;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 6px;
     transition: all .2s;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px dashed rgba(255,255,255,0.2);
     font-family: 'Noto Sans SC', sans-serif;
   }
 
   .new-group-btn:hover {
-    background: rgba(255,255,255,0.12);
-    color: #fff;
+    border-color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.75);
   }
 
-  .sidebar-section { margin-bottom: 6px; }
+  .sidebar-section { padding: 4px 0; }
 
   .sidebar-section-title {
-    padding: 10px 14px 6px;
-    font-size: 10px;
-    font-weight: 700;
+    padding: 10px 16px 6px;
+    font-size: 11px;
+    font-weight: 600;
     color: rgba(255,255,255,0.35);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
   }
-
-  .sidebar-group-title {
-    padding: 6px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.55);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all .2s;
-  }
-
-  .sidebar-group-title:hover { color: rgba(255,255,255,0.85); }
 
   .sidebar-page-item {
-    padding: 7px 14px 7px 32px;
-    font-size: 12px;
+    padding: 9px 16px;
+    font-size: 13px;
     font-weight: 500;
     color: rgba(255,255,255,0.55);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: all .2s;
+    gap: 10px;
+    transition: all .15s;
     position: relative;
   }
 
@@ -656,7 +641,7 @@
 
   .sidebar-page-item.active {
     color: #fff;
-    background: rgba(46,213,115,0.12);
+    background: rgba(99,102,241,0.2);
     font-weight: 600;
   }
 
@@ -667,48 +652,37 @@
     top: 50%;
     transform: translateY(-50%);
     width: 3px;
-    height: 16px;
-    background: #2ed573;
-    border-radius: 0 2px 2px 0;
+    height: 18px;
+    background: #6366f1;
+    border-radius: 0 3px 3px 0;
   }
 
   .page-icon {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 800;
     color: #fff;
     flex-shrink: 0;
   }
 
-  .icon-pc { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-  .icon-style { background: linear-gradient(135deg, #f093fb, #f5576c); }
-  .icon-ozon { background: linear-gradient(135deg, #2ed573, #1abc6c); }
-  .icon-html { background: linear-gradient(135deg, #ff9500, #ff6b35); }
-  .icon-css { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-  .icon-js { background: linear-gradient(135deg, #f093fb, #a855f7); }
-  .icon-dev { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+  .icon-pc { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); }
+  .icon-style { background: linear-gradient(135deg, #a855f7, #6366f1); }
+  .icon-ozon { background: linear-gradient(135deg, #10b981, #059669); }
+  .icon-html { background: linear-gradient(135deg, #ec4899, #be185d); }
+  .icon-css { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .icon-js { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+  .icon-dev { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 
   .page-label {
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .page-tag {
-    font-size: 8px;
-    font-weight: 700;
-    padding: 1px 5px;
-    border-radius: 3px;
-    background: rgba(255,255,255,0.12);
-    color: rgba(255,255,255,0.5);
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
   }
 </style>
 </head>
@@ -745,29 +719,38 @@
   <div class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">雷</div>
+        <div class="sidebar-logo-icon">店</div>
         <div class="sidebar-logo-text">店雷达</div>
       </div>
-      <button class="new-group-btn">+ 新建</button>
+      <button class="new-group-btn">+ 新建分组</button>
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-section-title">设计页面</div>
-      <div class="sidebar-group-title" onclick="toggleSidebarGroup(this)">
-        <span>▾</span> 1688产品库
-      </div>
+      <div class="sidebar-section-title">限时特惠活动</div>
       <div class="sidebar-page-item" onclick="navigateTo('ai-analysis.html', this)">
-        <div class="page-icon icon-pc">PC</div>
-        <span class="page-label">AI智能分析页面</span>
-      </div>
-      <div class="sidebar-page-item" onclick="navigateTo('style-compare.html', this)">
-        <div class="page-icon icon-style">比</div>
-        <span class="page-label">3种风格对比</span>
+        <div class="page-icon icon-pc">P</div>
+        <span class="page-label">PC端价格展示</span>
       </div>
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-section-title">开发代码</div>
+      <div class="sidebar-section-title">风格方案</div>
+      <div class="sidebar-page-item" onclick="navigateTo('style-compare.html', this)">
+        <div class="page-icon icon-style">S</div>
+        <span class="page-label">5种风格对比</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">OZON会员套餐</div>
+      <div class="sidebar-page-item" onclick="navigateTo('ai-analysis.html', this)">
+        <div class="page-icon icon-ozon">O</div>
+        <span class="page-label">OZON会员价格</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">前端开发</div>
       <div class="sidebar-page-item" onclick="navigateTo('code-html.html', this)">
         <div class="page-icon icon-html">H</div>
         <span class="page-label">HTML 代码</span>
@@ -780,14 +763,9 @@
         <div class="page-icon icon-js">J</div>
         <span class="page-label">JS 代码</span>
       </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-section-title">设计工具</div>
       <div class="sidebar-page-item active" onclick="navigateTo('dev-mode.html', this)">
         <div class="page-icon icon-dev">F</div>
         <span class="page-label">前端标注模式</span>
-        <span class="page-tag">HOT</span>
       </div>
     </div>
   </div>
@@ -1756,19 +1734,6 @@ function showToast(msg) {
 function navigateTo(page, el) {
   if (page === 'dev-mode.html') return;
   window.location.href = page;
-}
-
-function toggleSidebarGroup(el) {
-  var arrow = el.querySelector('span');
-  var parent = el.parentElement;
-  var items = parent.querySelectorAll('.sidebar-page-item');
-  if (arrow.textContent === '▾') {
-    arrow.textContent = '▸';
-    items.forEach(function(item) { item.style.display = 'none'; });
-  } else {
-    arrow.textContent = '▾';
-    items.forEach(function(item) { item.style.display = 'flex'; });
-  }
 }
 
 // ====== 模式切换 ======
