@@ -474,7 +474,7 @@ body {
 .ai-summary {
   display: none;
 }
-.ai-card.done .step-timeline { display: none; }
+.ai-card.done .step-timeline { display: flex; }
 .ai-card.done .ai-summary { display: block; }
 
 .summary-metrics {
@@ -963,42 +963,7 @@ body {
           </div>
         </div>
 
-        <!-- 分析完成摘要 -->
-        <div class="ai-summary" id="aiSummary">
-          <div class="summary-metrics">
-            <div class="summary-metric">
-              <div class="summary-metric-value">2,340</div>
-              <div class="summary-metric-label">匹配商品数</div>
-            </div>
-            <div class="summary-metric">
-              <div class="summary-metric-value up">+23%</div>
-              <div class="summary-metric-label">类目30天增速</div>
-            </div>
-            <div class="summary-metric">
-              <div class="summary-metric-value warn">中高</div>
-              <div class="summary-metric-label">竞争烈度</div>
-            </div>
-            <div class="summary-metric">
-              <div class="summary-metric-value">1.8s</div>
-              <div class="summary-metric-label">分析耗时</div>
-            </div>
-          </div>
 
-          <div class="summary-insight">
-            <div class="summary-insight-title">💡 AI 选品建议</div>
-            <div class="summary-insight-text">
-              蓝牙耳机整体市场增速稳健增长 <strong>23%</strong>，竞争偏激烈。建议关注「<strong>骨传导</strong>」和「<strong>电竞低延迟</strong>」两个细分赛道：骨传导增速达 <strong>156%</strong> 且头部品牌尚未垄断，新卖家切入机会较大；电竞耳机受益于手游市场增长，利润空间约 <strong>40-50%</strong>。均价区间 ¥15-68，建议优先考虑 ¥25-45 价格带布局。
-            </div>
-          </div>
-
-          <div class="summary-actions">
-            <button class="summary-action-btn">🔍 只看骨传导耳机</button>
-            <button class="summary-action-btn">📈 按7日增速排序</button>
-            <button class="summary-action-btn">🏭 筛选源头工厂</button>
-            <button class="summary-action-btn">💰 利润空间分析</button>
-            <button class="summary-action-btn">📊 查看完整分析报告</button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -1162,16 +1127,19 @@ function startSearch() {
   let currentStep = 0;
   function runStep() {
     if (currentStep >= 3) {
-      // 全部完成，显示摘要
+      // 全部完成，自动折叠卡片
       setTimeout(() => {
         card.classList.add('done');
         document.getElementById('aiCardIcon').textContent = '✓';
         document.getElementById('aiCardTitle').textContent = 'AI 智能分析完成';
         document.getElementById('aiCardSubtitle').textContent = '已为您精准匹配 2,340 件优质商品 · 耗时 1.8 秒';
         document.getElementById('collapsedBadge').textContent = '✓ 完成';
-        document.getElementById('collapsedText').textContent = 'AI 分析完成 · 2,340 件商品 · 增速 +23% · 建议关注骨传导赛道';
+        document.getElementById('collapsedText').textContent = 'AI 分析完成 · 2,340 件商品 · 已智能优化搜索结果';
+        // 自动折叠
+        card.classList.add('collapsed');
+        collapsed = true;
         searchStarted = false;
-      }, 500);
+      }, 800);
       return;
     }
 
