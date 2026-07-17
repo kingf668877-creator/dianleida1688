@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 智能分析完成</title>
+<link rel="stylesheet" href="ai-three-step.css">
+</head>
+<body>
+<main class="page">
+  <div class="edit-toolbar" id="editToolbar">
+    <button class="edit-btn primary" id="editModeBtn" type="button">编辑模式</button>
+    <button class="edit-btn" id="copyChangesBtn" type="button" disabled>复制修改记录</button>
+    <button class="edit-btn ghost" id="resetChangesBtn" type="button" disabled>重置修改</button>
+    <span class="edit-tip" id="editTip">开启后可直接点击文案修改</span>
+  </div>
+
+  <section class="changes-panel" id="changesPanel" hidden>
+    <div class="changes-head">
+      <strong>修改记录</strong>
+      <span id="changesCount">0 条</span>
+    </div>
+    <pre id="changesPreview">暂无修改</pre>
+  </section>
+
+  <section class="analysis-card" id="analysisCard">
+    <button class="card-header" id="collapseBtn" type="button" aria-expanded="true" aria-controls="cardBody">
+      <span class="ai-mark">
+        <span class="ai-mark-icon">✓</span>
+      </span>
+      <span class="heading-copy">
+        <strong data-editable data-edit-label="主标题">AI 智能分析中</strong>
+        <small id="statusText" data-editable data-edit-label="副标题">正在生成分析结果</small>
+      </span>
+      <span class="header-actions">
+        <span class="collapse-chip"><span class="collapse-label">收起</span><span class="caret"></span></span>
+      </span>
+    </button>
+
+    <div class="card-body" id="cardBody">
+      <ol class="steps">
+        <li class="step">
+          <div class="step-rail">
+            <span class="step-dot">✓</span>
+            <span class="step-line"></span>
+          </div>
+          <div class="step-main">
+            <div class="step-top">
+              <div>
+                <span class="step-title" data-editable data-edit-label="Step 1 标题">Step 1：核心词提取</span>
+              </div>
+            </div>
+            <p class="step-summary" data-editable data-edit-label="Step 1 描述">核心产品：蓝牙耳机 · 修饰词：通用 · 必含词：蓝牙耳机、耳机</p>
+            <div class="tag-row">
+              <span class="tag" data-editable data-edit-label="Step 1 标签 1">核心：蓝牙耳机</span>
+              <span class="tag" data-editable data-edit-label="Step 1 标签 2">修饰：通用</span>
+              <span class="tag" data-editable data-edit-label="Step 1 标签 3">必含：耳机</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <div class="step-rail">
+            <span class="step-dot">✓</span>
+            <span class="step-line"></span>
+          </div>
+          <div class="step-main">
+            <div class="step-top">
+              <div>
+                <span class="step-title" data-editable data-edit-label="Step 2 标题">Step 2：关键词扩展与排除</span>
+              </div>
+            </div>
+            <p class="step-summary" data-editable data-edit-label="Step 2 描述">智能扩展 6 个搜索变体 · 排除 4 个不相关词</p>
+            <div class="tag-row tag-row-wrap">
+              <span class="tag" data-editable data-edit-label="Step 2 标签 1">无线蓝牙耳机</span>
+              <span class="tag" data-editable data-edit-label="Step 2 标签 2">TWS蓝牙耳机</span>
+              <span class="tag" data-editable data-edit-label="Step 2 标签 3">爆款蓝牙耳机</span>
+              <span class="tag" data-editable data-edit-label="Step 2 标签 4">降噪蓝牙耳机</span>
+              <span class="tag" data-editable data-edit-label="Step 2 标签 5">运动蓝牙耳机</span>
+              <span class="tag" data-editable data-edit-label="Step 2 标签 6">便携蓝牙耳机</span>
+              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 1">有线耳机</span>
+              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 2">耳机线</span>
+              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 3">耳机套</span>
+              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 4">耳机支架</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="step step-last">
+          <div class="step-rail">
+            <span class="step-dot">✓</span>
+          </div>
+          <div class="step-main">
+            <div class="step-top">
+              <div>
+                <span class="step-title" data-editable data-edit-label="Step 3 标题">Step 3：实时商品搜索完成</span>
+              </div>
+            </div>
+            <p class="step-summary" data-editable data-edit-label="Step 3 描述">搜索词：蓝牙耳机、无线蓝牙耳机、TWS蓝牙耳机、爆款蓝牙耳机等，正在搜索商品中...</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="collapsed-bar" id="collapsedBar" aria-hidden="true">
+      <button class="collapsed-trigger" type="button" id="expandBtn">
+        <span class="collapsed-badge" data-editable data-edit-label="收起态徽标">✓ 完成</span>
+        <span class="collapsed-text" data-editable data-edit-label="收起态文案">AI 分析完成 · 2,340 件商品 · 已智能优化搜索结果</span>
+        <span class="collapsed-expand">展开 <span class="caret"></span></span>
+      </button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">已复制</div>
+</main>
+<script src="ai-three-step.js"></script>
+</body>
+</html>
