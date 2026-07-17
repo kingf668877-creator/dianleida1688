@@ -1,7 +1,4 @@
 const card = document.getElementById('analysisCard');
-const collapseBtn = document.getElementById('collapseBtn');
-const expandBtn = document.getElementById('expandBtn');
-const collapseLabel = collapseBtn.querySelector('.collapse-label');
 const toast = document.getElementById('toast');
 
 const editModeBtn = document.getElementById('editModeBtn');
@@ -21,22 +18,6 @@ editableNodes.forEach((node, index) => {
   const key = node.dataset.editKey || `field-${index}`;
   node.dataset.editKey = key;
   originalValues.set(key, node.textContent.trim());
-});
-
-function setCollapsed(collapsed) {
-  card.classList.toggle('collapsed', collapsed);
-  collapseBtn.setAttribute('aria-expanded', String(!collapsed));
-  collapseLabel.textContent = collapsed ? '展开' : '收起';
-}
-
-collapseBtn.addEventListener('click', event => {
-  if (editMode && event.target.closest('[data-editable]')) return;
-  setCollapsed(!card.classList.contains('collapsed'));
-});
-
-expandBtn.addEventListener('click', event => {
-  if (editMode && event.target.closest('[data-editable]')) return;
-  setCollapsed(false);
 });
 
 function fallbackCopy(text) {
@@ -170,4 +151,3 @@ copyChangesBtn.addEventListener('click', () => copyText(buildChangeText(), copyC
 resetChangesBtn.addEventListener('click', resetChanges);
 
 renderChanges();
-setCollapsed(false);

@@ -100,13 +100,11 @@ body.edit-mode [data-editable]:focus { box-shadow: 0 0 0 4px rgba(98,54,255,.10)
   width: 100%;
   height: 80px;
   padding: 0 24px;
-  border: 0;
   border-bottom: 1px solid var(--line-2);
   background: transparent;
   display: flex;
   align-items: center;
   text-align: left;
-  cursor: pointer;
 }
 .ai-mark {
   width: 40px;
@@ -134,42 +132,8 @@ body.edit-mode [data-editable]:focus { box-shadow: 0 0 0 4px rgba(98,54,255,.10)
   color: #6a38d8;
   font-size: 12px;
 }
-.header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-.collapse-chip {
-  min-width: 74px;
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid #d9c8ff;
-  border-radius: 9px;
-  background: rgba(255,255,255,0.82);
-  color: #5f38dd;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-}
-.caret {
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg) translateY(-1px);
-}
 .card-body {
-  max-height: 1200px;
   opacity: 1;
-  transition: max-height .38s ease, opacity .24s ease;
-}
-.analysis-card.collapsed .card-body {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
 }
 .steps {
   list-style: none;
@@ -275,67 +239,6 @@ body.edit-mode [data-editable]:focus { box-shadow: 0 0 0 4px rgba(98,54,255,.10)
   border-color: #b7f0ca;
   color: #118f51;
 }
-.collapsed-bar {
-  display: none;
-  padding: 12px 20px;
-  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(249,246,255,.95));
-}
-.analysis-card.collapsed .collapsed-bar { display: block; }
-.collapsed-trigger {
-  width: 100%;
-  min-height: 40px;
-  border: 0;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  color: #3a176d;
-  text-align: left;
-  cursor: pointer;
-  padding: 2px 0;
-}
-.collapsed-badge {
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #27cf72, #17b85c);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 800;
-  box-shadow: 0 8px 18px rgba(36, 198, 108, 0.18);
-  white-space: nowrap;
-}
-.collapsed-text {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 700;
-  color: #2f1862;
-}
-.collapsed-expand {
-  height: 34px;
-  min-width: 78px;
-  padding: 0 14px;
-  border: 1px solid #d9c8ff;
-  border-radius: 9px;
-  background: rgba(255,255,255,.82);
-  color: #5f38dd;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-}
-.collapse-chip .caret,
-.collapsed-expand .caret {
-  transform: rotate(45deg) translateY(-1px);
-}
-.analysis-card.collapsed .collapse-chip .caret,
-.analysis-card:not(.collapsed) .collapsed-expand .caret {
-  transform: rotate(-135deg) translateY(1px);
-}
 .toast {
   position: fixed;
   left: 50%;
@@ -358,6 +261,4 @@ body.edit-mode [data-editable]:focus { box-shadow: 0 0 0 4px rgba(98,54,255,.10)
   .page { width: calc(100% - 16px); }
   .step { grid-template-columns: 46px 1fr; }
   .step-main { padding-right: 14px; }
-  .collapsed-trigger { gap: 12px; flex-wrap: wrap; }
-  .collapsed-text { min-width: 100%; order: 3; }
 }

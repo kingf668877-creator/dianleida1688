@@ -12,13 +12,14 @@
   .app { display:flex; width:100%; height:100vh; }
   .layers { width:224px; flex:0 0 224px; background:#fff; border-right:1px solid var(--border); }
   .layers-title { height:52px; display:flex; align-items:center; padding:0 20px; border-bottom:1px solid var(--border); font-size:15px; font-weight:600; }
+  .search-wrap { padding:10px 12px 0; }
+  .search-input { width:100%; height:34px; padding:0 12px; border:1px solid var(--border); border-radius:8px; color:#1d2129; outline:none; font:13px/1 "PingFang SC","Microsoft YaHei",sans-serif; }
+  .search-input:focus { border-color:var(--blue); box-shadow:0 0 0 2px rgba(51,112,255,.10); }
+  .search-input::placeholder { color:#a8abb2; }
   .layer-list { padding:10px 8px; }
-  .version-folder { width:100%; height:34px; padding:0 10px; border:0; border-radius:6px; background:transparent; color:#4e5969; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer; text-align:left; transition:.16s ease; }
-  .version-folder:hover { background:var(--hover); color:var(--text); }
-  .version-arrow { width:14px; color:#86909c; transition:transform .16s ease; }
-  .version-folder.collapsed .version-arrow { transform:rotate(-90deg); }
+  .version-folder { width:100%; height:34px; padding:0 10px; border:0; border-radius:6px; background:transparent; color:#4e5969; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; text-align:left; }
   .version-pages { padding:4px 0 0 22px; }
-  .version-pages.collapsed { display:none; }
+  .layer-empty { display:none; padding:18px 12px; color:#a8abb2; font-size:12px; text-align:center; }
   .layer-item { width:100%; height:42px; padding:0 12px; border:0; border-radius:6px; background:transparent; color:#4e5969; display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer; text-align:left; transition:.16s ease; }
   .layer-item:hover { background:var(--hover); color:var(--text); }
   .layer-item.active { color:var(--blue); background:#e8f0ff; font-weight:500; }
@@ -32,19 +33,22 @@
 </head>
 <body>
 <div class="app">
-  <aside class="layers" aria-label="图层导航">
-    <div class="layers-title">图层</div>
+  <aside class="layers" aria-label="店雷达选品导航">
+    <div class="layers-title">店雷达选品</div>
+    <div class="search-wrap">
+      <input class="search-input" id="layerSearch" type="search" placeholder="搜索版本或页面">
+    </div>
     <nav class="layer-list">
-      <button class="version-folder" id="versionFolder" type="button" aria-expanded="true" aria-controls="versionPages">
-        <span class="version-arrow">▾</span>
+      <div class="version-folder" id="versionFolder">
         <span>V2.8.9</span>
-      </button>
-      <div class="version-pages" id="versionPages">
-        <button class="layer-item active" data-page="ai-three-step.html"><span class="layer-icon icon-p">P</span>搜索智能体</button>
-        <button class="layer-item" data-page="ai-three-step-code-html.html"><span class="layer-icon icon-h">H</span>HTML</button>
-        <button class="layer-item" data-page="ai-three-step-code-css.html"><span class="layer-icon icon-c">C</span>CSS</button>
-        <button class="layer-item" data-page="ai-three-step-code-js.html"><span class="layer-icon icon-j">J</span>JS</button>
       </div>
+      <div class="version-pages" id="versionPages">
+        <button class="layer-item active" data-page="ai-three-step.html" data-search="V2.8.9 搜索智能体"><span class="layer-icon icon-p">P</span>搜索智能体</button>
+        <button class="layer-item" data-page="ai-three-step-code-html.html" data-search="V2.8.9 HTML"><span class="layer-icon icon-h">H</span>HTML</button>
+        <button class="layer-item" data-page="ai-three-step-code-css.html" data-search="V2.8.9 CSS"><span class="layer-icon icon-c">C</span>CSS</button>
+        <button class="layer-item" data-page="ai-three-step-code-js.html" data-search="V2.8.9 JS"><span class="layer-icon icon-j">J</span>JS</button>
+      </div>
+      <div class="layer-empty" id="layerEmpty">暂无匹配内容</div>
     </nav>
   </aside>
   <main class="stage">
@@ -54,20 +58,31 @@
 <script>
   const frame = document.getElementById('designFrame');
   const items = Array.from(document.querySelectorAll('.layer-item'));
+  const layerSearch = document.getElementById('layerSearch');
   const versionFolder = document.getElementById('versionFolder');
-  const versionPages = document.getElementById('versionPages');
-
-  versionFolder.addEventListener('click', () => {
-    const collapsed = versionPages.classList.toggle('collapsed');
-    versionFolder.classList.toggle('collapsed', collapsed);
-    versionFolder.setAttribute('aria-expanded', String(!collapsed));
-  });
+  const layerEmpty = document.getElementById('layerEmpty');
 
   items.forEach(item => item.addEventListener('click', () => {
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
     frame.src = item.dataset.page;
   }));
+
+  layerSearch.addEventListener('input', () => {
+    const keyword = layerSearch.value.trim().toLowerCase();
+    let visibleCount = 0;
+    const versionMatched = 'v2.8.9'.includes(keyword) || '2.8.9'.includes(keyword);
+
+    items.forEach(item => {
+      const text = (item.dataset.search || item.textContent).toLowerCase();
+      const matched = !keyword || versionMatched || text.includes(keyword);
+      item.style.display = matched ? 'flex' : 'none';
+      if (matched) visibleCount += 1;
+    });
+
+    versionFolder.style.display = visibleCount > 0 ? 'flex' : 'none';
+    layerEmpty.style.display = visibleCount > 0 ? 'none' : 'block';
+  });
 </script>
 </body>
 </html>
