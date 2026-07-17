@@ -1888,13 +1888,17 @@ function exportImage(scale) {
     return;
   }
   showToast('正在生成图片...');
-  html2canvas(ctxTargetEl, { scale: scale, useCORS: true }).then(function(canvas) {
-    var link = document.createElement('a');
+  // 在 iframe 内部调用 html2canvas
+  iWin.html2canvas(ctxTargetEl, { scale: scale, useCORS: true }).then(function(canvas) {
+    var link = iDoc.createElement('a');
     link.download = 'element' + (scale > 1 ? '@2x' : '') + '.png';
     link.href = canvas.toDataURL('image/png');
+    // 触发下载
+    iDoc.body.appendChild(link);
     link.click();
+    iDoc.body.removeChild(link);
     showToast('图片已导出');
-  }).catch(function() {
+  }).catch(function(err) {
     showToast('导出失败');
   });
 }
