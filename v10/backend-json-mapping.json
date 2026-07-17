@@ -1,0 +1,110 @@
+{
+  "title": "后端只需接收的智能体分析结果",
+  "description": "后端只需要读取智能体返回 JSON 中的核心产品、修饰词、必含词、关键词扩展词和排除词。",
+  "fields": {
+    "coreProduct": {
+      "type": "string",
+      "name": "核心产品",
+      "description": "用户真正要找的商品主体，例如化妆包、钓鱼工具包、运动护具。",
+      "usage": [
+        "作为主商品词",
+        "参与标题相关性判断",
+        "当扩展词为空时作为兜底搜索词"
+      ]
+    },
+    "modifiers": {
+      "type": "object",
+      "name": "修饰词",
+      "description": "用户搜索词里的风格、材质、人群、场景、价格等修饰信息。",
+      "properties": {
+        "style": "风格或款式，例如复古、异形、韩版、ins风",
+        "material": "材质，例如 PVC、真皮、硅胶、帆布",
+        "crowd": "人群，例如女、男、儿童、宝宝",
+        "scene": "使用场景，例如钓鱼、户外、旅行、通勤",
+        "priceRange": "价格区间，包含 min 和 max",
+        "other": "其他有筛选价值的修饰条件，例如大容量、便携、防水"
+      },
+      "rules": [
+        "没有明确修饰词时填写空数组",
+        "不要返回通用、不限、默认、常规、其他等占位词",
+        "主要用于筛选提示或相关性加权，不建议作为强过滤条件"
+      ]
+    },
+    "requiredKeywords": {
+      "type": "string[]",
+      "name": "必含词",
+      "description": "商品标题必须包含的关键词，用于防止结果跑偏。",
+      "rules": [
+        "1至2个必含词时，商品标题必须全部命中",
+        "3个及以上时，商品标题命中至少三分之二",
+        "必含词不要太多，避免无结果",
+        "谨慎使用包、袋等单字词"
+      ]
+    },
+    "expandedKeywords": {
+      "type": "string[]",
+      "name": "关键词扩展词",
+      "description": "与核心产品高度相关的补充搜索词，用于扩展召回。",
+      "rules": [
+        "数量控制在5至8个以内",
+        "调用商品搜索接口时建议最多取前2个参与主搜索",
+        "拼接搜索词不要超过3个",
+        "不要一次性拼接全部扩展词"
+      ]
+    },
+    "excludedKeywords": {
+      "type": "string[]",
+      "name": "排除词",
+      "description": "需要过滤掉的无关商品关键词，商品标题命中则排除。",
+      "rules": [
+        "商品标题命中任一排除词时直接剔除",
+        "排除词必须是明确无关品类",
+        "不要单独使用工具、用品、配件等过泛词"
+      ]
+    }
+  },
+  "minimalExample": {
+    "coreProduct": "化妆包",
+    "modifiers": {
+      "style": [],
+      "material": ["PVC"],
+      "crowd": [],
+      "scene": ["旅行", "洗漱"],
+      "priceRange": {
+        "min": null,
+        "max": null
+      },
+      "other": []
+    },
+    "requiredKeywords": ["化妆包"],
+    "expandedKeywords": ["PVC化妆包", "透明化妆包", "旅行洗漱包"],
+    "excludedKeywords": ["笔袋", "文具盒", "材料包", "配件包"]
+  },
+  "backendFlow": [
+    "读取 coreProduct，确认商品主体",
+    "读取 expandedKeywords，取前1至2个扩展搜索词",
+    "用用户原词加扩展词调用商品搜索接口",
+    "用 requiredKeywords 做标题必含过滤",
+    "用 excludedKeywords 做标题排除过滤",
+    "用 modifiers 做相关性加权或筛选展示"
+  ],
+  "examples": [
+    {
+      "query": "麻将包",
+      "excludedKeywords": ["麻将牌", "麻将机", "麻将桌", "麻将垫", "材料包"]
+    },
+    {
+      "query": "透明化妆包pvc",
+      "excludedKeywords": ["笔袋", "文具盒", "材料包", "配件包"]
+    },
+    {
+      "query": "钓鱼工具包",
+      "excludedKeywords": ["鱼饵", "鱼线", "鱼钩", "钓鱼竿", "配件包"]
+    },
+    {
+      "query": "运动护具",
+      "excludedKeywords": ["运动鞋", "运动服", "运动水壶", "运动手表"]
+    }
+  ],
+  "summary": "后端只需要接收 coreProduct、modifiers、requiredKeywords、expandedKeywords、excludedKeywords 五个字段。不要把通用、不限、默认等占位词当作有效筛选词。"
+}
