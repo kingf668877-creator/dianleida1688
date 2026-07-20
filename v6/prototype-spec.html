@@ -8,55 +8,57 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
     min-height: 100vh;
     color: #1d2129;
+    line-height: 1.7;
   }
 
-  /* 顶部工具栏 */
-  .toolbar {
+  /* 顶部栏 */
+  .topbar {
     position: sticky;
     top: 0;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
+    padding: 12px 28px;
     background: #fff;
-    border-bottom: 1px solid #e5e6eb;
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    border-bottom: 1px solid #f2f3f5;
   }
-  .toolbar-left {
+  .topbar-left {
     display: flex;
     align-items: center;
     gap: 12px;
   }
-  .toolbar-title {
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .toolbar-title .icon {
-    width: 28px;
-    height: 28px;
+  .logo-icon {
+    width: 24px;
+    height: 24px;
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    border-radius: 7px;
+    border-radius: 6px;
     display: grid;
     place-items: center;
     color: #fff;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
   }
-  .toolbar-right {
+  .breadcrumb {
+    font-size: 13px;
+    color: #86909c;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .breadcrumb span:last-child { color: #1d2129; font-weight: 500; }
+
+  .topbar-right {
     display: flex;
     align-items: center;
     gap: 8px;
   }
   .btn {
-    height: 34px;
+    height: 32px;
     padding: 0 14px;
     border: 0;
     border-radius: 6px;
@@ -69,184 +71,341 @@
     align-items: center;
     gap: 6px;
   }
-  .btn.primary { background: #6236ff; color: #fff; }
-  .btn.primary:hover { background: #5229e0; }
-  .btn.ghost { background: #f2f3f5; color: #4e5969; }
-  .btn.ghost:hover { background: #e5e6eb; color: #1d2129; }
-  .btn.success { background: #10b981; color: #fff; }
-  .btn.success:hover { background: #059669; }
+  .btn.primary { background: #3370ff; color: #fff; }
+  .btn.primary:hover { background: #2968f2; }
+  .btn.ghost { background: transparent; color: #4e5969; border: 1px solid #e5e6eb; }
+  .btn.ghost:hover { background: #f7f8fa; color: #1d2129; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* 搜索栏 */
-  .search-bar {
-    padding: 16px 24px 0;
-  }
-  .search-input {
-    width: 100%;
-    height: 40px;
-    padding: 0 16px 0 40px;
-    border: 1px solid #e5e6eb;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    transition: .15s;
-    background: #fff;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386909c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.3-4.3'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: 12px center;
-  }
-  .search-input:focus {
-    border-color: #6236ff;
-    box-shadow: 0 0 0 3px rgba(98,54,255,.10);
-  }
-  .search-input::placeholder { color: #a8abb2; }
-
-  /* 统计栏 */
-  .stats-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 24px;
-    font-size: 12px;
-    color: #86909c;
-  }
-
-  /* 表格容器 */
-  .table-wrap {
-    padding: 0 24px 40px;
-    max-width: 1100px;
+  /* 文档主体 */
+  .doc-wrap {
+    max-width: 820px;
     margin: 0 auto;
+    padding: 40px 28px 120px;
   }
 
-  /* 表格 */
-  .data-table {
-    width: 100%;
-    background: #fff;
-    border: 1px solid #e5e6eb;
-    border-radius: 12px;
-    overflow: hidden;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-  .data-table th,
-  .data-table td {
-    padding: 0;
-    text-align: left;
-    border-bottom: 1px solid #f2f3f5;
-  }
-  .data-table tr:last-child td { border-bottom: 0; }
-
-  /* 表头 */
-  .data-table thead th {
-    padding: 12px 16px;
-    background: #f7f8fa;
-    font-size: 13px;
-    font-weight: 600;
-    color: #4e5969;
-    border-bottom: 1px solid #e5e6eb;
-    user-select: none;
-  }
-  .data-table thead th:first-child { width: 50%; }
-  .data-table thead th:last-child { width: 80px; text-align: center; }
-
-  /* 表格行 */
-  .data-table tbody tr {
-    transition: background .15s;
-  }
-  .data-table tbody tr:hover {
-    background: #faf8ff;
-  }
-  .data-table tbody tr:hover .row-actions { opacity: 1; }
-
-  /* 单元格可编辑 */
-  .cell-edit {
-    padding: 10px 16px;
-    font-size: 13px;
-    color: #1d2129;
-    line-height: 1.6;
+  /* 文档标题 */
+  .doc-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 24px;
     outline: none;
-    min-height: 40px;
-    cursor: text;
-    transition: background .15s;
+    color: #1d2129;
   }
-  .cell-edit:hover {
-    background: rgba(98,54,255,.04);
-  }
-  .cell-edit:focus {
-    background: #f0ebff;
-  }
-  .cell-edit:empty::before {
+  .doc-title:empty::before {
     content: attr(data-placeholder);
     color: #c9cdd4;
   }
-  .cell-edit.desc {
-    color: #4e5969;
-  }
 
-  /* 行操作 */
-  .row-actions {
+  /* 内容块 */
+  .block {
+    position: relative;
+    padding: 4px 0;
+    margin: 2px 0;
+  }
+  .block:hover .block-handle { opacity: 1; }
+
+  /* 块操作手柄 */
+  .block-handle {
+    position: absolute;
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 2px;
-    padding: 8px;
     opacity: 0;
     transition: opacity .15s;
   }
-  .icon-btn {
+  .handle-btn {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #86909c;
+    cursor: pointer;
+    transition: .15s;
+    font-size: 14px;
+  }
+  .handle-btn:hover { background: #f2f3f5; color: #1d2129; }
+  .handle-btn.drag { cursor: grab; }
+  .handle-btn.drag:active { cursor: grabbing; }
+
+  /* 文本块 */
+  .text-block {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #1d2129;
+    outline: none;
+    min-height: 28px;
+  }
+  .text-block:empty::before {
+    content: attr(data-placeholder);
+    color: #c9cdd4;
+  }
+  .text-block.heading1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .text-block.heading2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .text-block.heading3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+  .text-block.quote {
+    padding: 8px 16px;
+    border-left: 3px solid #3370ff;
+    background: #f7f9ff;
+    color: #4e5969;
+    border-radius: 0 6px 6px 0;
+  }
+  .text-block.bullet {
+    padding-left: 24px;
+    position: relative;
+  }
+  .text-block.bullet::before {
+    content: "•";
+    position: absolute;
+    left: 8px;
+    color: #86909c;
+  }
+  .text-block.ordered {
+    padding-left: 28px;
+    position: relative;
+  }
+  .text-block.ordered::before {
+    content: attr(data-order) ".";
+    position: absolute;
+    left: 6px;
+    color: #86909c;
+    min-width: 16px;
+  }
+
+  /* 分割线 */
+  .divider-block {
+    padding: 16px 0;
+  }
+  .divider-block hr {
+    border: 0;
+    border-top: 1px solid #e5e6eb;
+  }
+
+  /* 图片块 */
+  .image-block {
+    padding: 8px 0;
+    text-align: center;
+  }
+  .image-block img {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  .image-uploader {
+    border: 2px dashed #e5e6eb;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    color: #86909c;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .image-uploader:hover {
+    border-color: #3370ff;
+    color: #3370ff;
+    background: #f7f9ff;
+  }
+  .image-uploader .icon { font-size: 32px; margin-bottom: 8px; }
+  .image-uploader .tip { font-size: 13px; }
+
+  /* 表格块 */
+  .table-block {
+    padding: 8px 0;
+    overflow-x: auto;
+  }
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e5e6eb;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .doc-table th,
+  .doc-table td {
+    border: 1px solid #e5e6eb;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 14px;
+    outline: none;
+    min-width: 100px;
+    vertical-align: top;
+  }
+  .doc-table th {
+    background: #f7f8fa;
+    font-weight: 600;
+    color: #4e5969;
+  }
+  .doc-table td:focus,
+  .doc-table th:focus {
+    background: #eff4ff;
+  }
+  .table-toolbar {
+    display: flex;
+    gap: 6px;
+    padding: 6px 0 0;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .block:hover .table-toolbar { opacity: 1; }
+  .table-btn {
+    height: 26px;
+    padding: 0 10px;
+    border: 1px solid #e5e6eb;
+    border-radius: 4px;
+    background: #fff;
+    color: #86909c;
+    font-size: 12px;
+    cursor: pointer;
+    transition: .15s;
+    font-family: inherit;
+  }
+  .table-btn:hover {
+    border-color: #3370ff;
+    color: #3370ff;
+  }
+  .table-btn.danger:hover {
+    border-color: #ff4d4f;
+    color: #ff4d4f;
+  }
+
+  /* 代码块 */
+  .code-block {
+    padding: 8px 0;
+  }
+  .code-block pre {
+    background: #1d2129;
+    color: #f2f3f5;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 添加块按钮 */
+  .add-block-area {
+    position: relative;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .add-block-btn {
     width: 28px;
     height: 28px;
     display: grid;
     place-items: center;
     border: 0;
-    border-radius: 5px;
+    border-radius: 6px;
     background: transparent;
-    color: #86909c;
+    color: #c9cdd4;
     cursor: pointer;
     transition: .15s;
+    font-size: 16px;
   }
-  .icon-btn:hover { background: #f0ebff; color: #6236ff; }
-  .icon-btn.danger:hover { background: #fff0f0; color: #ff4d4f; }
+  .add-block-btn:hover {
+    background: #f2f3f5;
+    color: #4e5969;
+  }
 
-  /* 添加行 */
-  .add-row {
+  /* 块菜单弹窗 */
+  .block-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 240px;
+    background: #fff;
+    border: 1px solid #e5e6eb;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    z-index: 200;
+    padding: 6px;
+    display: none;
+  }
+  .block-menu.show { display: block; }
+  .menu-group-title {
+    font-size: 11px;
+    color: #86909c;
+    padding: 6px 10px 4px;
+    font-weight: 500;
+  }
+  .menu-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px;
-    font-size: 13px;
-    color: #86909c;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: .15s;
-    border-top: 1px solid #f2f3f5;
-    user-select: none;
+    transition: background .15s;
   }
-  .add-row:hover {
-    background: #faf8ff;
-    color: #6236ff;
+  .menu-item:hover { background: #f7f8fa; }
+  .menu-icon {
+    width: 28px;
+    height: 28px;
+    background: #f2f3f5;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    color: #4e5969;
+    flex-shrink: 0;
   }
+  .menu-info { flex: 1; min-width: 0; }
+  .menu-name { font-size: 13px; color: #1d2129; font-weight: 500; }
+  .menu-desc { font-size: 11px; color: #86909c; margin-top: 1px; }
 
-  /* 空状态 */
-  .empty-state {
-    padding: 60px 20px;
-    text-align: center;
+  /* 底部统计 */
+  .doc-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 28px;
+    background: #fff;
+    border-top: 1px solid #f2f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
     color: #86909c;
-  }
-  .empty-state .icon {
-    font-size: 48px;
-    margin-bottom: 12px;
-    opacity: .3;
+    z-index: 50;
   }
 
   /* Toast */
   .toast {
     position: fixed;
-    top: 20px;
+    top: 60px;
     left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    padding: 10px 20px;
+    transform: translateX(-50%) translateY(-10px);
+    padding: 10px 18px;
     background: #1d2129;
     color: #fff;
     border-radius: 8px;
@@ -262,65 +421,31 @@
   }
   .toast.success { background: #10b981; }
 
-  /* 确认弹窗 */
-  .modal-mask {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.4);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;
-  }
-  .modal-mask.show { display: flex; }
-  .modal {
-    width: 360px;
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
-  }
-  .modal-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .modal-desc {
-    font-size: 13px;
-    color: #86909c;
-    margin-bottom: 20px;
-    line-height: 1.6;
-  }
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
+  /* 隐藏的文件输入 */
+  #fileInput { display: none; }
 
   /* 响应式 */
   @media (max-width: 640px) {
-    .toolbar { padding: 10px 16px; }
-    .search-bar { padding: 12px 16px 0; }
-    .stats-bar { padding: 10px 16px; }
-    .table-wrap { padding: 0 16px 40px; }
-    .data-table thead th:first-child { width: 45%; }
+    .topbar { padding: 10px 16px; }
+    .doc-wrap { padding: 24px 16px 100px; }
+    .doc-title { font-size: 24px; }
+    .block-handle { display: none; }
   }
 </style>
 </head>
 <body>
 
-<!-- 顶部工具栏 -->
-<div class="toolbar">
-  <div class="toolbar-left">
-    <div class="toolbar-title">
-      <span class="icon">P</span>
-      原型说明
+<!-- 顶部栏 -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-icon">P</div>
+    <div class="breadcrumb">
+      <span>原型说明</span>
+      <span>/</span>
+      <span id="breadcrumbTitle">1688选品库-AI搜索方案</span>
     </div>
   </div>
-  <div class="toolbar-right">
-    <button class="btn ghost" id="addRowBtn">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      添加行
-    </button>
+  <div class="topbar-right">
     <button class="btn ghost" id="clearBtn">清空</button>
     <button class="btn primary" id="publishBtn">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M13 8L7 2 1 8m6-1v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -329,339 +454,637 @@
   </div>
 </div>
 
-<!-- 搜索栏 -->
-<div class="search-bar">
-  <input class="search-input" id="searchInput" type="text" placeholder="搜索功能或说明...">
-</div>
-
-<!-- 统计 -->
-<div class="stats-bar">
-  <span id="statsText">共 0 条</span>
-  <span>点击单元格直接编辑</span>
-</div>
-
-<!-- 表格 -->
-<div class="table-wrap">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>功能名称</th>
-        <th>说明</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      <!-- 动态渲染 -->
-    </tbody>
-  </table>
-  <div class="add-row" id="addRowBtn2">
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    添加一行
+<!-- 文档主体 -->
+<div class="doc-wrap">
+  <div class="doc-title" id="docTitle" contenteditable="true" data-placeholder="请输入标题">
+    1688选品库 - AI搜索方案
   </div>
+  <div id="blocksContainer">
+    <!-- 动态渲染 -->
+  </div>
+  <div class="add-block-area">
+    <button class="add-block-btn" id="addBlockBtn" title="添加内容块">+</button>
+    <div class="block-menu" id="blockMenu">
+      <div class="menu-group-title">基础</div>
+      <div class="menu-item" data-type="text">
+        <div class="menu-icon">¶</div>
+        <div class="menu-info">
+          <div class="menu-name">正文</div>
+          <div class="menu-desc">普通文本段落</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="heading1">
+        <div class="menu-icon">H1</div>
+        <div class="menu-info">
+          <div class="menu-name">一级标题</div>
+          <div class="menu-desc">大号标题</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="heading2">
+        <div class="menu-icon">H2</div>
+        <div class="menu-info">
+          <div class="menu-name">二级标题</div>
+          <div class="menu-desc">中号标题</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="heading3">
+        <div class="menu-icon">H3</div>
+        <div class="menu-info">
+          <div class="menu-name">三级标题</div>
+          <div class="menu-desc">小号标题</div>
+        </div>
+      </div>
+      <div class="menu-group-title">列表</div>
+      <div class="menu-item" data-type="bullet">
+        <div class="menu-icon">•</div>
+        <div class="menu-info">
+          <div class="menu-name">无序列表</div>
+          <div class="menu-desc">圆点列表</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="ordered">
+        <div class="menu-icon">1.</div>
+        <div class="menu-info">
+          <div class="menu-name">有序列表</div>
+          <div class="menu-desc">数字列表</div>
+        </div>
+      </div>
+      <div class="menu-group-title">高级</div>
+      <div class="menu-item" data-type="quote">
+        <div class="menu-icon">❝</div>
+        <div class="menu-info">
+          <div class="menu-name">引用</div>
+          <div class="menu-desc">引用文字块</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="divider">
+        <div class="menu-icon">―</div>
+        <div class="menu-info">
+          <div class="menu-name">分割线</div>
+          <div class="menu-desc">水平分割线</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="image">
+        <div class="menu-icon">🖼</div>
+        <div class="menu-info">
+          <div class="menu-name">图片</div>
+          <div class="menu-desc">上传或粘贴图片</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="table">
+        <div class="menu-icon">▦</div>
+        <div class="menu-info">
+          <div class="menu-name">表格</div>
+          <div class="menu-desc">插入可编辑表格</div>
+        </div>
+      </div>
+      <div class="menu-item" data-type="code">
+        <div class="menu-icon">{ }</div>
+        <div class="menu-info">
+          <div class="menu-name">代码块</div>
+          <div class="menu-desc">插入代码片段</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部统计 -->
+<div class="doc-footer">
+  <span id="wordCount">共 0 字</span>
+  <span id="blockCount">0 个内容块</span>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- 确认弹窗 -->
-<div class="modal-mask" id="confirmModal">
-  <div class="modal">
-    <div class="modal-title" id="modalTitle">确认</div>
-    <div class="modal-desc" id="modalDesc">确定要执行此操作吗？</div>
-    <div class="modal-actions">
-      <button class="btn ghost" id="modalCancel">取消</button>
-      <button class="btn danger" id="modalConfirm">确认</button>
-    </div>
-  </div>
-</div>
+<!-- 隐藏文件输入 -->
+<input type="file" id="fileInput" accept="image/*" multiple>
 
 <script>
-// ========== 数据 ==========
-let tableData = [
-  { name: '1688选品库', desc: 'AI搜索选品功能入口' },
-  { name: '1688选品库-方案一', desc: '关键词搜索+筛选方案' },
-  { name: '商品分析', desc: '商品详情数据分析面板' },
-  { name: '1688选品库-方案二', desc: '图片搜索+同款对比方案' },
-  { name: '亚马逊精选货盘', desc: '亚马逊热销商品货盘' },
-  { name: '下游商机榜-要修改', desc: '下游平台商机榜单（待优化）' },
-  { name: '淘宝商品分析', desc: '淘宝平台商品数据分析' },
-  { name: '抖音商品分析', desc: '抖音平台商品数据分析' }
+// ========== 数据结构 ==========
+let blocks = [
+  { id: genId(), type: 'heading2', content: '功能概述' },
+  { id: genId(), type: 'text', content: '本页面用于展示1688选品库的AI搜索功能，支持关键词搜索、智能筛选、商品分析等功能。' },
+  { id: genId(), type: 'heading2', content: '功能列表' },
+  { id: genId(), type: 'bullet', content: '1688选品库 - AI搜索选品功能入口' },
+  { id: genId(), type: 'bullet', content: '1688选品库-方案一 - 关键词搜索+筛选方案' },
+  { id: genId(), type: 'bullet', content: '商品分析 - 商品详情数据分析面板' },
+  { id: genId(), type: 'bullet', content: '1688选品库-方案二 - 图片搜索+同款对比方案' },
+  { id: genId(), type: 'bullet', content: '亚马逊精选货盘 - 亚马逊热销商品货盘' },
+  { id: genId(), type: 'bullet', content: '下游商机榜 - 下游平台商机榜单' },
+  { id: genId(), type: 'bullet', content: '淘宝商品分析 - 淘宝平台商品数据分析' },
+  { id: genId(), type: 'bullet', content: '抖音商品分析 - 抖音平台商品数据分析' },
+  { id: genId(), type: 'heading2', content: '版本对比' },
+  { id: genId(), type: 'table', data: {
+    rows: [
+      ['版本', '功能', '状态'],
+      ['V2.8.9', 'AI搜索方案', '进行中'],
+      ['V2.8.8', '筛选优化', '已完成'],
+      ['V2.8.7', '商品分析', '已完成']
+    ]
+  }},
+  { id: genId(), type: 'quote', content: '点击任意位置即可编辑，支持添加文字、图片、表格等多种内容块。' }
 ];
 
-// ========== 元素 ==========
-const tableBody = document.getElementById('tableBody');
-const searchInput = document.getElementById('searchInput');
-const statsText = document.getElementById('statsText');
-const publishBtn = document.getElementById('publishBtn');
-const addRowBtn = document.getElementById('addRowBtn');
-const addRowBtn2 = document.getElementById('addRowBtn2');
-const clearBtn = document.getElementById('clearBtn');
-const toast = document.getElementById('toast');
-const confirmModal = document.getElementById('confirmModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalDesc = document.getElementById('modalDesc');
-const modalCancel = document.getElementById('modalCancel');
-const modalConfirm = document.getElementById('modalConfirm');
+let currentInsertIndex = blocks.length;
+let imageUploadTargetId = null;
 
-let pendingAction = null;
+// ========== 工具函数 ==========
+function genId() {
+  return 'b_' + Math.random().toString(36).substr(2, 9);
+}
 
 // ========== 渲染 ==========
 function render() {
-  const keyword = searchInput.value.trim().toLowerCase();
-  const filtered = keyword
-    ? tableData.filter(row =>
-        row.name.toLowerCase().includes(keyword) ||
-        row.desc.toLowerCase().includes(keyword)
-      )
-    : tableData;
-
-  if (filtered.length === 0) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="3">
-          <div class="empty-state">
-            <div class="icon">📋</div>
-            <div>${keyword ? '没有找到匹配的内容' : '暂无数据，点击下方按钮添加'}</div>
-          </div>
-        </td>
-      </tr>
-    `;
-  } else {
-    tableBody.innerHTML = filtered.map((row, i) => {
-      const realIndex = tableData.indexOf(row);
-      return `
-        <tr data-index="${realIndex}">
-          <td>
-            <div class="cell-edit" data-field="name" contenteditable="true" data-placeholder="请输入功能名称">${row.name || ''}</div>
-          </td>
-          <td>
-            <div class="cell-edit desc" data-field="desc" contenteditable="true" data-placeholder="请输入说明">${row.desc || ''}</div>
-          </td>
-          <td>
-            <div class="row-actions">
-              <button class="icon-btn" data-action="move-up" title="上移">
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 12V4m0 0L5 7m3-3l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <button class="icon-btn" data-action="move-down" title="下移">
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 4v8m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <button class="icon-btn danger" data-action="delete" title="删除">
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 5h10M6 5V3h4v2M5 5v8h6V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    bindRowEvents();
-  }
-
-  statsText.textContent = `共 ${filtered.length} 条${keyword ? ` / ${tableData.length} 条总计` : ''}`;
+  const container = document.getElementById('blocksContainer');
+  container.innerHTML = blocks.map((block, index) => renderBlock(block, index)).join('');
+  bindBlockEvents();
+  updateStats();
 }
 
-// ========== 行事件 ==========
-function bindRowEvents() {
-  tableBody.querySelectorAll('tr[data-index]').forEach(tr => {
-    const index = parseInt(tr.dataset.index);
-    const row = tableData[index];
-    if (!row) return;
+function renderBlock(block, index) {
+  let content = '';
+  const handle = `
+    <div class="block-handle">
+      <button class="handle-btn add" data-action="add" title="添加块">+</button>
+      <button class="handle-btn drag" data-action="drag" title="拖动排序">⋮⋮</button>
+      <button class="handle-btn del" data-action="delete" title="删除">✕</button>
+    </div>
+  `;
 
-    // 编辑单元格
-    tr.querySelectorAll('.cell-edit').forEach(cell => {
-      const field = cell.dataset.field;
-      cell.addEventListener('blur', () => {
-        row[field] = cell.textContent.trim();
-        saveToLocal();
+  switch (block.type) {
+    case 'text':
+    case 'heading1':
+    case 'heading2':
+    case 'heading3':
+    case 'quote':
+    case 'bullet':
+    case 'ordered':
+      const order = block.type === 'ordered' ? (index + 1) : '';
+      content = `<div class="text-block ${block.type}" contenteditable="true" data-placeholder="输入文字...">${block.content || ''}</div>`;
+      break;
+
+    case 'divider':
+      content = `<div class="divider-block"><hr></div>`;
+      break;
+
+    case 'image':
+      if (block.src) {
+        content = `
+          <div class="image-block">
+            <img src="${block.src}" alt="${block.alt || ''}">
+          </div>
+        `;
+      } else {
+        content = `
+          <div class="image-block">
+            <div class="image-uploader" data-action="upload">
+              <div class="icon">📷</div>
+              <div class="tip">点击上传图片 或 粘贴图片</div>
+            </div>
+          </div>
+        `;
+      }
+      break;
+
+    case 'table':
+      const rows = block.data?.rows || [['', '', ''], ['', '', ''], ['', '', '']];
+      let tableHtml = '<table class="doc-table">';
+      rows.forEach((row, ri) => {
+        tableHtml += '<tr>';
+        row.forEach((cell, ci) => {
+          const tag = ri === 0 ? 'th' : 'td';
+          tableHtml += `<${tag} contenteditable="true" data-row="${ri}" data-col="${ci}">${cell || ''}</${tag}>`;
+        });
+        tableHtml += '</tr>';
       });
-      cell.addEventListener('keydown', (e) => {
+      tableHtml += '</table>';
+      content = `
+        <div class="table-block">
+          ${tableHtml}
+          <div class="table-toolbar">
+            <button class="table-btn" data-action="add-row">+ 行</button>
+            <button class="table-btn" data-action="add-col">+ 列</button>
+            <button class="table-btn danger" data-action="del-row">- 行</button>
+            <button class="table-btn danger" data-action="del-col">- 列</button>
+          </div>
+        </div>
+      `;
+      break;
+
+    case 'code':
+      content = `
+        <div class="code-block">
+          <pre contenteditable="true">${block.content || '// 输入代码'}</pre>
+        </div>
+      `;
+      break;
+
+    default:
+      content = `<div class="text-block" contenteditable="true">${block.content || ''}</div>`;
+  }
+
+  return `<div class="block" data-id="${block.id}" data-index="${index}">${handle}${content}</div>`;
+}
+
+// ========== 绑定事件 ==========
+function bindBlockEvents() {
+  document.querySelectorAll('.block').forEach(blockEl => {
+    const id = blockEl.dataset.id;
+    const block = blocks.find(b => b.id === id);
+    if (!block) return;
+
+    // 文本编辑
+    const textEl = blockEl.querySelector('.text-block');
+    if (textEl) {
+      textEl.addEventListener('input', () => {
+        block.content = textEl.textContent;
+        saveToLocal();
+        updateStats();
+      });
+      textEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          cell.blur();
-          // 下一行同字段聚焦
-          const nextTr = tr.nextElementSibling;
-          if (nextTr && nextTr.dataset.index !== undefined) {
-            const nextCell = nextTr.querySelector(`[data-field="${field}"]`);
-            if (nextCell) nextCell.focus();
-          }
+          const idx = blocks.findIndex(b => b.id === id);
+          const newType = (block.type === 'bullet' || block.type === 'ordered') ? block.type : 'text';
+          blocks.splice(idx + 1, 0, { id: genId(), type: newType, content: '' });
+          render();
+          saveToLocal();
+          setTimeout(() => {
+            const next = document.querySelector(`[data-index="${idx + 1}"] .text-block`);
+            if (next) next.focus();
+          }, 30);
         }
-        if (e.key === 'Tab') {
-          // Tab 切换到下一个单元格
-          const cells = Array.from(tr.querySelectorAll('.cell-edit'));
-          const curIdx = cells.indexOf(cell);
-          if (!e.shiftKey && curIdx < cells.length - 1) {
-            e.preventDefault();
-            cells[curIdx + 1].focus();
-          } else if (e.shiftKey && curIdx > 0) {
-            e.preventDefault();
-            cells[curIdx - 1].focus();
-          }
+        if (e.key === 'Backspace' && textEl.textContent === '' && blocks.length > 1) {
+          e.preventDefault();
+          const idx = blocks.findIndex(b => b.id === id);
+          blocks.splice(idx, 1);
+          render();
+          saveToLocal();
+          setTimeout(() => {
+            const prev = document.querySelector(`[data-index="${Math.max(0, idx - 1)}"] .text-block`);
+            if (prev) prev.focus();
+          }, 30);
         }
-      });
-    });
-
-    // 上移
-    const upBtn = tr.querySelector('[data-action="move-up"]');
-    if (upBtn) {
-      upBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (index === 0) { showToast('已经是第一行了'); return; }
-        [tableData[index - 1], tableData[index]] = [tableData[index], tableData[index - 1]];
-        render();
-        saveToLocal();
       });
     }
 
-    // 下移
-    const downBtn = tr.querySelector('[data-action="move-down"]');
-    if (downBtn) {
-      downBtn.addEventListener('click', (e) => {
+    // 块操作按钮
+    const addBtn = blockEl.querySelector('[data-action="add"]');
+    if (addBtn) {
+      addBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (index === tableData.length - 1) { showToast('已经是最后一行了'); return; }
-        [tableData[index + 1], tableData[index]] = [tableData[index], tableData[index + 1]];
-        render();
-        saveToLocal();
+        const idx = blocks.findIndex(b => b.id === id);
+        currentInsertIndex = idx;
+        showBlockMenu(addBtn);
       });
     }
 
-    // 删除
-    const delBtn = tr.querySelector('[data-action="delete"]');
+    const delBtn = blockEl.querySelector('[data-action="delete"]');
     if (delBtn) {
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        showConfirm('删除行', `确定要删除「${row.name || '空行'}」吗？`, () => {
-          tableData.splice(index, 1);
-          render();
+        if (blocks.length <= 1) { showToast('至少保留一个内容块'); return; }
+        const idx = blocks.findIndex(b => b.id === id);
+        blocks.splice(idx, 1);
+        render();
+        saveToLocal();
+        showToast('已删除');
+      });
+    }
+
+    // 拖拽排序
+    const dragBtn = blockEl.querySelector('[data-action="drag"]');
+    if (dragBtn) {
+      dragBtn.addEventListener('mousedown', (e) => startDrag(e, id));
+    }
+
+    // 图片上传
+    const uploader = blockEl.querySelector('[data-action="upload"]');
+    if (uploader) {
+      uploader.addEventListener('click', () => {
+        imageUploadTargetId = id;
+        document.getElementById('fileInput').click();
+      });
+    }
+
+    // 表格编辑
+    const table = blockEl.querySelector('.doc-table');
+    if (table) {
+      table.querySelectorAll('[contenteditable]').forEach(cell => {
+        cell.addEventListener('input', () => {
+          const r = parseInt(cell.dataset.row);
+          const c = parseInt(cell.dataset.col);
+          block.data.rows[r][c] = cell.textContent;
           saveToLocal();
-          showToast('已删除');
         });
+      });
+    }
+
+    // 表格工具栏
+    const tableToolbar = blockEl.querySelector('.table-toolbar');
+    if (tableToolbar) {
+      tableToolbar.querySelector('[data-action="add-row"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cols = block.data.rows[0]?.length || 3;
+        block.data.rows.push(new Array(cols).fill(''));
+        render();
+        saveToLocal();
+      });
+      tableToolbar.querySelector('[data-action="add-col"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        block.data.rows.forEach(row => row.push(''));
+        render();
+        saveToLocal();
+      });
+      tableToolbar.querySelector('[data-action="del-row"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (block.data.rows.length <= 1) { showToast('至少保留一行'); return; }
+        block.data.rows.pop();
+        render();
+        saveToLocal();
+      });
+      tableToolbar.querySelector('[data-action="del-col"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if ((block.data.rows[0]?.length || 0) <= 1) { showToast('至少保留一列'); return; }
+        block.data.rows.forEach(row => row.pop());
+        render();
+        saveToLocal();
+      });
+    }
+
+    // 代码块
+    const codeEl = blockEl.querySelector('pre');
+    if (codeEl) {
+      codeEl.addEventListener('input', () => {
+        block.content = codeEl.textContent;
+        saveToLocal();
       });
     }
   });
 }
 
-// ========== 操作 ==========
-function addRow() {
-  tableData.push({ name: '', desc: '' });
-  render();
-  saveToLocal();
-  // 聚焦新行第一列
-  setTimeout(() => {
-    const lastRow = tableBody.querySelector('tr:last-child[data-index]');
-    if (lastRow) {
-      const firstCell = lastRow.querySelector('[data-field="name"]');
-      if (firstCell) firstCell.focus();
-    }
-  }, 50);
+// ========== 拖拽排序 ==========
+let dragData = null;
+
+function startDrag(e, id) {
+  e.preventDefault();
+  dragData = { id, startY: e.clientY, el: document.querySelector(`[data-id="${id}"]`) };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
 }
 
-function clearAll() {
-  showConfirm('清空表格', '确定要清空所有数据吗？此操作不可撤销。', () => {
-    tableData = [];
+function onDrag(e) {
+  if (!dragData) return;
+  const delta = e.clientY - dragData.startY;
+  const blockHeight = 40;
+  const idx = blocks.findIndex(b => b.id === dragData.id);
+  const moveBy = Math.round(delta / blockHeight);
+  if (moveBy !== 0 && idx + moveBy >= 0 && idx + moveBy < blocks.length) {
+    const [removed] = blocks.splice(idx, 1);
+    blocks.splice(idx + moveBy, 0, removed);
     render();
     saveToLocal();
-    showToast('已清空');
+    dragData.startY = e.clientY;
+  }
+}
+
+function endDrag() {
+  dragData = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+}
+
+// ========== 块菜单 ==========
+const addBlockBtn = document.getElementById('addBlockBtn');
+const blockMenu = document.getElementById('blockMenu');
+
+addBlockBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  currentInsertIndex = blocks.length;
+  blockMenu.classList.toggle('show');
+});
+
+document.addEventListener('click', (e) => {
+  if (!blockMenu.contains(e.target) && e.target !== addBlockBtn) {
+    blockMenu.classList.remove('show');
+  }
+});
+
+function showBlockMenu(anchor) {
+  const rect = anchor.getBoundingClientRect();
+  blockMenu.style.left = rect.left + 'px';
+  blockMenu.style.top = (rect.bottom + 4) + 'px';
+  blockMenu.classList.add('show');
+}
+
+blockMenu.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const type = item.dataset.type;
+    addBlock(type, currentInsertIndex);
+    blockMenu.classList.remove('show');
   });
+});
+
+function addBlock(type, index) {
+  const newBlock = { id: genId(), type, content: '' };
+  if (type === 'table') {
+    newBlock.data = { rows: [
+      ['列1', '列2', '列3'],
+      ['', '', ''],
+      ['', '', '']
+    ]};
+  }
+  if (type === 'divider') {
+    newBlock.content = '';
+  }
+  if (index === undefined) index = blocks.length;
+  blocks.splice(index, 0, newBlock);
+  render();
+  saveToLocal();
+
+  // 聚焦新块
+  setTimeout(() => {
+    const newEl = document.querySelector(`[data-id="${newBlock.id}"]`);
+    if (newEl) {
+      const editable = newEl.querySelector('[contenteditable="true"]');
+      if (editable) editable.focus();
+    }
+  }, 30);
+}
+
+// ========== 图片上传 ==========
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (imageUploadTargetId) {
+        const block = blocks.find(b => b.id === imageUploadTargetId);
+        if (block) {
+          block.src = evt.target.result;
+          block.alt = file.name;
+        }
+        imageUploadTargetId = null;
+      } else {
+        blocks.push({ id: genId(), type: 'image', src: evt.target.result, alt: file.name });
+      }
+      render();
+      saveToLocal();
+      showToast('图片已添加');
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+// 粘贴图片
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (let item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        blocks.push({ id: genId(), type: 'image', src: evt.target.result, alt: '粘贴图片' });
+        render();
+        saveToLocal();
+        showToast('图片已粘贴');
+      };
+      reader.readAsDataURL(file);
+      break;
+    }
+  }
+});
+
+// ========== 标题 ==========
+const docTitle = document.getElementById('docTitle');
+const breadcrumbTitle = document.getElementById('breadcrumbTitle');
+docTitle.addEventListener('input', () => {
+  breadcrumbTitle.textContent = docTitle.textContent || '未命名文档';
+  saveToLocal();
+  updateStats();
+});
+
+// ========== 统计 ==========
+function updateStats() {
+  let words = docTitle.textContent.length;
+  blocks.forEach(b => {
+    if (b.content) words += b.content.length;
+    if (b.type === 'table' && b.data?.rows) {
+      b.data.rows.forEach(row => row.forEach(cell => words += (cell?.length || 0)));
+    }
+  });
+  document.getElementById('wordCount').textContent = `共 ${words} 字`;
+  document.getElementById('blockCount').textContent = `${blocks.length} 个内容块`;
 }
 
 // ========== 发布 ==========
-function publish() {
-  if (tableData.length === 0) {
-    showToast('暂无内容可发布');
-    return;
-  }
-
-  let text = '【原型说明】\n\n';
-  tableData.forEach((row, i) => {
-    text += `${i + 1}. ${row.name || '（未命名）'}`;
-    if (row.desc) {
-      text += ` — ${row.desc}`;
+document.getElementById('publishBtn').addEventListener('click', () => {
+  let md = `# ${docTitle.textContent}\n\n`;
+  blocks.forEach(b => {
+    switch (b.type) {
+      case 'heading1': md += `# ${b.content}\n\n`; break;
+      case 'heading2': md += `## ${b.content}\n\n`; break;
+      case 'heading3': md += `### ${b.content}\n\n`; break;
+      case 'bullet': md += `- ${b.content}\n`; break;
+      case 'ordered': md += `1. ${b.content}\n`; break;
+      case 'quote': md += `> ${b.content}\n\n`; break;
+      case 'divider': md += `---\n\n`; break;
+      case 'image':
+        if (b.src) md += `![${b.alt || '图片'}](${b.src})\n\n`;
+        break;
+      case 'table':
+        if (b.data?.rows) {
+          b.data.rows.forEach((row, i) => {
+            md += `| ${row.join(' | ')} |\n`;
+            if (i === 0) md += `| ${row.map(() => '---').join(' | ')} |\n`;
+          });
+          md += '\n';
+        }
+        break;
+      case 'code':
+        md += '```\n' + b.content + '\n```\n\n';
+        break;
+      default: md += `${b.content}\n\n`;
     }
-    text += '\n';
   });
 
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('已复制到剪贴板，可直接发布', 'success');
+  navigator.clipboard.writeText(md).then(() => {
+    showToast('已复制 Markdown，可直接发布', 'success');
   }).catch(() => {
     const ta = document.createElement('textarea');
-    ta.value = text;
+    ta.value = md;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    showToast('已复制到剪贴板，可直接发布', 'success');
+    showToast('已复制 Markdown，可直接发布', 'success');
   });
-}
+});
+
+// ========== 清空 ==========
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('确定要清空所有内容吗？')) return;
+  blocks = [{ id: genId(), type: 'text', content: '' }];
+  docTitle.textContent = '未命名文档';
+  breadcrumbTitle.textContent = '未命名文档';
+  render();
+  saveToLocal();
+  showToast('已清空');
+});
 
 // ========== 本地存储 ==========
 function saveToLocal() {
-  localStorage.setItem('prototype-table-data', JSON.stringify(tableData));
+  try {
+    localStorage.setItem('yuque-doc-data', JSON.stringify({
+      title: docTitle.textContent,
+      blocks
+    }));
+  } catch (e) {
+    console.warn('保存失败，可能是图片太大');
+  }
 }
 
 function loadFromLocal() {
-  const saved = localStorage.getItem('prototype-table-data');
+  const saved = localStorage.getItem('yuque-doc-data');
   if (saved) {
     try {
-      tableData = JSON.parse(saved);
+      const data = JSON.parse(saved);
+      if (data.title !== undefined) {
+        docTitle.textContent = data.title;
+        breadcrumbTitle.textContent = data.title || '未命名文档';
+      }
+      if (data.blocks) blocks = data.blocks;
     } catch (e) {
-      console.warn('数据解析失败，使用默认数据');
+      console.warn('加载失败，使用默认内容');
     }
   }
 }
 
 // ========== Toast ==========
+const toast = document.getElementById('toast');
 function showToast(msg, type) {
   toast.textContent = msg;
   toast.className = 'toast show' + (type === 'success' ? ' success' : '');
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 2000);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 2000);
 }
-
-// ========== 确认弹窗 ==========
-function showConfirm(title, desc, onConfirm) {
-  modalTitle.textContent = title;
-  modalDesc.textContent = desc;
-  pendingAction = onConfirm;
-  confirmModal.classList.add('show');
-}
-
-modalCancel.addEventListener('click', () => {
-  confirmModal.classList.remove('show');
-  pendingAction = null;
-});
-modalConfirm.addEventListener('click', () => {
-  confirmModal.classList.remove('show');
-  if (pendingAction) pendingAction();
-  pendingAction = null;
-});
-confirmModal.addEventListener('click', (e) => {
-  if (e.target === confirmModal) {
-    confirmModal.classList.remove('show');
-    pendingAction = null;
-  }
-});
 
 // ========== 初始化 ==========
 loadFromLocal();
 render();
 
-searchInput.addEventListener('input', render);
-addRowBtn.addEventListener('click', addRow);
-addRowBtn2.addEventListener('click', addRow);
-clearBtn.addEventListener('click', clearAll);
-publishBtn.addEventListener('click', publish);
-
 // 快捷键
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
-    publish();
-  }
-  if (e.ctrlKey && e.key === 'Enter') {
-    e.preventDefault();
-    addRow();
+    document.getElementById('publishBtn').click();
   }
 });
 </script>
