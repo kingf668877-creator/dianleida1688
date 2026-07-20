@@ -1,10 +1,10 @@
-﻿# 扣子智能体调用方案（后端对接文档）
+# 扣子智能体调用方案（后端对接文档）
 
 ## 一、基本信息
 
 | 项 | 值 |
 |----|----|
-| 接口地址 | `https://api.coze.cn/v3/chat` |
+| 接口地址 | ``https://api.coze.cn/v3/chat`` |
 | 请求方式 | `POST` |
 | 认证方式 | Bearer Token |
 | 响应格式 | SSE 流式（text/event-stream） |
@@ -166,7 +166,7 @@ import requests
 import json
 
 def call_coze_agent(keyword: str) -> dict:
-    url = "https://api.coze.cn/v3/chat"
+    url = "`https://api.coze.cn/v3/chat`"
     headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m",
@@ -234,7 +234,7 @@ print(result)
 
 ```javascript
 async function callCozeAgent(keyword) {
-  const response = await fetch('https://api.coze.cn/v3/chat', {
+  const response = await fetch('`https://api.coze.cn/v3/chat`', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
