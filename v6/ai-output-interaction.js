@@ -45,21 +45,6 @@ editableNodes.forEach(node => {
   });
 });
 
-// 展开按钮交互
-const expandBtn = document.querySelector('.expand-btn');
-if (expandBtn) {
-  expandBtn.addEventListener('click', () => {
-    expandBtn.classList.toggle('expanded');
-    const isExpanded = expandBtn.classList.contains('expanded');
-    const text = expandBtn.textContent.trim().replace(/[↑↓]/g, '').trim();
-    if (isExpanded) {
-      showToast('已展开分析详情');
-    } else {
-      showToast('已收起');
-    }
-  });
-}
-
 function toggleEditMode() {
   editMode = !editMode;
   document.body.classList.toggle('edit-mode', editMode);
