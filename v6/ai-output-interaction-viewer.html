@@ -51,8 +51,7 @@
   .tab-preview .tab-dot { background: #ff6b6b; }
   .tab-html .tab-dot { background: #e34f26; }
   .tab-css .tab-dot { background: #1572b6; }
-  .tab-js .tab-dot { background: #b58b00; }
-  .tab-md .tab-dot { background: #519aba; }
+  .tab-js .tab-dot { background: #b58b00; }
 
   .panels {
     height: calc(100vh - 48px);
@@ -117,68 +116,6 @@
     min-height: calc(100% - 50px);
   }
 
-  /* MD 面板 */
-  .md-panel {
-    padding: 20px;
-  }
-  .md-content {
-    max-width: 900px;
-    margin: 0 auto;
-    line-height: 1.8;
-    font-size: 14px;
-    color: #1d2129;
-  }
-  .md-content h1 { margin: 0 0 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e6eb; font-size: 26px; font-weight: 700; }
-  .md-content h2 { margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid #3370ff; font-size: 19px; font-weight: 600; color: #1e293b; }
-  .md-content h3 { margin: 22px 0 10px; font-size: 16px; font-weight: 600; color: #334155; }
-  .md-content p { margin: 10px 0; }
-  .md-content ul, .md-content ol { padding-left: 26px; margin: 10px 0; }
-  .md-content li { margin: 5px 0; }
-  .md-content code {
-    background: #f2f3f5;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-family: Consolas, Monaco, monospace;
-    color: #d97706;
-  }
-  .md-content pre {
-    background: #1d2129;
-    color: #f2f3f5;
-    padding: 16px;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 12px 0;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .md-content pre code { background: transparent; color: inherit; padding: 0; }
-  .md-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 12px 0;
-    font-size: 13px;
-  }
-  .md-content th, .md-content td {
-    border: 1px solid #e5e6eb;
-    padding: 8px 12px;
-    text-align: left;
-  }
-  .md-content th { background: #f7f8fa; font-weight: 600; }
-  .md-content blockquote {
-    border-left: 4px solid #3370ff;
-    padding: 8px 16px;
-    background: #f7f9ff;
-    color: #4e5969;
-    margin: 12px 0;
-    border-radius: 0 6px 6px 0;
-  }
-  .md-content hr {
-    border: 0;
-    border-top: 1px solid #e5e6eb;
-    margin: 20px 0;
-  }
-  .md-error { color: #b91c1c; text-align: center; padding: 40px; }
 </style>
 </head>
 <body>
@@ -194,9 +131,6 @@
     </button>
     <button class="tab-btn tab-js" data-tab="js" role="tab">
       <span class="tab-dot"></span>JS
-    </button>
-    <button class="tab-btn tab-md" data-tab="md" role="tab">
-      <span class="tab-dot"></span>MD
     </button>
   </div>
 
@@ -233,20 +167,12 @@
       <pre class="code" id="codeJs">正在加载…</pre>
     </section>
 
-    <!-- MD -->
-    <section class="panel md-panel" id="panel-md">
-      <div class="code-header" style="max-width:900px;margin:0 auto 12px;">
-        <small>coze_agent_prompt_fast.md</small>
-        <button class="copy-btn" data-copy="md">复制 MD</button>
-      </div>
-      <div class="md-content" id="mdContent">正在加载…</div>
-    </section>
   </div>
 
 <script>
   const tabs = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.panel');
-  const codeCache = { html: '', css: '', js: '', md: '' };
+  const codeCache = { html: '', css: '', js: '' };
 
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -270,92 +196,7 @@
   loadCode('html', 'ai-output-interaction-clean.html', 'codeHtml');
   loadCode('css', 'ai-output-interaction-clean.css', 'codeCss');
   loadCode('js', 'ai-output-interaction-clean.js', 'codeJs');
-
-  // 加载并渲染 MD
-  function renderMarkdown(markdown) {
-    const lines = markdown.replace(/\r/g, '').split('\n');
-    const html = [];
-    let inCode = false, codeLang = '', codeLines = [];
-    let inList = false, listType = '', listItems = [];
-    let inTable = false, tableRows = [];
-    let inBlockquote = false, blockquoteLines = [];
-
-    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function inline(s) {
-      return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>')
-        .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g,'<em>$1</em>')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
-    }
-    function closeList() {
-      if (inList) { html.push(`<${listType}>${listItems.join('')}</${listType}>`); inList=false; listItems=[]; }
-    }
-    function closeCode() {
-      if (inCode) { html.push(`<pre><code class="lang-${codeLang}">${esc(codeLines.join('\n'))}</code></pre>`); inCode=false; codeLines=[]; }
-    }
-    function closeTable() {
-      if (inTable && tableRows.length > 1) {
-        let t = '<table><thead><tr>';
-        tableRows[0].forEach(c => t += `<th>${inline(c)}</th>`);
-        t += '</tr></thead><tbody>';
-        for (let i = 2; i < tableRows.length; i++) { t += '<tr>'; tableRows[i].forEach(c => t += `<td>${inline(c)}</td>`); t += '</tr>'; }
-        t += '</tbody></table>'; html.push(t);
-      }
-      inTable=false; tableRows=[];
-    }
-    function closeBlockquote() {
-      if (inBlockquote) { html.push(`<blockquote>${blockquoteLines.join('<br>')}</blockquote>`); inBlockquote=false; blockquoteLines=[]; }
-    }
-
-    for (let line of lines) {
-      if (line.startsWith('```')) {
-        closeList(); closeTable(); closeBlockquote();
-        if (!inCode) { inCode=true; codeLang=line.slice(3).trim(); } else closeCode();
-        continue;
-      }
-      if (inCode) { codeLines.push(line); continue; }
-      if (line.startsWith('# ')) { closeList();closeTable();closeBlockquote(); html.push(`<h1>${inline(line.slice(2))}</h1>`); continue; }
-      if (line.startsWith('## ')) { closeList();closeTable();closeBlockquote(); html.push(`<h2>${inline(line.slice(3))}</h2>`); continue; }
-      if (line.startsWith('### ')) { closeList();closeTable();closeBlockquote(); html.push(`<h3>${inline(line.slice(4))}</h3>`); continue; }
-      if (/^---+$/.test(line.trim())) { closeList();closeTable();closeBlockquote(); html.push('<hr>'); continue; }
-      if (line.startsWith('> ')) {
-        closeList(); closeTable();
-        inBlockquote=true; blockquoteLines.push(inline(line.slice(2))); continue;
-      } else if (inBlockquote && line.trim()==='') { closeBlockquote(); continue; }
-      if (line.includes('|') && line.trim().startsWith('|')) {
-        closeList(); closeBlockquote();
-        const cells = line.split('|').filter(c=>c.trim()!=='').map(c=>c.trim());
-        if (!inTable) { inTable=true; tableRows=[cells]; }
-        else if (cells.every(c=>/^[-:]+$/.test(c))) { tableRows.push(cells); }
-        else { tableRows.push(cells); }
-        continue;
-      } else { closeTable(); }
-      if (/^\d+\.\s+/.test(line)) {
-        closeBlockquote();
-        if (!inList || listType!=='ol') { closeList(); inList=true; listType='ol'; }
-        listItems.push(`<li>${inline(line.replace(/^\d+\.\s+/,''))}</li>`); continue;
-      }
-      if (/^[-*+]\s+/.test(line)) {
-        closeBlockquote();
-        if (!inList || listType!=='ul') { closeList(); inList=true; listType='ul'; }
-        listItems.push(`<li>${inline(line.replace(/^[-*+]\s+/,''))}</li>`); continue;
-      }
-      if (line.trim() === '') { closeList();closeTable();closeBlockquote(); continue; }
-      closeList();closeTable();closeBlockquote();
-      html.push(`<p>${inline(line)}</p>`);
-    }
-    closeList(); closeCode(); closeTable(); closeBlockquote();
-    return html.join('\n');
-  }
-
-  fetch('coze_agent_prompt_fast.md').then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
-    .then(text => {
-      codeCache.md = text;
-      document.getElementById('mdContent').innerHTML = renderMarkdown(text);
-    })
-    .catch(() => {
-      document.getElementById('mdContent').innerHTML = '<div class="md-error">MD 文件加载失败</div>';
-    });
+
 
   document.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
