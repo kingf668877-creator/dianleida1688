@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD 文档管理 - 店雷达</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6f8;
+    min-height: 100vh;
+    color: #1d2129;
+  }
+
+  /* 顶部栏 */
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid #e5e6eb;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: #86909c;
+    margin-top: 2px;
+  }
+  .back-btn {
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid #e5e6eb;
+    border-radius: 6px;
+    background: #fff;
+    color: #4e5969;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .back-btn:hover { background: #f7f8fa; color: #1d2129; }
+
+  /* 主容器 */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 28px 60px;
+  }
+
+  /* 配置区 */
+  .config-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e6eb;
+  }
+  .config-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .form-item {
+    flex: 1;
+    min-width: 200px;
+  }
+  .form-label {
+    font-size: 13px;
+    color: #4e5969;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .form-input, .form-select {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #e5e6eb;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1d2129;
+    outline: none;
+    font-family: inherit;
+    background: #fff;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: #3370ff;
+    box-shadow: 0 0 0 2px rgba(51,112,255,.10);
+  }
+  .form-input::placeholder { color: #a8abb2; }
+
+  .token-hint {
+    font-size: 11px;
+    color: #86909c;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .token-hint a { color: #3370ff; text-decoration: none; }
+
+  /* 文件上传区 */
+  .upload-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e6eb;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #e8f0ff;
+    color: #3370ff;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .upload-area {
+    border: 2px dashed #e5e6eb;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: .2s;
+    background: #fafbfc;
+  }
+  .upload-area:hover {
+    border-color: #3370ff;
+    background: #f7f9ff;
+  }
+  .upload-area.dragover {
+    border-color: #3370ff;
+    background: #e8f0ff;
+  }
+  .upload-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+  .upload-text {
+    font-size: 15px;
+    color: #1d2129;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .upload-hint {
+    font-size: 12px;
+    color: #86909c;
+  }
+  .upload-hint span { color: #3370ff; }
+
+  .file-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f7f8fa;
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+  .file-info-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .file-icon {
+    width: 36px;
+    height: 36px;
+    background: #e8f0ff;
+    color: #3370ff;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .file-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .file-size {
+    font-size: 12px;
+    color: #86909c;
+    margin-top: 2px;
+  }
+  .remove-btn {
+    padding: 4px 10px;
+    border: 1px solid #e5e6eb;
+    border-radius: 4px;
+    background: #fff;
+    color: #86909c;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .remove-btn:hover { border-color: #ff4d4f; color: #ff4d4f; }
+
+  /* 预览区 */
+  .preview-section {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e6eb;
+    overflow: hidden;
+  }
+  .preview-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid #e5e6eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fafbfc;
+  }
+  .preview-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .preview-tab {
+    padding: 6px 14px;
+    border: 0;
+    background: transparent;
+    color: #4e5969;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-family: inherit;
+  }
+  .preview-tab.active {
+    background: #fff;
+    color: #3370ff;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .preview-stats {
+    font-size: 12px;
+    color: #86909c;
+  }
+
+  .preview-body {
+    padding: 24px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  /* Markdown 渲染样式 */
+  .md-render {
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.8;
+    font-size: 14px;
+  }
+  .md-render h1 {
+    font-size: 24px;
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e6eb;
+    font-weight: 700;
+  }
+  .md-render h2 {
+    font-size: 18px;
+    margin: 24px 0 12px;
+    padding-left: 10px;
+    border-left: 4px solid #3370ff;
+    font-weight: 600;
+  }
+  .md-render h3 {
+    font-size: 16px;
+    margin: 20px 0 10px;
+    font-weight: 600;
+  }
+  .md-render p { margin: 10px 0; }
+  .md-render ul, .md-render ol {
+    padding-left: 24px;
+    margin: 10px 0;
+  }
+  .md-render li { margin: 4px 0; }
+  .md-render code {
+    background: #f2f3f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: Consolas, Monaco, monospace;
+    color: #d97706;
+  }
+  .md-render pre {
+    background: #1d2129;
+    color: #f2f3f5;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .md-render pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+  .md-render table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .md-render th, .md-render td {
+    border: 1px solid #e5e6eb;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .md-render th {
+    background: #f7f8fa;
+    font-weight: 600;
+  }
+  .md-render blockquote {
+    border-left: 4px solid #3370ff;
+    padding: 8px 16px;
+    background: #f7f9ff;
+    color: #4e5969;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .md-render hr {
+    border: 0;
+    border-top: 1px solid #e5e6eb;
+    margin: 20px 0;
+  }
+  .md-render strong { color: #1d2129; font-weight: 600; }
+
+  .md-source {
+    background: #1d2129;
+    color: #f2f3f5;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #a8abb2;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* 操作栏 */
+  .action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e5e6eb;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+  }
+  .action-left {
+    font-size: 13px;
+    color: #86909c;
+  }
+  .action-right {
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    height: 36px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: .15s;
+  }
+  .btn.primary { background: #3370ff; color: #fff; }
+  .btn.primary:hover { background: #2968f2; }
+  .btn.primary:disabled { background: #a8c5ff; cursor: not-allowed; }
+  .btn.ghost { background: #fff; color: #4e5969; border: 1px solid #e5e6eb; }
+  .btn.ghost:hover { background: #f7f8fa; color: #1d2129; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    padding: 12px 20px;
+    background: #1d2129;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transition: .25s;
+    z-index: 2000;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { background: #10b981; }
+  .toast.error { background: #ff4d4f; }
+  .toast.loading { background: #3370ff; }
+
+  /* 部署结果 */
+  .result-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+  }
+  .result-modal.show { display: flex; }
+  .result-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+  }
+  .result-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+  }
+  .result-icon.success { background: #ecfdf5; color: #10b981; }
+  .result-icon.error { background: #fef2f2; color: #ff4d4f; }
+  .result-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .result-desc {
+    font-size: 13px;
+    color: #86909c;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .result-url {
+    background: #f7f8fa;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #4e5969;
+    word-break: break-all;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 12px 16px; }
+    .container { padding: 16px; }
+    .config-row { flex-direction: column; }
+    .form-item { width: 100%; }
+    .action-bar { padding: 10px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部栏 -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-icon">M</div>
+    <div>
+      <div class="title">MD 文档管理</div>
+      <div class="subtitle">上传 Markdown 文件，一键部署到 GitHub Pages</div>
+    </div>
+  </div>
+  <button class="back-btn" onclick="history.back()">← 返回</button>
+</div>
+
+<!-- 主容器 -->
+<div class="container">
+
+  <!-- 配置区 -->
+  <div class="config-card">
+    <div class="config-row">
+      <div class="form-item">
+        <div class="form-label">目标文件</div>
+        <select class="form-select" id="targetFile">
+          <option value="v6/backend-json-mapping.md">v6/backend-json-mapping.md（后端对接文档）</option>
+          <option value="v6/coze_agent_prompt_fast.md">v6/coze_agent_prompt_fast.md（智能体提示词）</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <div class="form-label">GitHub Token</div>
+        <input type="password" class="form-input" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="token-hint">
+          Token 仅保存在本地浏览器，不会上传。
+          <a href="https://github.com/settings/tokens?type=beta" target="_blank">获取 Token →</a>
+        </div>
+      </div>
+      <div class="form-item" style="flex: 0 0 auto;">
+        <button class="btn ghost" onclick="saveToken()" style="height:36px;">保存配置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 上传区 -->
+  <div class="upload-section">
+    <div class="section-title">
+      上传文件
+      <span class="badge">支持 .md</span>
+    </div>
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">📄</div>
+      <div class="upload-text">点击或拖拽上传 MD 文件</div>
+      <div class="upload-hint">支持 <span>.md</span> 格式，文件将直接替换目标文件</div>
+    </div>
+    <input type="file" id="fileInput" accept=".md" style="display:none;">
+    <div id="fileInfo" style="display:none;">
+      <div class="file-info">
+        <div class="file-info-left">
+          <div class="file-icon">MD</div>
+          <div>
+            <div class="file-name" id="fileName">-</div>
+            <div class="file-size" id="fileSize">-</div>
+          </div>
+        </div>
+        <button class="remove-btn" onclick="removeFile()">移除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 预览区 -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <div class="preview-tabs">
+        <button class="preview-tab active" data-tab="render" onclick="switchPreview('render')">渲染预览</button>
+        <button class="preview-tab" data-tab="source" onclick="switchPreview('source')">源码</button>
+      </div>
+      <div class="preview-stats" id="previewStats">暂无文件</div>
+    </div>
+    <div class="preview-body" id="previewBody">
+      <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-text">上传 MD 文件后在此预览内容</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 操作栏 -->
+<div class="action-bar">
+  <div class="action-left" id="actionStatus">请上传 MD 文件</div>
+  <div class="action-right">
+    <button class="btn ghost" onclick="copyMarkdown()" id="copyBtn" disabled>复制 MD</button>
+    <button class="btn primary" onclick="deployToGithub()" id="deployBtn" disabled>🚀 部署到 GitHub</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 结果弹窗 -->
+<div class="result-modal" id="resultModal">
+  <div class="result-card">
+    <div class="result-icon" id="resultIcon">✓</div>
+    <div class="result-title" id="resultTitle">部署成功</div>
+    <div class="result-desc" id="resultDesc">文件已更新到 GitHub Pages</div>
+    <div class="result-url" id="resultUrl" style="display:none;"></div>
+    <button class="btn primary" style="width:100%;justify-content:center;" onclick="closeResult()">知道了</button>
+  </div>
+</div>
+
+<script>
+  // ========== 配置存储 ==========
+  const CONFIG_KEY = 'md_manager_config';
+
+  function loadConfig() {
+    try {
+      const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      if (cfg.token) document.getElementById('githubToken').value = cfg.token;
+      if (cfg.targetFile) document.getElementById('targetFile').value = cfg.targetFile;
+    } catch(e) {}
+  }
+
+  function saveToken() {
+    const token = document.getElementById('githubToken').value.trim();
+    const targetFile = document.getElementById('targetFile').value;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({ token, targetFile }));
+    showToast('配置已保存', 'success');
+  }
+
+  loadConfig();
+
+  // ========== 文件上传 ==========
+  let currentContent = '';
+  let currentFileName = '';
+
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+
+  uploadArea.addEventListener('click', () => fileInput.click());
+
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) handleFile(files[0]);
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.name.endsWith('.md')) {
+      showToast('请上传 .md 格式的文件', 'error');
+      return;
+    }
+    currentFileName = file.name;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      currentContent = e.target.result;
+      showFileInfo(file);
+      renderPreview();
+      updateStatus();
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  function showFileInfo(file) {
+    document.getElementById('fileInfo').style.display = 'block';
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatSize(file.size);
+    document.getElementById('copyBtn').disabled = false;
+    document.getElementById('deployBtn').disabled = false;
+  }
+
+  function removeFile() {
+    currentContent = '';
+    currentFileName = '';
+    fileInput.value = '';
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('previewBody').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-text">上传 MD 文件后在此预览内容</div>
+      </div>`;
+    document.getElementById('previewStats').textContent = '暂无文件';
+    document.getElementById('copyBtn').disabled = true;
+    document.getElementById('deployBtn').disabled = true;
+    updateStatus();
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  // ========== 预览切换 ==========
+  let currentTab = 'render';
+
+  function switchPreview(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.preview-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    renderPreview();
+  }
+
+  function renderPreview() {
+    if (!currentContent) return;
+    const body = document.getElementById('previewBody');
+    const stats = document.getElementById('previewStats');
+
+    const lines = currentContent.split('\n').length;
+    const chars = currentContent.length;
+    stats.textContent = `${lines} 行 · ${chars} 字符`;
+
+    if (currentTab === 'render') {
+      body.innerHTML = `<div class="md-render">${renderMarkdown(currentContent)}</div>`;
+    } else {
+      body.innerHTML = `<pre class="md-source"></pre>`;
+      body.querySelector('.md-source').textContent = currentContent;
+    }
+  }
+
+  // ========== Markdown 渲染 ==========
+  function renderMarkdown(text) {
+    const lines = text.replace(/\r/g, '').split('\n');
+    const html = [];
+    let inCode = false;
+    let codeLang = '';
+    let codeLines = [];
+    let inList = false;
+    let listType = '';
+    let listItems = [];
+    let inTable = false;
+    let tableRows = [];
+    let inBlockquote = false;
+    let blockquoteLines = [];
+
+    function closeList() {
+      if (inList) {
+        const tag = listType === 'ol' ? 'ol' : 'ul';
+        html.push(`<${tag}>${listItems.join('')}</${tag}>`);
+        inList = false;
+        listItems = [];
+      }
+    }
+
+    function closeCode() {
+      if (inCode) {
+        html.push(`<pre><code class="lang-${codeLang}">${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+        inCode = false;
+        codeLines = [];
+        codeLang = '';
+      }
+    }
+
+    function closeTable() {
+      if (inTable && tableRows.length > 1) {
+        let thtml = '<table><thead><tr>';
+        tableRows[0].forEach(cell => thtml += `<th>${inlineMd(cell)}</th>`);
+        thtml += '</tr></thead><tbody>';
+        for (let i = 2; i < tableRows.length; i++) {
+          thtml += '<tr>';
+          tableRows[i].forEach(cell => thtml += `<td>${inlineMd(cell)}</td>`);
+          thtml += '</tr>';
+        }
+        thtml += '</tbody></table>';
+        html.push(thtml);
+      }
+      inTable = false;
+      tableRows = [];
+    }
+
+    function closeBlockquote() {
+      if (inBlockquote) {
+        html.push(`<blockquote>${blockquoteLines.join('<br>')}</blockquote>`);
+        inBlockquote = false;
+        blockquoteLines = [];
+      }
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function inlineMd(text) {
+      return escapeHtml(text)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    }
+
+    for (let line of lines) {
+      // 代码块
+      if (line.startsWith('```')) {
+        closeList(); closeTable(); closeBlockquote();
+        if (!inCode) {
+          inCode = true;
+          codeLang = line.slice(3).trim();
+        } else {
+          closeCode();
+        }
+        continue;
+      }
+      if (inCode) { codeLines.push(line); continue; }
+
+      // 标题
+      if (line.startsWith('# ')) {
+        closeList(); closeTable(); closeBlockquote();
+        html.push(`<h1>${inlineMd(line.slice(2))}</h1>`);
+        continue;
+      }
+      if (line.startsWith('## ')) {
+        closeList(); closeTable(); closeBlockquote();
+        html.push(`<h2>${inlineMd(line.slice(3))}</h2>`);
+        continue;
+      }
+      if (line.startsWith('### ')) {
+        closeList(); closeTable(); closeBlockquote();
+        html.push(`<h3>${inlineMd(line.slice(4))}</h3>`);
+        continue;
+      }
+
+      // 分割线
+      if (/^---+$/.test(line.trim())) {
+        closeList(); closeTable(); closeBlockquote();
+        html.push('<hr>');
+        continue;
+      }
+
+      // 引用
+      if (line.startsWith('> ')) {
+        closeList(); closeTable();
+        inBlockquote = true;
+        blockquoteLines.push(inlineMd(line.slice(2)));
+        continue;
+      } else if (inBlockquote && line.trim() === '') {
+        closeBlockquote();
+        continue;
+      }
+
+      // 表格
+      if (line.includes('|') && line.trim().startsWith('|')) {
+        closeList(); closeBlockquote();
+        const cells = line.split('|').filter(c => c.trim() !== '').map(c => c.trim());
+        if (!inTable) {
+          inTable = true;
+          tableRows = [cells];
+        } else if (cells.every(c => /^[-:]+$/.test(c))) {
+          tableRows.push(cells); // 分隔行
+        } else {
+          tableRows.push(cells);
+        }
+        continue;
+      } else {
+        closeTable();
+      }
+
+      // 有序列表
+      if (/^\d+\.\s+/.test(line)) {
+        closeBlockquote();
+        if (!inList || listType !== 'ol') {
+          closeList();
+          inList = true;
+          listType = 'ol';
+        }
+        listItems.push(`<li>${inlineMd(line.replace(/^\d+\.\s+/, ''))}</li>`);
+        continue;
+      }
+
+      // 无序列表
+      if (/^[-*+]\s+/.test(line)) {
+        closeBlockquote();
+        if (!inList || listType !== 'ul') {
+          closeList();
+          inList = true;
+          listType = 'ul';
+        }
+        listItems.push(`<li>${inlineMd(line.replace(/^[-*+]\s+/, ''))}</li>`);
+        continue;
+      }
+
+      // 空行
+      if (line.trim() === '') {
+        closeList(); closeTable(); closeBlockquote();
+        continue;
+      }
+
+      // 普通段落
+      closeList(); closeTable(); closeBlockquote();
+      html.push(`<p>${inlineMd(line)}</p>`);
+    }
+
+    closeList(); closeCode(); closeTable(); closeBlockquote();
+    return html.join('\n');
+  }
+
+  // ========== 复制 ==========
+  function copyMarkdown() {
+    if (!currentContent) return;
+    navigator.clipboard.writeText(currentContent)
+      .then(() => showToast('已复制到剪贴板', 'success'))
+      .catch(() => showToast('复制失败', 'error'));
+  }
+
+  // ========== 部署到 GitHub ==========
+  async function deployToGithub() {
+    const token = document.getElementById('githubToken').value.trim();
+    const targetFile = document.getElementById('targetFile').value;
+
+    if (!token) {
+      showToast('请先填写 GitHub Token', 'error');
+      return;
+    }
+    if (!currentContent) {
+      showToast('请先上传 MD 文件', 'error');
+      return;
+    }
+
+    const deployBtn = document.getElementById('deployBtn');
+    deployBtn.disabled = true;
+    deployBtn.textContent = '部署中...';
+    showToast('正在部署到 GitHub...', 'loading');
+
+    try {
+      // 1. 获取当前文件的 sha
+      const repo = 'kingf668877-creator/dianleida1688';
+      const branch = 'master';
+
+      let sha = null;
+      try {
+        const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${targetFile}?ref=${branch}`, {
+          headers: { 'Authorization': `token ${token}` }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          sha = data.sha;
+        }
+      } catch(e) {}
+
+      // 2. 编码内容
+      const base64 = btoa(unescape(encodeURIComponent(currentContent)));
+
+      // 3. 创建/更新文件
+      const body = {
+        message: `Update: ${targetFile.split('/').pop()}`,
+        content: base64,
+        branch: branch
+      };
+      if (sha) body.sha = sha;
+
+      const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${targetFile}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (resp.ok) {
+        showResult(true, targetFile);
+      } else {
+        const err = await resp.json();
+        throw new Error(err.message || '部署失败');
+      }
+
+    } catch (e) {
+      showResult(false, targetFile, e.message);
+    } finally {
+      deployBtn.disabled = false;
+      deployBtn.textContent = '🚀 部署到 GitHub';
+    }
+  }
+
+  function showResult(success, targetFile, errorMsg) {
+    const modal = document.getElementById('resultModal');
+    const icon = document.getElementById('resultIcon');
+    const title = document.getElementById('resultTitle');
+    const desc = document.getElementById('resultDesc');
+    const urlEl = document.getElementById('resultUrl');
+
+    if (success) {
+      icon.className = 'result-icon success';
+      icon.textContent = '✓';
+      title.textContent = '部署成功';
+      desc.textContent = '文件已更新到 GitHub，Pages 构建需要 1-2 分钟生效';
+      urlEl.style.display = 'block';
+      urlEl.textContent = 'https://kingf668877-creator.github.io/dianleida1688/' + targetFile;
+    } else {
+      icon.className = 'result-icon error';
+      icon.textContent = '✕';
+      title.textContent = '部署失败';
+      desc.textContent = errorMsg || '请检查 Token 是否正确，以及是否有仓库权限';
+      urlEl.style.display = 'none';
+    }
+    modal.classList.add('show');
+  }
+
+  function closeResult() {
+    document.getElementById('resultModal').classList.remove('show');
+  }
+
+  // ========== 工具函数 ==========
+  function updateStatus() {
+    const status = document.getElementById('actionStatus');
+    const target = document.getElementById('targetFile').value;
+    if (currentContent) {
+      status.textContent = `将更新到: ${target}`;
+    } else {
+      status.textContent = '请上传 MD 文件';
+    }
+  }
+
+  document.getElementById('targetFile').addEventListener('change', updateStatus);
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast show ' + (type || '');
+    setTimeout(() => { toast.className = 'toast'; }, 2500);
+  }
+</script>
+
+</body>
+</html>
