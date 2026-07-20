@@ -234,7 +234,7 @@
     <!-- MD -->
     <section class="panel md-panel" id="panel-md">
       <div class="code-header" style="max-width:1000px;margin:0 auto 12px;">
-        <small>backend-json-mapping.md</small>
+        <small>coze_agent_prompt_fast.md</small>
         <button class="copy-btn" data-copy="md">复制 MD</button>
       </div>
       <div class="md-content" id="mdContent">正在加载…</div>
@@ -320,7 +320,7 @@
     return html.join('\n');
   }
 
-  fetch('backend-json-mapping.md').then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
+  fetch('coze_agent_prompt_fast.md').then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
     .then(text => {
       codeCache.md = text;
       document.getElementById('mdContent').innerHTML = renderMarkdown(text);
