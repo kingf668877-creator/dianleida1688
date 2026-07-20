@@ -1,4 +1,3 @@
-const card = document.getElementById('analysisCard');
 const toast = document.getElementById('toast');
 
 const editModeBtn = document.getElementById('editModeBtn');
@@ -46,6 +45,33 @@ editableNodes.forEach(node => {
   });
 });
 
+// 全选功能
+const selectAll = document.getElementById('selectAll');
+const cardCheckboxes = document.querySelectorAll('.card-checkbox input[type="checkbox"]');
+const selectedCountEl = document.querySelector('.selected-count span');
+
+if (selectAll) {
+  selectAll.addEventListener('change', () => {
+    const checked = selectAll.checked;
+    cardCheckboxes.forEach(cb => { cb.checked = checked; });
+    updateSelectedCount();
+  });
+}
+
+cardCheckboxes.forEach(cb => {
+  cb.addEventListener('change', updateSelectedCount);
+});
+
+function updateSelectedCount() {
+  const checked = document.querySelectorAll('.card-checkbox input[type="checkbox"]:checked').length;
+  if (selectedCountEl) {
+    selectedCountEl.textContent = `已选 ${checked}`;
+  }
+  if (selectAll) {
+    selectAll.checked = checked === cardCheckboxes.length && checked > 0;
+  }
+}
+
 function toggleEditMode() {
   editMode = !editMode;
   document.body.classList.toggle('edit-mode', editMode);
@@ -55,8 +81,12 @@ function toggleEditMode() {
   editTip.textContent = editMode ? '点击虚线文案可直接修改，离开焦点后记录变更' : '开启后可直接点击文案修改';
 
   editableNodes.forEach(node => {
-    node.contentEditable = editMode ? 'true' : 'false';
-    node.spellcheck = false;
+    if (node.tagName === 'SELECT') {
+      node.disabled = !editMode;
+    } else {
+      node.contentEditable = editMode ? 'true' : 'false';
+      node.spellcheck = false;
+    }
   });
 
   if (editMode) showToast('编辑模式已开启');
