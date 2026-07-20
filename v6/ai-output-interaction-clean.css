@@ -232,7 +232,7 @@ body {
 /* 商品图片 */
 .product-img {
   width: 100%;
-  aspect-ratio: 1;
+  height: 180px;
   background: #f7f8fa;
   display: grid;
   place-items: center;
@@ -242,6 +242,10 @@ body {
   color: #c9cdd4;
   display: grid;
   place-items: center;
+}
+.img-placeholder svg {
+  width: 48px;
+  height: 48px;
 }
 
 /* 商品信息 */
