@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="logo.png">
+<title>原型说明 - 店雷达</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    color: #1d2129;
+  }
+
+  /* 顶部工具栏 */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e6eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  }
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .toolbar-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toolbar-title .icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #7c4dff 0%, #6236ff 100%);
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn {
+    height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: .15s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn.primary { background: #6236ff; color: #fff; }
+  .btn.primary:hover { background: #5229e0; }
+  .btn.ghost { background: #f2f3f5; color: #4e5969; }
+  .btn.ghost:hover { background: #e5e6eb; color: #1d2129; }
+  .btn.success { background: #10b981; color: #fff; }
+  .btn.success:hover { background: #059669; }
+  .btn.danger { background: #ff4d4f; color: #fff; }
+  .btn.danger:hover { background: #e03e3f; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* 搜索栏 */
+  .search-bar {
+    padding: 16px 24px 0;
+  }
+  .search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 16px 0 40px;
+    border: 1px solid #e5e6eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: .15s;
+    background: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386909c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.3-4.3'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+  .search-input:focus {
+    border-color: #6236ff;
+    box-shadow: 0 0 0 3px rgba(98,54,255,.10);
+  }
+  .search-input::placeholder { color: #a8abb2; }
+
+  /* 内容区域 */
+  .content {
+    padding: 16px 24px 40px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* 版本分组 */
+  .version-group {
+    background: #fff;
+    border: 1px solid #e5e6eb;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: .2s;
+  }
+  .version-group:hover {
+    border-color: #d4caff;
+    box-shadow: 0 4px 12px rgba(98,54,255,.08);
+  }
+
+  /* 版本标题 */
+  .version-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f8f5ff 0%, #fff 100%);
+    border-bottom: 1px solid #f2f3f5;
+    cursor: pointer;
+    user-select: none;
+  }
+  .version-header:hover {
+    background: linear-gradient(135deg, #f0ebff 0%, #faf8ff 100%);
+  }
+  .version-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .version-arrow {
+    width: 16px;
+    height: 16px;
+    color: #86909c;
+    transition: transform .2s;
+    flex-shrink: 0;
+  }
+  .version-group.collapsed .version-arrow {
+    transform: rotate(-90deg);
+  }
+  .version-tag {
+    padding: 3px 10px;
+    background: linear-gradient(135deg, #7c4dff 0%, #6236ff 100%);
+    color: #fff;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .version-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1d2129;
+    flex: 1;
+    outline: none;
+  }
+  .version-title:focus {
+    background: #f0ebff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+  }
+  .version-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .version-header:hover .version-actions { opacity: 1; }
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #86909c;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .icon-btn:hover { background: #f0ebff; color: #6236ff; }
+  .icon-btn.danger:hover { background: #fff0f0; color: #ff4d4f; }
+
+  /* 功能列表 */
+  .feature-list {
+    padding: 8px 0;
+  }
+  .version-group.collapsed .feature-list { display: none; }
+
+  /* 功能行 */
+  .feature-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 18px 8px 44px;
+    transition: background .15s;
+    position: relative;
+  }
+  .feature-row:hover { background: #f7f8fa; }
+  .feature-row:hover .row-actions { opacity: 1; }
+
+  .feature-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #c9cdd4;
+    flex-shrink: 0;
+  }
+  .feature-text {
+    flex: 1;
+    font-size: 13px;
+    color: #4e5969;
+    line-height: 1.5;
+    outline: none;
+  }
+  .feature-text:focus {
+    background: #f0ebff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    color: #1d2129;
+  }
+
+  .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+  /* 添加行按钮 */
+  .add-row-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px 8px 44px;
+    font-size: 13px;
+    color: #86909c;
+    cursor: pointer;
+    transition: .15s;
+    border: 0;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+  }
+  .add-row-btn:hover {
+    background: #f7f8fa;
+    color: #6236ff;
+  }
+
+  /* 添加版本按钮 */
+  .add-version-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px;
+    border: 2px dashed #d4caff;
+    border-radius: 12px;
+    background: #faf8ff;
+    color: #6236ff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: .15s;
+    font-family: inherit;
+  }
+  .add-version-btn:hover {
+    background: #f0ebff;
+    border-color: #6236ff;
+  }
+
+  /* 统计信息 */
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    font-size: 12px;
+    color: #86909c;
+  }
+
+  /* 空状态 */
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #86909c;
+  }
+  .empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: .3;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: 10px 20px;
+    background: #1d2129;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transition: .25s;
+    z-index: 2000;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.success { background: #10b981; }
+
+  /* 确认弹窗 */
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    width: 360px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .modal-desc {
+    font-size: 13px;
+    color: #86909c;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 640px) {
+    .toolbar { padding: 10px 16px; }
+    .search-bar { padding: 12px 16px 0; }
+    .content { padding: 12px 16px 40px; }
+    .version-header { padding: 12px 14px; }
+    .feature-row { padding: 8px 14px 8px 36px; }
+    .add-row-btn { padding: 8px 14px 8px 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部工具栏 -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="toolbar-title">
+      <span class="icon">P</span>
+      原型说明
+    </div>
+  </div>
+  <div class="toolbar-right">
+    <button class="btn ghost" id="expandAllBtn">展开全部</button>
+    <button class="btn ghost" id="collapseAllBtn">收起全部</button>
+    <button class="btn primary" id="publishBtn">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M13 8L7 2 1 8m6-1v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      发布
+    </button>
+  </div>
+</div>
+
+<!-- 搜索栏 -->
+<div class="search-bar">
+  <input class="search-input" id="searchInput" type="text" placeholder="搜索版本或功能...">
+</div>
+
+<!-- 统计 -->
+<div class="stats-bar">
+  <span id="statsText">共 0 个版本，0 条功能</span>
+  <span id="editModeStatus">查看模式</span>
+</div>
+
+<!-- 内容区域 -->
+<div class="content" id="content">
+  <!-- 动态渲染 -->
+</div>
+
+<!-- 添加版本按钮 -->
+<div style="padding: 0 24px 40px; max-width: 960px; margin: 0 auto;">
+  <button class="add-version-btn" id="addVersionBtn">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    新增版本
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 确认弹窗 -->
+<div class="modal-mask" id="confirmModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">确认删除</div>
+    <div class="modal-desc" id="modalDesc">确定要删除吗？</div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="modalCancel">取消</button>
+      <button class="btn danger" id="modalConfirm">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 数据 ==========
+let versionData = [
+  {
+    id: 'v289',
+    tag: '2.8.9',
+    title: '1688选品库-AI搜索方案',
+    expanded: true,
+    features: [
+      '1688选品库',
+      '1688选品库-方案一',
+      '商品分析',
+      '1688选品库-方案二',
+      '亚马逊精选货盘',
+      '下游商机榜-要修改',
+      '淘宝商品分析',
+      '抖音商品分析'
+    ]
+  },
+  {
+    id: 'v151',
+    tag: '1.5.1',
+    title: '1688好货榜-优化',
+    expanded: false,
+    features: ['1688好货榜优化']
+  },
+  {
+    id: 'v148',
+    tag: '1.4.8',
+    title: '亚马逊选品库',
+    expanded: false,
+    features: [
+      '选择类目',
+      '筛选模版',
+      '商品分析'
+    ]
+  },
+  {
+    id: 'v147',
+    tag: '1.4.7',
+    title: '子账号-互看全部',
+    expanded: false,
+    features: ['子账号互看全部功能']
+  },
+  {
+    id: 'v141',
+    tag: '1.4.1',
+    title: '选品监控',
+    expanded: false,
+    features: [
+      '监控搜索词-优化',
+      '店铺榜单-商品分析',
+      '监控排名-优化'
+    ]
+  },
+  {
+    id: 'v127',
+    tag: '1.2.7',
+    title: '选品监控-亚马逊',
+    expanded: false,
+    features: [
+      '选品监控',
+      '亚马逊利润榜'
+    ]
+  }
+];
+
+// ========== 元素 ==========
+const content = document.getElementById('content');
+const searchInput = document.getElementById('searchInput');
+const statsText = document.getElementById('statsText');
+const publishBtn = document.getElementById('publishBtn');
+const addVersionBtn = document.getElementById('addVersionBtn');
+const expandAllBtn = document.getElementById('expandAllBtn');
+const collapseAllBtn = document.getElementById('collapseAllBtn');
+const toast = document.getElementById('toast');
+const confirmModal = document.getElementById('confirmModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalDesc = document.getElementById('modalDesc');
+const modalCancel = document.getElementById('modalCancel');
+const modalConfirm = document.getElementById('modalConfirm');
+
+let pendingDelete = null;
+
+// ========== 渲染 ==========
+function render() {
+  const keyword = searchInput.value.trim().toLowerCase();
+  let totalFeatures = 0;
+
+  const filtered = versionData.map(v => {
+    const features = keyword
+      ? v.features.filter(f => f.toLowerCase().includes(keyword))
+      : v.features;
+    const matchTitle = v.title.toLowerCase().includes(keyword) || v.tag.toLowerCase().includes(keyword);
+    const visible = keyword ? (matchTitle || features.length > 0) : true;
+    totalFeatures += features.length;
+    return { ...v, features, visible, expanded: keyword ? true : v.expanded };
+  }).filter(v => v.visible);
+
+  if (filtered.length === 0) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <div>${keyword ? '没有找到匹配的内容' : '暂无版本，点击下方按钮添加'}</div>
+      </div>
+    `;
+  } else {
+    content.innerHTML = filtered.map(v => renderVersion(v)).join('');
+    bindEvents();
+  }
+
+  statsText.textContent = `共 ${filtered.length} 个版本，${totalFeatures} 条功能`;
+}
+
+function renderVersion(v) {
+  return `
+    <div class="version-group ${v.expanded ? '' : 'collapsed'}" data-id="${v.id}">
+      <div class="version-header" data-action="toggle">
+        <div class="version-left">
+          <svg class="version-arrow" viewBox="0 0 16 16" fill="none">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="version-tag">${v.tag}</span>
+          <span class="version-title" data-action="edit-title" contenteditable="true">${v.title}</span>
+        </div>
+        <div class="version-actions">
+          <button class="icon-btn" data-action="add-feature" title="添加功能">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <button class="icon-btn danger" data-action="delete-version" title="删除版本">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 5h10M6 5V3h4v2m-5 0v8h6V5M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="feature-list">
+        ${v.features.map((f, i) => `
+          <div class="feature-row" data-index="${i}">
+            <span class="feature-dot"></span>
+            <span class="feature-text" data-action="edit-feature" contenteditable="true">${f}</span>
+            <div class="row-actions">
+              <button class="icon-btn" data-action="add-before" title="上方插入">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none"><path d="M8 12V4m0 0L5 7m3-3l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="icon-btn" data-action="add-after" title="下方插入">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none"><path d="M8 4v8m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="icon-btn danger" data-action="delete-feature" title="删除">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none"><path d="M3 5h10M6 5V3h4v2m-5 0v8h6V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+        <button class="add-row-btn" data-action="add-feature">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          添加功能
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ========== 事件绑定 ==========
+function bindEvents() {
+  document.querySelectorAll('.version-group').forEach(group => {
+    const id = group.dataset.id;
+    const v = versionData.find(x => x.id === id);
+    if (!v) return;
+
+    // 展开/收起
+    group.querySelector('[data-action="toggle"]').addEventListener('click', (e) => {
+      if (e.target.closest('[data-action="edit-title"]')) return;
+      if (e.target.closest('.version-actions')) return;
+      v.expanded = !v.expanded;
+      group.classList.toggle('collapsed', !v.expanded);
+    });
+
+    // 编辑标题
+    const titleEl = group.querySelector('[data-action="edit-title"]');
+    titleEl.addEventListener('blur', () => {
+      v.title = titleEl.textContent.trim() || '未命名版本';
+      saveToLocal();
+    });
+    titleEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
+    });
+
+    // 添加功能（底部按钮）
+    group.querySelectorAll('[data-action="add-feature"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        v.features.push('新功能');
+        v.expanded = true;
+        render();
+        saveToLocal();
+        // 聚焦新行
+        setTimeout(() => {
+          const rows = group.querySelectorAll('.feature-row');
+          const last = rows[rows.length - 1];
+          if (last) {
+            const text = last.querySelector('.feature-text');
+            text.focus();
+            document.execCommand('selectAll', false, null);
+          }
+        }, 50);
+      });
+    });
+
+    // 删除版本
+    const delBtn = group.querySelector('[data-action="delete-version"]');
+    if (delBtn) {
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showConfirm('删除版本', `确定要删除版本「${v.tag} ${v.title}」吗？`, () => {
+          versionData = versionData.filter(x => x.id !== id);
+          render();
+          saveToLocal();
+          showToast('已删除版本');
+        });
+      });
+    }
+
+    // 功能行操作
+    group.querySelectorAll('.feature-row').forEach(row => {
+      const index = parseInt(row.dataset.index);
+      const textEl = row.querySelector('.feature-text');
+
+      // 编辑功能
+      textEl.addEventListener('blur', () => {
+        v.features[index] = textEl.textContent.trim() || '未命名功能';
+        saveToLocal();
+      });
+      textEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          // 在下方插入新行
+          v.features.splice(index + 1, 0, '');
+          render();
+          saveToLocal();
+          setTimeout(() => {
+            const newRows = group.querySelectorAll('.feature-row');
+            const newRow = newRows[index + 1];
+            if (newRow) newRow.querySelector('.feature-text').focus();
+          }, 50);
+        }
+        if (e.key === 'Backspace' && textEl.textContent === '' && v.features.length > 1) {
+          e.preventDefault();
+          v.features.splice(index, 1);
+          render();
+          saveToLocal();
+          setTimeout(() => {
+            const newRows = group.querySelectorAll('.feature-row');
+            const target = newRows[Math.max(0, index - 1)];
+            if (target) target.querySelector('.feature-text').focus();
+          }, 50);
+        }
+      });
+
+      // 上方插入
+      const addBefore = row.querySelector('[data-action="add-before"]');
+      if (addBefore) {
+        addBefore.addEventListener('click', (e) => {
+          e.stopPropagation();
+          v.features.splice(index, 0, '新功能');
+          render();
+          saveToLocal();
+          setTimeout(() => {
+            const newRows = group.querySelectorAll('.feature-row');
+            const newRow = newRows[index];
+            if (newRow) {
+              const text = newRow.querySelector('.feature-text');
+              text.focus();
+              document.execCommand('selectAll', false, null);
+            }
+          }, 50);
+        });
+      }
+
+      // 下方插入
+      const addAfter = row.querySelector('[data-action="add-after"]');
+      if (addAfter) {
+        addAfter.addEventListener('click', (e) => {
+          e.stopPropagation();
+          v.features.splice(index + 1, 0, '新功能');
+          render();
+          saveToLocal();
+          setTimeout(() => {
+            const newRows = group.querySelectorAll('.feature-row');
+            const newRow = newRows[index + 1];
+            if (newRow) {
+              const text = newRow.querySelector('.feature-text');
+              text.focus();
+              document.execCommand('selectAll', false, null);
+            }
+          }, 50);
+        });
+      }
+
+      // 删除功能
+      const delFeat = row.querySelector('[data-action="delete-feature"]');
+      if (delFeat) {
+        delFeat.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (v.features.length <= 1) {
+            showToast('至少保留一条功能', 'error');
+            return;
+          }
+          v.features.splice(index, 1);
+          render();
+          saveToLocal();
+          showToast('已删除');
+        });
+      }
+    });
+  });
+}
+
+// ========== 操作 ==========
+function addVersion() {
+  const id = 'v' + Date.now();
+  versionData.unshift({
+    id,
+    tag: '新版',
+    title: '新版本说明',
+    expanded: true,
+    features: ['功能一']
+  });
+  render();
+  saveToLocal();
+  showToast('已添加新版本');
+  // 聚焦标题
+  setTimeout(() => {
+    const first = document.querySelector('.version-group');
+    if (first) {
+      const title = first.querySelector('.version-title');
+      title.focus();
+      document.execCommand('selectAll', false, null);
+    }
+  }, 50);
+}
+
+function expandAll() {
+  versionData.forEach(v => v.expanded = true);
+  render();
+}
+
+function collapseAll() {
+  versionData.forEach(v => v.expanded = false);
+  render();
+}
+
+// ========== 发布 ==========
+function publish() {
+  let text = '【原型说明】\n\n';
+  versionData.forEach(v => {
+    text += `## ${v.tag} - ${v.title}\n`;
+    v.features.forEach(f => {
+      text += `- ${f}\n`;
+    });
+    text += '\n';
+  });
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制到剪贴板，可直接发布', 'success');
+  }).catch(() => {
+    // 降级方案
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制到剪贴板，可直接发布', 'success');
+  });
+}
+
+// ========== 本地存储 ==========
+function saveToLocal() {
+  localStorage.setItem('prototype-spec-data', JSON.stringify(versionData));
+}
+
+function loadFromLocal() {
+  const saved = localStorage.getItem('prototype-spec-data');
+  if (saved) {
+    try {
+      versionData = JSON.parse(saved);
+    } catch (e) {
+      console.warn('数据解析失败，使用默认数据');
+    }
+  }
+}
+
+// ========== Toast ==========
+function showToast(msg, type) {
+  toast.textContent = msg;
+  toast.className = 'toast show' + (type === 'success' ? ' success' : '');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
+}
+
+// ========== 确认弹窗 ==========
+function showConfirm(title, desc, onConfirm) {
+  modalTitle.textContent = title;
+  modalDesc.textContent = desc;
+  pendingDelete = onConfirm;
+  confirmModal.classList.add('show');
+}
+
+modalCancel.addEventListener('click', () => {
+  confirmModal.classList.remove('show');
+  pendingDelete = null;
+});
+modalConfirm.addEventListener('click', () => {
+  confirmModal.classList.remove('show');
+  if (pendingDelete) pendingDelete();
+  pendingDelete = null;
+});
+confirmModal.addEventListener('click', (e) => {
+  if (e.target === confirmModal) {
+    confirmModal.classList.remove('show');
+    pendingDelete = null;
+  }
+});
+
+// ========== 初始化 ==========
+loadFromLocal();
+render();
+
+searchInput.addEventListener('input', render);
+addVersionBtn.addEventListener('click', addVersion);
+expandAllBtn.addEventListener('click', expandAll);
+collapseAllBtn.addEventListener('click', collapseAll);
+publishBtn.addEventListener('click', publish);
+
+// 快捷键
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    publish();
+  }
+});
+</script>
+</body>
+</html>
