@@ -2087,24 +2087,11 @@ async function doSearch() {
   
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // ===== Step 1: AI智能体分析 =====
-  const step1 = addLoadingStep('🧠', 'Step 1: AI智能体分析');
-  
+  // ===== AI智能体分析（后台执行，不展示） =====
   let aiResult = null;
   let aiSource = 'none';
   
-  // 流式回调：实时更新分析内容
-  function onAnalysisDelta(delta, fullText) {
-    // 尝试从已有的内容中提取JSON并更新步骤
-    try {
-      const partial = fullText.substring(0, Math.min(fullText.length, 500));
-      updateStep(step1, '🧠', 'Step 1: AI智能体分析中...', 
-        '正在生成分析结果... ' + partial.replace(/[{\[\]"\\]/g, '').substring(0, 100) + '...'
-      );
-    } catch (e) {}
-  }
-  
-  aiResult = await callCozeSearchAnalysis(query, onAnalysisDelta);
+  aiResult = await callCozeSearchAnalysis(query, null);
   if (aiResult) aiSource = 'coze';
   
   if (!aiResult) {
@@ -2116,19 +2103,8 @@ async function doSearch() {
     aiResult = ruleBasedAnalysis(query);
     aiSource = 'rule';
   }
-  
-  const sourceLabel = aiSource === 'coze' ? '扣子AI智能体' : aiSource === 'zhipu' ? '智谱AI大模型' : '规则引擎';
-  const intentText = aiResult.intent || '明确找品';
-  const catText = aiResult.category ? (aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '')) : '未识别';
-  const summary = aiResult.analysisSummary || '分析完成';
-  const confidence = aiResult.intentConfidence ? '（置信度 ' + aiResult.intentConfidence + '）' : '';
-  
-  updateStep(step1, '✅', 'Step 1: ' + sourceLabel + '意图识别完成', 
-    '意图：' + intentText + confidence + ' · 类目：' + catText,
-    [sourceLabel, intentText].filter(Boolean)
-  );
 
-  // ===== Step 2: 核心词提取 =====
+  // ===== Step 1: 核心词提取 =====
   await new Promise(r => setTimeout(r, 200));
   const coreProduct = aiResult.coreProduct || query;
   const modifiers = aiResult.modifiers || {};
@@ -2141,31 +2117,31 @@ async function doSearch() {
   const tokens = allModifiers.length > 0 ? [coreProduct, ...allModifiers] : [coreProduct];
   const requiredKws = aiResult.requiredKeywords || [];
   
-  let step2Detail = '核心产品：' + coreProduct;
-  if (allModifiers.length > 0) step2Detail += ' · 修饰词：' + allModifiers.join('、');
-  if (requiredKws.length > 0) step2Detail += ' · 必含词：' + requiredKws.join('、');
+  let step1Detail = '核心产品：' + coreProduct;
+  if (allModifiers.length > 0) step1Detail += ' · 修饰词：' + allModifiers.join('、');
+  if (requiredKws.length > 0) step1Detail += ' · 必含词：' + requiredKws.join('、');
   
-  addStep('🎯', 'Step 2: 核心词提取', step2Detail, tokens);
+  addStep('🎯', 'Step 1: 核心词提取', step1Detail, tokens);
 
-  // ===== Step 3: 关键词扩展与排除 =====
+  // ===== Step 2: 关键词扩展与排除 =====
   await new Promise(r => setTimeout(r, 300));
   const expanded = aiResult.expandedKeywords || [];
   const excluded = aiResult.excludedKeywords || [];
   
-  let step3Detail = '';
-  let step3Tokens = [];
+  let step2Detail = '';
+  let step2Tokens = [];
   
   if (expanded.length > 0) {
-    step3Detail += '智能扩展 ' + expanded.length + ' 个搜索变体';
-    step3Tokens = expanded.slice(0, 8);
+    step2Detail += '智能扩展 ' + expanded.length + ' 个搜索变体';
+    step2Tokens = expanded.slice(0, 8);
   } else {
-    step3Detail += '无需额外扩展';
+    step2Detail += '无需额外扩展';
   }
   if (excluded.length > 0) {
-    step3Detail += ' · 排除 ' + excluded.length + ' 个不相关词';
+    step2Detail += ' · 排除 ' + excluded.length + ' 个不相关词';
   }
   
-  addStep('🔗', 'Step 3: 关键词扩展与排除', step3Detail, step3Tokens);
+  addStep('🔗', 'Step 2: 关键词扩展与排除', step2Detail, step2Tokens);
   
   // 展示排除词（如果有的话）
   if (excluded.length > 0) {
@@ -2181,7 +2157,7 @@ async function doSearch() {
     }
   }
 
-  // ===== Step 4: 类目获取（getCategory插件返回） =====
+  // ===== Step 3: 类目获取（getCategory插件返回） =====
   await new Promise(r => setTimeout(r, 250));
   if (aiResult.categoryTree && Array.isArray(aiResult.categoryTree) && aiResult.categoryTree.length > 0) {
     // 从 categoryTree 提取类目名和ID（插件返回的字段名是 category_name 和 category_id）
@@ -2189,29 +2165,17 @@ async function doSearch() {
     const catPath = treeNames.join(' > ');
     const catIds = aiResult.categoryTree.map(item => item.category_id || item.categoryId || '').filter(id => id);
     const catDetail = '类目路径：' + catPath + (catIds.length > 0 ? '（ID: ' + catIds.join('/') + '）· 数据来源：getCategory插件 · ✅ 已启用类目过滤' : '');
-    addStep('📂', 'Step 4: 类目获取（getCategory插件）', catDetail, treeNames.slice(0, 6));
+    addStep('📂', 'Step 3: 类目获取（getCategory插件）', catDetail, treeNames.slice(0, 6));
   } else if (aiResult.category && aiResult.category.mainCategory) {
     // 兼容：插件未返回数据但智能体有 category 字段
     let catDetail = '类目：' + aiResult.category.mainCategory + (aiResult.category.subCategory ? ' / ' + aiResult.category.subCategory : '') +
       (aiResult.category.categoryId ? '（ID: ' + aiResult.category.categoryId + '）' : '') + ' · ⚠️ 未调用getCategory插件，类目为智能体推测';
-    addStep('📂', 'Step 4: 类目获取', catDetail, aiResult.category.categoryKeywords || []);
+    addStep('📂', 'Step 3: 类目获取', catDetail, aiResult.category.categoryKeywords || []);
   } else {
-    addStep('📂', 'Step 4: 类目获取', '未获取到类目数据（getCategory插件未返回数据），将进行全量搜索');
+    addStep('📂', 'Step 3: 类目获取', '未获取到类目数据（getCategory插件未返回数据），将进行全量搜索');
   }
 
-  // ===== Step 5: 歧义检测 =====
-  await new Promise(r => setTimeout(r, 250));
-  const ambiguity = aiResult.ambiguity || {};
-  if (ambiguity.hasAmbiguity && ambiguity.ambiguousTerms && ambiguity.ambiguousTerms.length > 0) {
-    addStep('⚠️', 'Step 5: 歧义检测与消歧', 
-      '检测到歧义：「' + ambiguity.ambiguousTerms.join('、') + '」→ ' + (ambiguity.resolutionStrategy || '已自动处理'),
-      ambiguity.ambiguousTerms
-    );
-  } else {
-    addStep('✅', 'Step 5: 歧义检测', '未检测到歧义词汇，搜索指向明确');
-  }
-
-  // ===== Step 6: 搜索策略生成 =====
+  // ===== Step 4: 搜索策略生成 =====
   await new Promise(r => setTimeout(r, 200));
   const filters = [];
   if (modifiers.priceRange && (modifiers.priceRange.min || modifiers.priceRange.max)) {
@@ -2222,74 +2186,19 @@ async function doSearch() {
   if (modifiers.scene && modifiers.scene.length > 0) filters.push('场景: ' + modifiers.scene.join('、'));
   
   const searchStrategy = aiResult.searchStrategy || {};
-  let step6Detail = '';
+  let step4Detail = '';
   if (searchStrategy.filterHints) {
-    step6Detail = searchStrategy.filterHints;
+    step4Detail = searchStrategy.filterHints;
   } else if (filters.length > 0) {
-    step6Detail = '识别到 ' + filters.length + ' 个筛选条件';
+    step4Detail = '识别到 ' + filters.length + ' 个筛选条件';
   } else {
-    step6Detail = '未指定筛选条件，返回综合排序结果';
+    step4Detail = '未指定筛选条件，返回综合排序结果';
   }
   
-  addStep('📋', 'Step 6: 搜索策略生成', step6Detail, filters.length > 0 ? filters : (searchStrategy.secondaryQueries || []).slice(0, 4));
+  addStep('📋', 'Step 4: 搜索策略生成', step4Detail, filters.length > 0 ? filters : (searchStrategy.secondaryQueries || []).slice(0, 4));
 
-  // ===== Step 7: 商品属性分析 =====
-  await new Promise(r => setTimeout(r, 200));
-  const productAttrs = aiResult.productAttrs || {};
-  const attrTags = [];
-  let attrDetail = '';
-  
-  // 兼容新的 tags 键值对结构
-  if (productAttrs.tags && Array.isArray(productAttrs.tags)) {
-    for (const tag of productAttrs.tags) {
-      if (tag.name && tag.values && tag.values.length > 0) {
-        const valuesStr = tag.values.join('、');
-        attrDetail += (attrDetail ? ' · ' : '') + tag.name + '：' + valuesStr;
-        // 跨境属性特殊处理
-        if (tag.name === '跨境属性' && tag.targetMarket) {
-          attrTags.push('跨境货源');
-          attrTags.push('市场:' + tag.targetMarket);
-        } else {
-          attrTags.push(...tag.values);
-        }
-      }
-    }
-  }
-  // 兼容旧版结构（如果智能体还没更新提示词）
-  if (!productAttrs.tags && productAttrs.style) {
-    const oldFields = [
-      { key: 'style', label: '款式' },
-      { key: 'fabric', label: '面料' },
-      { key: 'length', label: '长度' },
-      { key: 'collarType', label: '领型' },
-      { key: 'sleeveLength', label: '袖长' },
-      { key: 'pattern', label: '图案' },
-      { key: 'season', label: '季节' },
-      { key: 'fitType', label: '版型' },
-      { key: 'designElements', label: '设计元素' }
-    ];
-    for (const field of oldFields) {
-      if (productAttrs[field.key] && productAttrs[field.key].length > 0) {
-        attrTags.push(...productAttrs[field.key]);
-        attrDetail += (attrDetail ? ' · ' : '') + field.label + '：' + productAttrs[field.key].join('、');
-      }
-    }
-    const cb = productAttrs.crossBorder;
-    if (cb && cb.isCrossBorder) {
-      attrTags.push('跨境货源');
-      if (cb.targetMarket) attrTags.push('市场:' + cb.targetMarket);
-      attrDetail += (attrDetail ? ' · ' : '') + '跨境：是' + (cb.targetMarket ? '（' + cb.targetMarket + '）' : '');
-    }
-  }
-  
-  if (attrDetail) {
-    addStep('🏷️', 'Step 7: 商品属性分析', attrDetail, attrTags.slice(0, 8));
-  } else {
-    addStep('🏷️', 'Step 7: 商品属性分析', '未识别到具体商品属性，将使用通用搜索策略');
-  }
-
-  // ===== Step 8: 调用店雷达API获取商品 =====
-  const step8 = addLoadingStep('📡', 'Step 8: 实时商品搜索');
+  // ===== Step 5: 调用店雷达API获取商品 =====
+  const step5 = addLoadingStep('📡', 'Step 5: 实时商品搜索');
   
   let products = [];
   try {
@@ -2303,12 +2212,12 @@ async function doSearch() {
     const searchWords = [query];
     if (aiResult && aiResult.expandedKeywords) searchWords.push(...aiResult.expandedKeywords.slice(0, 3));
     const displaySearch = searchWords.join('、');
-    updateStep(step8, '✅', 'Step 8: 实时商品搜索完成', 
+    updateStep(step5, '✅', 'Step 5: 实时商品搜索完成', 
       '搜索词：' + displaySearch + ' · 从1688实时获取 ' + products.length + ' 条商品数据',
       ['实时API', products.length + '件商品']
     );
   } else {
-    updateStep(step8, '⚠️', 'Step 8: 商品搜索', 
+    updateStep(step5, '⚠️', 'Step 5: 商品搜索', 
       '暂未获取到商品数据，请稍后重试或更换关键词');
   }
   
