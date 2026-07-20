@@ -397,6 +397,25 @@ body {
 }
 .analysis-header-title { font-size: 18px; font-weight: 600; color: #4C1D95; }
 .analysis-header-sub { font-size: 13px; color: #7C3AED; }
+.analysis-timing {
+  margin-top: 6px;
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: #6D28D9;
+}
+.analysis-timing.show { display: flex; }
+.timing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(124,58,237,0.14);
+}
+.timing-chip strong { font-weight: 700; color: #4C1D95; }
 
 .ai-steps { display: flex; flex-direction: column; gap: 10px; }
 .ai-step {
@@ -759,6 +778,11 @@ body {
       <div>
         <div class="analysis-header-title">AI智能分析 <span class="loading-dots" id="analysis-loading"><span></span><span></span><span></span></span></div>
         <div class="analysis-header-sub" id="analysis-sub">正在启动AI分析引擎...</div>
+        <div class="analysis-timing" id="analysis-timing">
+          <span class="timing-chip">智能体：<strong id="timing-agent">--</strong></span>
+          <span class="timing-chip">店雷达API：<strong id="timing-api">--</strong></span>
+          <span class="timing-chip">总耗时：<strong id="timing-total">--</strong></span>
+        </div>
       </div>
     </div>
     <div class="ai-steps" id="ai-steps">
@@ -2040,6 +2064,25 @@ function addLoadingStep(icon, title) {
   return stepEl;
 }
 
+function formatDuration(ms) {
+  if (ms === null || ms === undefined || Number.isNaN(ms)) return '--';
+  if (ms < 1000) return Math.round(ms) + 'ms';
+  return (ms / 1000).toFixed(2) + 's';
+}
+
+function updateTimingDisplay(timing) {
+  const timingEl = document.getElementById('analysis-timing');
+  if (!timingEl) return;
+  const hasValue = ['agent', 'api', 'total'].some(key => typeof timing[key] === 'number');
+  timingEl.classList.toggle('show', hasValue);
+  const agentEl = document.getElementById('timing-agent');
+  const apiEl = document.getElementById('timing-api');
+  const totalEl = document.getElementById('timing-total');
+  if (agentEl && timing.agent !== undefined) agentEl.textContent = formatDuration(timing.agent);
+  if (apiEl && timing.api !== undefined) apiEl.textContent = formatDuration(timing.api);
+  if (totalEl && timing.total !== undefined) totalEl.textContent = formatDuration(timing.total);
+}
+
 function updateStep(stepEl, icon, title, detail, tokens) {
   let tokensHtml = '';
   if (tokens && tokens.length > 0) {
@@ -2061,6 +2104,9 @@ async function doSearch() {
   if (!query || isSearching) return;
 
   isSearching = true;
+  const totalStartTime = performance.now();
+  let agentDuration = null;
+  let apiDuration = null;
   const btn = document.getElementById('search-btn');
   btn.disabled = true;
 
@@ -2075,6 +2121,9 @@ async function doSearch() {
   document.getElementById('ai-steps').innerHTML = '';
   document.getElementById('analysis-loading').style.display = 'inline-flex';
   document.getElementById('analysis-sub').textContent = '正在启动AI分析引擎...';
+  const timingEl = document.getElementById('analysis-timing');
+  if (timingEl) timingEl.classList.remove('show');
+  updateTimingDisplay({ agent: null, api: null, total: null });
   document.getElementById('product-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">正在搜索商品...</div>';
   
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2082,6 +2131,7 @@ async function doSearch() {
   // ===== AI智能体分析（后台执行，不展示） =====
   let aiResult = null;
   let aiSource = 'none';
+  const agentStartTime = performance.now();
   
   aiResult = await callCozeSearchAnalysis(query, null);
   if (aiResult) aiSource = 'coze';
@@ -2095,6 +2145,9 @@ async function doSearch() {
     aiResult = ruleBasedAnalysis(query);
     aiSource = 'rule';
   }
+  agentDuration = performance.now() - agentStartTime;
+  console.log('[耗时统计] 智能体分析:', formatDuration(agentDuration), '来源:', aiSource);
+  updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: performance.now() - totalStartTime });
 
   // ===== Step 1: 核心词提取 =====
   await new Promise(r => setTimeout(r, 200));
@@ -2171,10 +2224,15 @@ async function doSearch() {
   const step4 = addLoadingStep('📡', 'Step 4: 实时商品搜索');
   
   let products = [];
+  const apiStartTime = performance.now();
   try {
     products = await fetchProductsFromAPI(query, aiResult);
   } catch (e) {
     console.warn('API调用失败:', e.message);
+  } finally {
+    apiDuration = performance.now() - apiStartTime;
+    console.log('[耗时统计] 店雷达API:', formatDuration(apiDuration));
+    updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: performance.now() - totalStartTime });
   }
   
   if (products.length > 0) {
@@ -2192,6 +2250,9 @@ async function doSearch() {
   }
   
   // 隐藏顶部loading
+  const totalDuration = performance.now() - totalStartTime;
+  console.log('[耗时统计] 总调用时间:', formatDuration(totalDuration));
+  updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: totalDuration });
   document.getElementById('analysis-loading').style.display = 'none';
   document.getElementById('analysis-sub').textContent = 'AI智能分析完成，已为您精准匹配商品';
 
