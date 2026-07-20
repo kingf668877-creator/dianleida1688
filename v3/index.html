@@ -1409,6 +1409,10 @@ function deriveCategoryFilterFromTree(categoryTree) {
     if (name.match(/玩具|益智/)) allowedPrefixes.add('玩具');
     if (name.match(/办公|文具/)) allowedPrefixes.add('办公、文化');
     if (name.match(/鞋|靴/)) allowedPrefixes.add('鞋');
+    if (name.match(/插座|开关|电工|电气|电线|电缆|断路器|漏电|配电箱/)) allowedPrefixes.add('电工电气');
+    if (name.match(/照明|灯具|灯泡|灯管|LED|吊灯|台灯|手电筒/)) allowedPrefixes.add('照明工业');
+    if (name.match(/五金|工具|螺丝|螺母|扳手|钳子|锯片/)) allowedPrefixes.add('五金、工具');
+    if (name.match(/建材|家装|建筑|建材|涂料|地板|瓷砖|门窗/)) allowedPrefixes.add('家装、建材');
   }
   
   return {
@@ -1473,22 +1477,63 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     let categoryMatch = true;
     if (levelName) {
       if (categoryTreeFilter && categoryTreeFilter.categoryNames.length > 0) {
-        // 将 levelName 按 ">" 拆分为各级类目（如 "箱包皮具>化妆箱包>化妆包" → ["箱包皮具","化妆箱包","化妆包"]）
+        // 将 levelName 按 ">" 拆分为各级类目（如 "电工电气>插座>墙壁插座" → ["电工电气","插座","墙壁插座"]）
         const levelParts = levelName.split('>').map(s => s.trim()).filter(s => s);
         
         // 只用长度>=2的类目名匹配，过滤掉"袋"等单字（避免误匹配"塑料包装袋"等包装类）
         const validCatNames = categoryTreeFilter.categoryNames.filter(n => n.length >= 2);
         
-        // 匹配方式1：插件返回的三级类目名匹配 levelName 的末级（最精确）
-        // 如插件返回"化妆包"，商品的 levelName 末级是"化妆包" → 匹配
-        // 或插件返回"收纳袋"，商品的某级是"收纳袋、收纳包" → 匹配（双向includes）
-        categoryMatch = validCatNames.some(catName => 
-          levelParts.some(part => part === catName || part.includes(catName) || catName.includes(part))
-        );
+        // 判断一个类目名是否与某个 levelPart 精确匹配（支持顿号分隔的复合类目）
+        // 如 catName="墙壁插座" 匹配 part="墙壁插座"（精确相等）
+        // 如 catName="墙壁插座" 匹配 part="墙壁插座、地面插座"（顿号分隔的复合类目中有一项相等）
+        const matchExact = (catName, part) => {
+          if (part === catName) return true;
+          // 复合类目：part 用顿号分隔后逐项比较
+          if (part.includes('、')) {
+            return part.split('、').some(p => p.trim() === catName);
+          }
+          // 复合类目：catName 用顿号分隔后逐项比较
+          if (catName.includes('、')) {
+            return catName.split('、').some(p => p.trim() === part);
+          }
+          return false;
+        };
         
-        // 匹配方式2：一级类目前缀匹配（如 levelName 以 "箱包皮具" 或 "运动户外" 开头）
-        if (!categoryMatch && categoryTreeFilter.allowedPrefixes.length > 0) {
-          categoryMatch = categoryTreeFilter.allowedPrefixes.some(prefix => levelName.startsWith(prefix));
+        // 区分宽泛类目和具体类目
+        // 宽泛类目：被其他类目名包含的（如"插座"被"墙壁插座"包含）→ 匹配倒数第二级（二级类目）
+        // 具体类目：不被其他类目名包含的 → 匹配末级（三级类目）
+        const broadCatNames = [];  // 宽泛类目名
+        const specificCatNames = []; // 具体类目名
+        
+        for (const catName of validCatNames) {
+          const isBroad = validCatNames.some(other => other !== catName && other.includes(catName));
+          if (isBroad) {
+            broadCatNames.push(catName);
+          } else {
+            specificCatNames.push(catName);
+          }
+        }
+        
+        // 匹配策略：
+        // 1. 具体类目匹配末级（最精确）
+        // 2. 宽泛类目匹配倒数第二级（二级类目）
+        // 注意：有 categoryTree 时不使用一级前缀兜底，避免太宽泛
+        categoryMatch = false;
+        const lastLevel = levelParts[levelParts.length - 1] || '';
+        const secondLastLevel = levelParts[levelParts.length - 2] || '';
+        
+        // 第1轮：具体类目匹配末级
+        if (lastLevel && specificCatNames.length > 0) {
+          categoryMatch = specificCatNames.some(catName => matchExact(catName, lastLevel));
+        }
+        
+        // 第2轮：宽泛类目匹配倒数第二级
+        if (!categoryMatch && secondLastLevel && broadCatNames.length > 0) {
+          // 额外校验：末级类目如果是"配件/附件/工具/材料/包装/维修/安装/盒/罩/盖/框"等非主产品类目，即使二级匹配也排除
+          const isAccessoryLevel = /配件|附件|零件|工具|材料|辅料|包装|维修|修理|修补|修复|安装|防水盒|防溅盒|保护盖|保护罩|底盒|接线盒|明盒|暗盒|线盒/.test(lastLevel);
+          if (!isAccessoryLevel) {
+            categoryMatch = broadCatNames.some(catName => matchExact(catName, secondLastLevel));
+          }
         }
         
         // 有categoryTree时，严格排除不在目标类目中的商品
@@ -1709,6 +1754,16 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       catConfig = { categoryName: 'categoryTree', levelNames: categoryLevelNames };
     }
   }
+  // 宽松版类目过滤器：只用一级类目前缀过滤，不用精确类目名
+  // 用于兜底搜索，既保证大类目不错，又不会过滤太严
+  let looseCategoryFilter = null;
+  if (categoryTreeFilter && categoryTreeFilter.allowedPrefixes.length > 0) {
+    looseCategoryFilter = {
+      allowedPrefixes: categoryTreeFilter.allowedPrefixes,
+      categoryNames: [],  // 空数组：不做精确类目名匹配，只用前缀
+      categoryIdMap: categoryTreeFilter.categoryIdMap
+    };
+  }
   // 如果categoryTree没有数据，回退到本地CATEGORY_MAP
   if (!catConfig) {
     if (aiResult && aiResult.category && aiResult.category.mainCategory) {
@@ -1798,7 +1853,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           aiResult ? aiResult.coreProduct : keyword,
           categoryLevelNames,
           aiResult ? aiResult.productAttrs : null,
-          null  // 不启用类目过滤
+          looseCategoryFilter  // 宽松类目过滤：只用一级类目前缀，不用精确类目名
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -1850,7 +1905,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           aiResult ? aiResult.coreProduct : keyword,
           categoryLevelNames,
           aiResult ? aiResult.productAttrs : null,
-          null  // 不传categoryTreeFilter，放宽类目限制
+          looseCategoryFilter  // 宽松类目过滤：只用一级类目前缀，不用精确类目名
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -1864,7 +1919,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     }
     }
   }
-  
+
   // ===== 二次兜底：如果结果太少（<10），放宽类目过滤重新搜索 =====
   if (allProducts.length < 10) {
     try {
@@ -1887,7 +1942,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           aiResult ? aiResult.coreProduct : keyword,
           categoryLevelNames,
           aiResult ? aiResult.productAttrs : null,
-          null  // 不传categoryTreeFilter，放宽类目限制
+          looseCategoryFilter  // 宽松类目过滤：只用一级类目前缀，不用精确类目名
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
