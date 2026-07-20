@@ -181,6 +181,108 @@
 
   /* 隐藏的文件输入 */
   #mdFileInput { display: none; }
+
+  /* 发布弹窗 */
+  .modal-mask {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, .5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000;
+    animation: fadeIn .2s ease;
+  }
+  .modal-mask.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 480px;
+    overflow: hidden;
+    animation: slideUp .25s ease;
+  }
+  .modal-header {
+    padding: 22px 24px 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-icon {
+    width: 36px; height: 36px;
+    background: #e0f2fe;
+    color: #0284c7;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .modal-body {
+    padding: 20px 24px;
+  }
+  .modal-desc {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .modal-desc b { color: #1e293b; }
+  .modal-steps {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .modal-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #475569;
+  }
+  .step-num {
+    width: 22px; height: 22px;
+    background: #3370ff;
+    color: #fff;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .step-text { flex: 1; padding-top: 1px; }
+  .step-text b { color: #1e293b; }
+  .content-preview {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #64748b;
+    font-family: Consolas, Monaco, monospace;
+    max-height: 80px;
+    overflow: hidden;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .modal-footer {
+    padding: 14px 24px 22px;
+    display: flex;
+    gap: 10px;
+  }
+  .modal-footer .btn {
+    flex: 1;
+    height: 40px;
+    justify-content: center;
+    font-size: 14px;
+  }
 </style>
 </head>
 <body>
@@ -241,6 +343,42 @@
 
 <!-- 隐藏文件输入 -->
 <input type="file" id="mdFileInput" accept=".md,text/markdown">
+
+<!-- 发布弹窗 -->
+<div class="modal-mask" id="publishModal" onclick="if(event.target===this)closePublishModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-icon">🚀</span>
+        <span>发布更新到线上</span>
+      </div>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">
+        内容已保存到本地。要更新到线上 Git，请按以下步骤操作：
+      </p>
+      <div class="modal-steps">
+        <div class="modal-step">
+          <span class="step-num">1</span>
+          <div class="step-text">点击下方按钮 <b>复制最新内容</b></div>
+        </div>
+        <div class="modal-step">
+          <span class="step-num">2</span>
+          <div class="step-text">打开 WorkBuddy 对话框，<b>粘贴内容</b>并说「帮我更新这个 MD 文档」</div>
+        </div>
+        <div class="modal-step">
+          <span class="step-num">3</span>
+          <div class="step-text">WorkBuddy 会帮你更新到 GitHub，1-2 分钟后线上生效</div>
+        </div>
+      </div>
+      <div class="content-preview" id="publishContentPreview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePublishModal()">取消</button>
+      <button class="btn btn-primary" id="copyPublishBtn" onclick="copyPublishContent()">📋 复制内容并发给 WorkBuddy</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -485,11 +623,41 @@ function publish() {
   }
 
   saveToLocal();
-  showToast('🎉 发布成功！内容已更新', 'success');
+  showPublishModal();
+}
 
-  // 发布后切换到预览模式
-  if (currentMode !== 'preview') {
-    setTimeout(() => switchMode('preview'), 300);
+// 发布提示弹窗
+function showPublishModal() {
+  const modal = document.getElementById('publishModal');
+  const contentPreview = document.getElementById('publishContentPreview');
+
+  // 显示前 200 字预览
+  const preview = rawContent.length > 200 ? rawContent.slice(0, 200) + '...' : rawContent;
+  contentPreview.textContent = preview;
+
+  modal.classList.add('show');
+}
+
+function closePublishModal() {
+  document.getElementById('publishModal').classList.remove('show');
+}
+
+function copyPublishContent() {
+  const text = editor.value || rawContent;
+  if (!text) return;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        const btn = document.getElementById('copyPublishBtn');
+        const old = btn.innerHTML;
+        btn.innerHTML = '✓ 已复制，请发给 WorkBuddy';
+        btn.style.background = '#10b981';
+        setTimeout(() => { btn.innerHTML = old; btn.style.background = ''; }, 2000);
+      })
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
   }
 }
 
