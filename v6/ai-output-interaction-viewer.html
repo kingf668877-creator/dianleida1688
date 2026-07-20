@@ -1,107 +1,108 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 输出结果交互</title>
-  <link rel="icon" type="image/png" href="logo.png">
-<style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
-  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #1d2129; }
-
-  .tabs-wrap {
-    height: 48px;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    background: #fff;
-    border-bottom: 1px solid #e5e6eb;
-    gap: 4px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .tab-btn {
-    height: 32px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: #4e5969;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background .15s, color .15s;
-  }
-  .tab-btn:hover { background: #f2f3f5; color: #1d2129; }
-  .tab-btn.active {
-    background: #f0ebff;
-    color: #6236ff;
-    font-weight: 600;
-  }
-  .tab-btn .tab-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin-right: 6px;
-    border-radius: 3px;
-    vertical-align: -1px;
-  }
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 输出结果交互</title>
+  <link rel="icon" type="image/png" href="logo.png">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #1d2129; }
+
+  .tabs-wrap {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background: #fff;
+    border-bottom: 1px solid #e5e6eb;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .tab-btn {
+    height: 32px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #4e5969;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .tab-btn:hover { background: #f2f3f5; color: #1d2129; }
+  .tab-btn.active {
+    background: #f0ebff;
+    color: #6236ff;
+    font-weight: 600;
+  }
+  .tab-btn .tab-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 3px;
+    vertical-align: -1px;
+  }
   .tab-preview .tab-dot { background: #ff6b6b; }
   .tab-html .tab-dot { background: #e34f26; }
   .tab-css .tab-dot { background: #1572b6; }
   .tab-js .tab-dot { background: #b58b00; }
-
-  .panels {
-    height: calc(100vh - 48px);
-    overflow: hidden;
-    position: relative;
-  }
-  .panel {
-    position: absolute;
-    inset: 0;
-    display: none;
-    overflow: auto;
-  }
-  .panel.active { display: block; }
-
-  /* 效果图面板 */
-  #panel-preview iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display: block;
-  }
-
-  /* 代码面板通用 */
-  .code-panel {
-    padding: 20px;
-  }
-  .code-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .code-header small {
-    color: #86909c;
-    font: 12px Consolas, monospace;
-  }
-  .copy-btn {
-    height: 30px;
-    padding: 0 14px;
-    border: 1px solid #e5e6eb;
-    border-radius: 6px;
-    background: #fff;
-    color: #4e5969;
-    font-size: 12px;
-    cursor: pointer;
-    transition: .15s;
-  }
-  .copy-btn:hover { border-color: #6236ff; color: #6236ff; }
-  .copy-btn.ok { background: #16a36a; border-color: #16a36a; color: #fff; }
-
+  .tab-md .tab-dot { background: #519aba; }
+
+  .panels {
+    height: calc(100vh - 48px);
+    overflow: hidden;
+    position: relative;
+  }
+  .panel {
+    position: absolute;
+    inset: 0;
+    display: none;
+    overflow: auto;
+  }
+  .panel.active { display: block; }
+
+  /* 效果图面板 */
+  #panel-preview iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  /* 代码面板通用 */
+  .code-panel {
+    padding: 20px;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .code-header small {
+    color: #86909c;
+    font: 12px Consolas, monospace;
+  }
+  .copy-btn {
+    height: 30px;
+    padding: 0 14px;
+    border: 1px solid #e5e6eb;
+    border-radius: 6px;
+    background: #fff;
+    color: #4e5969;
+    font-size: 12px;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .copy-btn:hover { border-color: #6236ff; color: #6236ff; }
+  .copy-btn.ok { background: #16a36a; border-color: #16a36a; color: #fff; }
+
   pre.code {
     margin: 0;
     padding: 20px;
@@ -115,48 +116,114 @@
     tab-size: 2;
     min-height: calc(100% - 50px);
   }
-</style>
-</head>
-<body>
-  <div class="tabs-wrap" role="tablist">
-    <button class="tab-btn tab-preview active" data-tab="preview" role="tab">
-      <span class="tab-dot"></span>效果图
-    </button>
-    <button class="tab-btn tab-html" data-tab="html" role="tab">
-      <span class="tab-dot"></span>HTML
-    </button>
-    <button class="tab-btn tab-css" data-tab="css" role="tab">
-      <span class="tab-dot"></span>CSS
-    </button>
+
+  /* MD 面板 */
+  .md-panel {
+    padding: 20px;
+  }
+  .md-content {
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.8;
+    font-size: 14px;
+    color: #1d2129;
+  }
+  .md-content h1 { margin: 0 0 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e6eb; font-size: 26px; font-weight: 700; }
+  .md-content h2 { margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid #3370ff; font-size: 19px; font-weight: 600; color: #1e293b; }
+  .md-content h3 { margin: 22px 0 10px; font-size: 16px; font-weight: 600; color: #334155; }
+  .md-content p { margin: 10px 0; }
+  .md-content ul, .md-content ol { padding-left: 26px; margin: 10px 0; }
+  .md-content li { margin: 5px 0; }
+  .md-content code {
+    background: #f2f3f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: Consolas, Monaco, monospace;
+    color: #d97706;
+  }
+  .md-content pre {
+    background: #1d2129;
+    color: #f2f3f5;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .md-content pre code { background: transparent; color: inherit; padding: 0; }
+  .md-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .md-content th, .md-content td {
+    border: 1px solid #e5e6eb;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .md-content th { background: #f7f8fa; font-weight: 600; }
+  .md-content blockquote {
+    border-left: 4px solid #3370ff;
+    padding: 8px 16px;
+    background: #f7f9ff;
+    color: #4e5969;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .md-content hr {
+    border: 0;
+    border-top: 1px solid #e5e6eb;
+    margin: 20px 0;
+  }
+  .md-error { color: #b91c1c; text-align: center; padding: 40px; }
+</style>
+</head>
+<body>
+  <div class="tabs-wrap" role="tablist">
+    <button class="tab-btn tab-preview active" data-tab="preview" role="tab">
+      <span class="tab-dot"></span>效果图
+    </button>
+    <button class="tab-btn tab-html" data-tab="html" role="tab">
+      <span class="tab-dot"></span>HTML
+    </button>
+    <button class="tab-btn tab-css" data-tab="css" role="tab">
+      <span class="tab-dot"></span>CSS
+    </button>
     <button class="tab-btn tab-js" data-tab="js" role="tab">
       <span class="tab-dot"></span>JS
     </button>
-  </div>
-
-  <div class="panels">
-    <!-- 效果图 -->
-    <section class="panel active" id="panel-preview">
-      <iframe id="previewFrame" src="ai-output-interaction-clean.html" title="效果图"></iframe>
-    </section>
-
-    <!-- HTML -->
-    <section class="panel code-panel" id="panel-html">
-      <div class="code-header">
-        <small>ai-output-interaction-clean.html</small>
-        <button class="copy-btn" data-copy="html">复制 HTML</button>
-      </div>
-      <pre class="code" id="codeHtml">正在加载…</pre>
-    </section>
-
-    <!-- CSS -->
-    <section class="panel code-panel" id="panel-css">
-      <div class="code-header">
-        <small>ai-output-interaction-clean.css</small>
-        <button class="copy-btn" data-copy="css">复制 CSS</button>
-      </div>
-      <pre class="code" id="codeCss">正在加载…</pre>
-    </section>
-
+    <button class="tab-btn tab-md" data-tab="md" role="tab">
+      <span class="tab-dot"></span>MD
+    </button>
+  </div>
+
+  <div class="panels">
+    <!-- 效果图 -->
+    <section class="panel active" id="panel-preview">
+      <iframe id="previewFrame" src="ai-output-interaction-clean.html" title="效果图"></iframe>
+    </section>
+
+    <!-- HTML -->
+    <section class="panel code-panel" id="panel-html">
+      <div class="code-header">
+        <small>ai-output-interaction-clean.html</small>
+        <button class="copy-btn" data-copy="html">复制 HTML</button>
+      </div>
+      <pre class="code" id="codeHtml">正在加载…</pre>
+    </section>
+
+    <!-- CSS -->
+    <section class="panel code-panel" id="panel-css">
+      <div class="code-header">
+        <small>ai-output-interaction-clean.css</small>
+        <button class="copy-btn" data-copy="css">复制 CSS</button>
+      </div>
+      <pre class="code" id="codeCss">正在加载…</pre>
+    </section>
+
     <!-- JS -->
     <section class="panel code-panel" id="panel-js">
       <div class="code-header">
@@ -165,52 +232,147 @@
       </div>
       <pre class="code" id="codeJs">正在加载…</pre>
     </section>
-  </div>
 
-<script>
+    <!-- MD -->
+    <section class="panel md-panel" id="panel-md">
+      <div class="code-header" style="max-width:900px;margin:0 auto 12px;">
+        <small>coze_agent_prompt_fast.md</small>
+        <button class="copy-btn" data-copy="md">复制 MD</button>
+      </div>
+      <div class="md-content" id="mdContent">正在加载…</div>
+    </section>
+  </div>
+
+<script>
   const tabs = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.panel');
-  const codeCache = { html: '', css: '', js: '' };
-
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      tabs.forEach(b => b.classList.toggle('active', b === btn));
-      panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
-    });
-  });
-
-  function loadCode(type, url, targetId) {
-    fetch(url).then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
-      .then(text => {
-        codeCache[type] = text;
-        document.getElementById(targetId).textContent = text;
-      })
-      .catch(() => {
-        document.getElementById(targetId).textContent = '加载失败：' + url;
-      });
-  }
-
+  const codeCache = { html: '', css: '', js: '', md: '' };
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      tabs.forEach(b => b.classList.toggle('active', b === btn));
+      panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+    });
+  });
+
+  function loadCode(type, url, targetId) {
+    fetch(url).then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
+      .then(text => {
+        codeCache[type] = text;
+        document.getElementById(targetId).textContent = text;
+      })
+      .catch(() => {
+        document.getElementById(targetId).textContent = '加载失败：' + url;
+      });
+  }
+
   loadCode('html', 'ai-output-interaction-clean.html', 'codeHtml');
   loadCode('css', 'ai-output-interaction-clean.css', 'codeCss');
   loadCode('js', 'ai-output-interaction-clean.js', 'codeJs');
 
-  document.querySelectorAll('.copy-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const type = btn.dataset.copy;
-      const text = codeCache[type];
-      if (!text) return;
-      try {
-        await navigator.clipboard.writeText(text);
-        const old = btn.textContent;
-        btn.textContent = '已复制';
-        btn.classList.add('ok');
-        setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1600);
-      } catch (e) {
-        btn.textContent = '复制失败';
+  // 加载并渲染 MD
+  function renderMarkdown(markdown) {
+    const lines = markdown.replace(/\r/g, '').split('\n');
+    const html = [];
+    let inCode = false, codeLang = '', codeLines = [];
+    let inList = false, listType = '', listItems = [];
+    let inTable = false, tableRows = [];
+    let inBlockquote = false, blockquoteLines = [];
+
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function inline(s) {
+      return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+    }
+    function closeList() {
+      if (inList) { html.push(`<${listType}>${listItems.join('')}</${listType}>`); inList=false; listItems=[]; }
+    }
+    function closeCode() {
+      if (inCode) { html.push(`<pre><code class="lang-${codeLang}">${esc(codeLines.join('\n'))}</code></pre>`); inCode=false; codeLines=[]; }
+    }
+    function closeTable() {
+      if (inTable && tableRows.length > 1) {
+        let t = '<table><thead><tr>';
+        tableRows[0].forEach(c => t += `<th>${inline(c)}</th>`);
+        t += '</tr></thead><tbody>';
+        for (let i = 2; i < tableRows.length; i++) { t += '<tr>'; tableRows[i].forEach(c => t += `<td>${inline(c)}</td>`); t += '</tr>'; }
+        t += '</tbody></table>'; html.push(t);
       }
-    });
-  });
-</script>
-</body>
-</html>
+      inTable=false; tableRows=[];
+    }
+    function closeBlockquote() {
+      if (inBlockquote) { html.push(`<blockquote>${blockquoteLines.join('<br>')}</blockquote>`); inBlockquote=false; blockquoteLines=[]; }
+    }
+
+    for (let line of lines) {
+      if (line.startsWith('```')) {
+        closeList(); closeTable(); closeBlockquote();
+        if (!inCode) { inCode=true; codeLang=line.slice(3).trim(); } else closeCode();
+        continue;
+      }
+      if (inCode) { codeLines.push(line); continue; }
+      if (line.startsWith('# ')) { closeList();closeTable();closeBlockquote(); html.push(`<h1>${inline(line.slice(2))}</h1>`); continue; }
+      if (line.startsWith('## ')) { closeList();closeTable();closeBlockquote(); html.push(`<h2>${inline(line.slice(3))}</h2>`); continue; }
+      if (line.startsWith('### ')) { closeList();closeTable();closeBlockquote(); html.push(`<h3>${inline(line.slice(4))}</h3>`); continue; }
+      if (/^---+$/.test(line.trim())) { closeList();closeTable();closeBlockquote(); html.push('<hr>'); continue; }
+      if (line.startsWith('> ')) {
+        closeList(); closeTable();
+        inBlockquote=true; blockquoteLines.push(inline(line.slice(2))); continue;
+      } else if (inBlockquote && line.trim()==='') { closeBlockquote(); continue; }
+      if (line.includes('|') && line.trim().startsWith('|')) {
+        closeList(); closeBlockquote();
+        const cells = line.split('|').filter(c=>c.trim()!=='').map(c=>c.trim());
+        if (!inTable) { inTable=true; tableRows=[cells]; }
+        else if (cells.every(c=>/^[-:]+$/.test(c))) { tableRows.push(cells); }
+        else { tableRows.push(cells); }
+        continue;
+      } else { closeTable(); }
+      if (/^\d+\.\s+/.test(line)) {
+        closeBlockquote();
+        if (!inList || listType!=='ol') { closeList(); inList=true; listType='ol'; }
+        listItems.push(`<li>${inline(line.replace(/^\d+\.\s+/,''))}</li>`); continue;
+      }
+      if (/^[-*+]\s+/.test(line)) {
+        closeBlockquote();
+        if (!inList || listType!=='ul') { closeList(); inList=true; listType='ul'; }
+        listItems.push(`<li>${inline(line.replace(/^[-*+]\s+/,''))}</li>`); continue;
+      }
+      if (line.trim() === '') { closeList();closeTable();closeBlockquote(); continue; }
+      closeList();closeTable();closeBlockquote();
+      html.push(`<p>${inline(line)}</p>`);
+    }
+    closeList(); closeCode(); closeTable(); closeBlockquote();
+    return html.join('\n');
+  }
+
+  fetch('coze_agent_prompt_fast.md').then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
+    .then(text => {
+      codeCache.md = text;
+      document.getElementById('mdContent').innerHTML = renderMarkdown(text);
+    })
+    .catch(() => {
+      document.getElementById('mdContent').innerHTML = '<div class="md-error">MD 文件加载失败</div>';
+    });
+
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const type = btn.dataset.copy;
+      const text = codeCache[type];
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        const old = btn.textContent;
+        btn.textContent = '已复制';
+        btn.classList.add('ok');
+        setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1600);
+      } catch (e) {
+        btn.textContent = '复制失败';
+      }
+    });
+  });
+</script>
+</body>
+</html>
