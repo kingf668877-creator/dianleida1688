@@ -1,173 +1,315 @@
-# 后端只需接收的智能体分析结果
+﻿# 扣子智能体调用方案（后端对接文档）
 
-后端不需要关心类目、意图、置信度、歧义说明、搜索策略等字段，只需要读取智能体返回JSON里的以下5类结果：
+## 一、基本信息
 
-1. 核心产品
-2. 修饰词
-3. 必含词
-4. 关键词扩展词
-5. 排除词
+| 项 | 值 |
+|----|----|
+| 接口地址 | `https://api.coze.cn/v3/chat` |
+| 请求方式 | `POST` |
+| 认证方式 | Bearer Token |
+| 响应格式 | SSE 流式（text/event-stream） |
+| 智能体ID（bot_id） | `7660723428240588815` |
+| API Token | `sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m` |
+| 超时建议 | 60秒 |
 
-## 1. 字段对应关系
+## 二、请求参数
 
-| 后端需要的内容 | JSON字段 | 类型 | 说明 |
-|----------------|----------|------|------|
-| 核心产品 | `coreProduct` | string | 用户真正要找的商品主体，例如“化妆包”“钓鱼工具包”“运动护具” |
-| 修饰词 | `modifiers` | object | 用户搜索词里的风格、材质、人群、场景、价格等修饰信息 |
-| 必含词 | `requiredKeywords` | string[] | 商品标题必须包含的关键词，用于防止结果跑偏 |
-| 关键词扩展词 | `expandedKeywords` | string[] | 与核心产品高度相关的补充搜索词，用于扩展召回 |
-| 排除词 | `excludedKeywords` | string[] | 需要过滤掉的无关商品关键词，商品标题命中则排除 |
+### 请求头
 
-## 2. 后端需要接收的最小JSON结构
+```
+Content-Type: application/json
+Authorization: Bearer sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m
+Accept: text/event-stream
+```
+
+### 请求体
 
 ```json
 {
+  "bot_id": "7660723428240588815",
+  "user_id": "dianleida_backend_xxx",
+  "stream": true,
+  "auto_save_history": true,
+  "additional_messages": [
+    {
+      "role": "user",
+      "content": "透明化妆包pvc",
+      "content_type": "text"
+    }
+  ]
+}
+```
+
+### 字段说明
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `bot_id` | string | 是 | 智能体ID，固定值 `7660723428240588815` |
+| `user_id` | string | 是 | 用户标识，后端自己生成，用于会话区分 |
+| `stream` | boolean | 是 | 固定 `true`，启用流式响应 |
+| `auto_save_history` | boolean | 是 | 固定 `true`，自动保存历史 |
+| `additional_messages[0].content` | string | 是 | 用户搜索关键词，即要分析的词 |
+
+## 三、响应解析
+
+### SSE 事件类型
+
+响应是 SSE 流式格式，主要关注以下事件：
+
+| 事件 | 说明 |
+|------|------|
+| `conversation.message.delta` | 流式消息增量，**主要用这个**，从里面提取 answer 类型的内容 |
+| `conversation.message.completed` | 单条消息完成 |
+| `conversation.chat.completed` | 整个对话完成 |
+| `conversation.chat.failed` | 对话失败 |
+
+### 事件数据结构（conversation.message.delta）
+
+```json
+{
+  "id": "msg_xxx",
+  "type": "answer",
+  "content": "{",
+  "content_type": "text"
+}
+```
+
+**关键字段**：`type === "answer"` 的事件，其 `content` 是 JSON 的片段，需要累积拼接。
+
+### 解析步骤
+
+1. 建立 SSE 连接，持续接收事件
+2. 只收集 `conversation.message.delta` 事件中 `type === "answer"` 的 `content`，逐段拼接成完整字符串
+3. 当收到 `conversation.chat.completed` 事件，或拼接出的字符串包含完整 JSON 时，解析 JSON
+4. JSON 解析失败时，用**括号匹配法**提取第一个完整的 `{...}` 对象再解析
+
+### 括号匹配提取法（容错用）
+
+如果智能体返回的内容前后有多余文字，用深度计数法提取第一个完整 JSON：
+
+```
+遍历字符串：
+  遇到 '{'  → depth++，depth从0变1时记录 start
+  遇到 '}'  → depth--，depth从1变0时记录 end，结束遍历
+  截取 [start, end+1] 就是完整的 JSON 对象
+```
+
+## 四、返回的 JSON 结构
+
+智能体最终输出的 JSON 包含以下字段：
+
+```json
+{
+  "categoryName": "化妆包",
+  "categoryId": "1226749003",
   "coreProduct": "化妆包",
   "modifiers": {
     "style": [],
     "material": ["PVC"],
     "crowd": [],
     "scene": ["旅行", "洗漱"],
-    "priceRange": { "min": null, "max": null },
-    "other": []
+    "other": ["透明", "防水"]
   },
   "requiredKeywords": ["化妆包"],
   "expandedKeywords": ["PVC化妆包", "透明化妆包", "旅行洗漱包"],
-  "excludedKeywords": ["笔袋", "文具盒", "材料包", "配件包"]
+  "excludedKeywords": ["笔袋", "文具盒", "材料包"],
+  "categoryTree": [
+    { "category_name": "化妆包", "category_id": "1226749003" }
+  ]
 }
 ```
 
-## 3. 各字段怎么用
+### 字段用途
 
-### 3.1 核心产品：`coreProduct`
+| 字段 | 用途 |
+|------|------|
+| `categoryName` | 匹配的类目名称 |
+| `categoryId` | 匹配的类目ID |
+| `coreProduct` | 核心产品词 |
+| `modifiers` | 修饰词（风格/材质/人群/场景/其他） |
+| `requiredKeywords` | 必含词，商品标题必须包含 |
+| `expandedKeywords` | 扩展词，用于扩大搜索召回 |
+| `excludedKeywords` | 排除词，用于过滤无关商品 |
+| `categoryTree` | 插件返回的完整类目数组（备用） |
 
-用于判断用户真正搜索的商品主体。
+## 五、调用流程
 
-示例：
+```text
+用户搜索关键词
+    ↓
+后端调用扣子智能体 API
+    ↓
+SSE 流式接收，累积 answer 内容
+    ↓
+解析出 JSON 结果
+    ↓
+用扩展词调用店雷达商品搜索接口
+    ↓
+用必含词 + 排除词 + 类目名过滤商品
+    ↓
+返回给前端
+```
 
-| 用户输入 | coreProduct |
-|----------|-------------|
-| 透明化妆包pvc | 化妆包 |
-| 钓鱼工具包 | 钓鱼工具包 |
-| 运动护具 | 运动护具 |
-| 麻将包 | 麻将包 |
+## 六、注意事项
 
-后端用途：
+1. **Token 安全**：API Token 不要暴露在前端，必须由后端调用
+2. **超时设置**：建议设置 60 秒超时，智能体需要调用插件，整体耗时 5~15 秒左右
+3. **错误重试**：调用失败可重试 1 次，不要无限重试
+4. **搜索词数量**：`expandedKeywords` 取前 2 个参与主搜索即可，拼太多店雷达会返回 400
+5. **类目匹配**：`category_id` 不能直接用于店雷达搜索过滤，需要用 `category_name` 匹配商品的 `levelName` 字段
+6. **单字必含词**：如果 `requiredKeywords` 里有单字词如"包"，要注意排除"一包""包邮"等量词/动词用法
 
-- 作为主商品词
-- 参与标题相关性判断
-- 当扩展词为空时，可用它作为兜底搜索词
+## 七、Python 调用示例
 
-### 3.2 修饰词：`modifiers`
+```python
+import requests
+import json
 
-用于描述用户搜索里的限定条件。
+def call_coze_agent(keyword: str) -> dict:
+    url = "https://api.coze.cn/v3/chat"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m",
+        "Accept": "text/event-stream",
+    }
+    body = {
+        "bot_id": "7660723428240588815",
+        "user_id": "dianleida_backend",
+        "stream": True,
+        "auto_save_history": True,
+        "additional_messages": [
+            {"role": "user", "content": keyword, "content_type": "text"}
+        ],
+    }
 
-```json
-"modifiers": {
-  "style": [],
-  "material": ["PVC"],
-  "crowd": [],
-  "scene": ["旅行", "洗漱"],
-  "priceRange": { "min": null, "max": null },
-  "other": []
+    answer_content = ""
+    with requests.post(url, headers=headers, json=body, stream=True, timeout=60) as resp:
+        resp.raise_for_status()
+        for line in resp.iter_lines(decode_unicode=True):
+            if not line:
+                continue
+            if line.startswith("event:"):
+                event_type = line[6:].strip()
+                continue
+            if line.startswith("data:"):
+                data_str = line[5:].strip()
+                if not data_str or data_str == "[DONE]":
+                    continue
+                try:
+                    data = json.loads(data_str)
+                except:
+                    continue
+                if event_type == "conversation.message.delta":
+                    if data.get("type") == "answer":
+                        answer_content += data.get("content", "")
+                elif event_type == "conversation.chat.failed":
+                    raise Exception(data.get("last_error", {}).get("msg", "调用失败"))
+                elif event_type == "conversation.chat.completed":
+                    break
+
+    # 尝试解析 JSON
+    try:
+        return json.loads(answer_content)
+    except:
+        # 括号匹配法提取第一个完整 JSON
+        depth = 0
+        start = -1
+        for i, ch in enumerate(answer_content):
+            if ch == "{":
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    return json.loads(answer_content[start:i+1])
+        raise Exception("无法解析智能体返回结果")
+
+# 调用示例
+result = call_coze_agent("透明化妆包pvc")
+print(result)
+```
+
+## 八、Node.js 调用示例
+
+```javascript
+async function callCozeAgent(keyword) {
+  const response = await fetch('https://api.coze.cn/v3/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m',
+      'Accept': 'text/event-stream'
+    },
+    body: JSON.stringify({
+      bot_id: '7660723428240588815',
+      user_id: 'dianleida_backend',
+      stream: true,
+      auto_save_history: true,
+      additional_messages: [
+        { role: 'user', content: keyword, content_type: 'text' }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP ' + response.status);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let answerContent = '';
+  let eventType = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith('event:')) {
+        eventType = trimmed.substring(6).trim();
+      } else if (trimmed.startsWith('data:')) {
+        const dataStr = trimmed.substring(5).trim();
+        if (!dataStr || dataStr === '[DONE]') continue;
+        try {
+          const data = JSON.parse(dataStr);
+          if (eventType === 'conversation.message.delta' && data.type === 'answer') {
+            answerContent += data.content || '';
+          } else if (eventType === 'conversation.chat.failed') {
+            throw new Error(data.last_error?.msg || '调用失败');
+          } else if (eventType === 'conversation.chat.completed') {
+            return parseJSON(answerContent);
+          }
+        } catch (e) {
+          // skip
+        }
+      }
+    }
+  }
+
+  return parseJSON(answerContent);
+}
+
+function parseJSON(str) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    let depth = 0, start = -1;
+    for (let i = 0; i < str.length; i++) {
+      if (str[i] === '{') { if (depth === 0) start = i; depth++; }
+      else if (str[i] === '}') {
+        depth--;
+        if (depth === 0 && start >= 0) return JSON.parse(str.substring(start, i + 1));
+      }
+    }
+    throw new Error('无法解析智能体返回结果');
+  }
 }
 ```
-
-字段说明：
-
-| 子字段 | 说明 | 示例 |
-|--------|------|------|
-| `style` | 风格/款式 | 复古、异形、韩版、ins风 |
-| `material` | 材质 | PVC、真皮、硅胶、帆布 |
-| `crowd` | 人群 | 女、男、儿童、宝宝 |
-| `scene` | 使用场景 | 钓鱼、户外、旅行、通勤 |
-| `priceRange` | 价格区间 | `{ "min": 10, "max": 50 }` |
-| `other` | 其他有筛选价值的修饰条件 | 大容量、便携、防水 |
-
-注意：
-
-- 没有明确修饰词时填空数组 `[]`
-- 不要返回“通用”“不限”“默认”“常规”“其他”等占位词
-- `modifiers` 主要用于筛选提示或相关性加权，不建议作为强过滤条件
-
-### 3.3 必含词：`requiredKeywords`
-
-用于保证商品标题必须包含关键商品词。
-
-```json
-"requiredKeywords": ["化妆包"]
-```
-
-后端处理建议：
-
-| 数量 | 建议规则 |
-|------|----------|
-| 1~2个必含词 | 商品标题必须全部命中 |
-| 3个及以上 | 商品标题命中至少三分之二即可 |
-
-注意：
-
-- 必含词不要太多，否则会导致无结果
-- 单字词如“包”“袋”要谨慎使用，避免误判“一包”“包邮”
-- 如果使用单字词，需要排除量词和动词用法
-
-### 3.4 关键词扩展词：`expandedKeywords`
-
-用于扩大搜索召回。
-
-```json
-"expandedKeywords": ["PVC化妆包", "透明化妆包", "旅行洗漱包"]
-```
-
-后端处理建议：
-
-- 数量控制在5~8个以内
-- 实际调用商品搜索接口时，建议最多取前2个参与主搜索
-- 拼接搜索词不要超过3个：用户原词 + 扩展词1 + 扩展词2
-- 店雷达搜索词过多可能返回400
-
-示例拼接：
-
-```text
-透明化妆包pvc、PVC化妆包、透明化妆包
-```
-
-不要一次性拼接全部扩展词。
-
-### 3.5 排除词：`excludedKeywords`
-
-用于过滤无关商品。
-
-```json
-"excludedKeywords": ["笔袋", "文具盒", "材料包", "配件包"]
-```
-
-后端处理建议：
-
-- 商品标题命中任一排除词，直接剔除
-- 排除词必须是明确无关品类
-- 不要使用过泛的词，比如“工具”“用品”“配件”单独出现容易误杀
-
-示例：
-
-| 搜索词 | 合理排除词 |
-|--------|------------|
-| 麻将包 | 麻将牌、麻将机、麻将桌、麻将垫、材料包 |
-| 透明化妆包pvc | 笔袋、文具盒、材料包、配件包 |
-| 钓鱼工具包 | 鱼饵、鱼线、鱼钩、钓鱼竿、配件包 |
-| 运动护具 | 运动鞋、运动服、运动水壶、运动手表 |
-
-## 4. 后端简化处理流程
-
-```text
-1. 读取 coreProduct，确认商品主体
-2. 读取 expandedKeywords，取前1~2个扩展搜索词
-3. 用“用户原词 + 扩展词”调用商品搜索接口
-4. 用 requiredKeywords 做标题必含过滤
-5. 用 excludedKeywords 做标题排除过滤
-6. 用 modifiers 做相关性加权或筛选展示
-```
-
-## 5. 给后端的一句话说明
-
-后端只需要拿智能体返回的 `coreProduct`、`modifiers`、`requiredKeywords`、`expandedKeywords`、`excludedKeywords` 五个字段：`coreProduct` 确认商品主体，`expandedKeywords` 扩大搜索，`requiredKeywords` 保证标题必含，`excludedKeywords` 过滤无关商品，`modifiers` 只做修饰条件和相关性加权，不要把“通用/不限/默认”当作有效筛选词。
