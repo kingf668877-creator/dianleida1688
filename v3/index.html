@@ -2302,7 +2302,7 @@ async function doSearch() {
   // 重置分析步骤
   document.getElementById('ai-steps').innerHTML = '';
   document.getElementById('analysis-loading').style.display = 'inline-flex';
-  document.getElementById('analysis-sub').textContent = '正在启动AI分析引擎...';
+  document.getElementById('analysis-sub').textContent = '正在识别核心商品词...';
   const timingEl = document.getElementById('analysis-timing');
   if (timingEl) timingEl.classList.remove('show');
   updateTimingDisplay({ category: null, keyword: null, api: null, total: null });
@@ -2317,6 +2317,7 @@ async function doSearch() {
   // Step 1: 先添加搜索词分析的流式步骤（前端模拟分步分析过程）
   const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在识别核心商品词...');
   const step1LiveDetail = step1Live.querySelector('.ai-step-detail');
+  const analysisSubEl = document.getElementById('analysis-sub');
   let currentPhase = 0;  // 0:核心词, 1:修饰词, 2:扩展词, 3:排除词, 4:完成
   
   // 模拟分步分析的阶段描述
@@ -2403,6 +2404,10 @@ async function doSearch() {
       
       displayText = phaseText + phaseDetail;
       step1LiveDetail.textContent = displayText;
+      // 同步更新顶部副标题，让用户一开始就能看到分析进度
+      if (analysisSubEl) {
+        analysisSubEl.textContent = displayText;
+      }
     }
     // 实时更新总耗时
     updateTimingDisplay({ 
