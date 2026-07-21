@@ -1488,19 +1488,18 @@ function getCategoryLevelNames(categoryName) {
 }
 
 // ===== 从categoryTree提取叶子类目ID（最后一级类目）=====
-function extractLeafCategoryIds(categoryTree, limit) {
+function extractLeafCategoryIds(categoryTree) {
   if (!categoryTree || !Array.isArray(categoryTree) || categoryTree.length === 0) return [];
   
   const ids = [];
-  const max = limit || 3;  // 默认只取前3个最相关的，避免范围太宽
   for (const item of categoryTree) {
     const id = item.category_id || item.categoryId || '';
     if (id && !ids.includes(id)) {
       ids.push(id);
-      if (ids.length >= max) break;
     }
   }
-  return ids;
+  // 最多20个（API限制）
+  return ids.slice(0, 20);
 }
 
 // ===== 从categoryTree派生类目过滤信息（基于getCategory插件返回的类目ID+名称）=====
