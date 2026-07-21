@@ -2314,55 +2314,94 @@ async function doSearch() {
   let aiResult = null;
   let aiSource = 'none';
   
-  // Step 1: 先添加搜索词分析的流式步骤（实时展示）
-  const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在分析搜索词...');
+  // Step 1: 先添加搜索词分析的流式步骤（前端模拟分步分析过程）
+  const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在识别核心商品词...');
   const step1LiveDetail = step1Live.querySelector('.ai-step-detail');
+  let currentPhase = 0;  // 0:核心词, 1:修饰词, 2:扩展词, 3:排除词, 4:完成
+  
+  // 模拟分步分析的阶段描述
+  const analysisPhases = [
+    { keyword: 'coreProduct', text: '正在提取核心商品词...', doneText: '核心商品已识别' },
+    { keyword: 'modifiers', text: '正在分析修饰条件...', doneText: '修饰条件已提取' },
+    { keyword: 'expandedKeywords', text: '正在生成扩展搜索词...', doneText: '扩展词生成中' },
+    { keyword: 'excludedKeywords', text: '正在生成排除词...', doneText: '排除词生成中' },
+  ];
   
   const cozeData = await callCozeSearchAnalysis(query, (delta, fullText) => {
-    // 实时流式展示搜索词智能体的分析过程
+    // 前端模拟分步分析过程，根据JSON输出进度展示不同阶段
     if (step1LiveDetail) {
-      // 从JSON中提取可读的字段进行展示
       let displayText = '';
       
-      // 尝试提取 coreProduct
-      const coreMatch = fullText.match(/"coreProduct"\s*:\s*"([^"]*)"/);
-      if (coreMatch && coreMatch[1]) {
-        displayText += '核心商品：' + coreMatch[1] + ' · ';
-      }
+      // 检查当前已经输出了哪些字段，推进分析阶段
+      const hasCore = fullText.includes('"coreProduct"');
+      const hasModifiers = fullText.includes('"modifiers"');
+      const hasExpanded = fullText.includes('"expandedKeywords"');
+      const hasExcluded = fullText.includes('"excludedKeywords"');
       
-      // 提取 modifiers 中的内容
-      const sceneMatch = fullText.match(/"scene"\s*:\s*\[([^\]]*)\]/);
-      if (sceneMatch && sceneMatch[1]) {
-        const scenes = sceneMatch[1].match(/"([^"]*)"/g);
-        if (scenes && scenes.length > 0) {
-          displayText += '场景：' + scenes.map(s => s.replace(/"/g, '')).join('、') + ' · ';
+      // 根据已输出的字段判断当前阶段
+      let phaseText = '正在分析搜索词...';
+      let phaseDetail = '';
+      
+      if (hasExcluded) {
+        currentPhase = 3;
+        phaseText = '正在生成排除词...';
+        // 统计已生成的排除词数量
+        const excMatch = fullText.match(/"excludedKeywords"\s*:\s*\[([^\]]*)\]/);
+        if (excMatch && excMatch[1]) {
+          const excs = excMatch[1].match(/"([^"]*)"/g);
+          if (excs && excs.length > 0) {
+            phaseDetail = '（已生成 ' + excs.length + ' 个）';
+          }
+        }
+      } else if (hasExpanded) {
+        currentPhase = 2;
+        phaseText = '正在生成扩展搜索词...';
+        // 统计已生成的扩展词数量
+        const expMatch = fullText.match(/"expandedKeywords"\s*:\s*\[([^\]]*)\]/);
+        if (expMatch && expMatch[1]) {
+          const exps = expMatch[1].match(/"([^"]*)"/g);
+          if (exps && exps.length > 0) {
+            phaseDetail = '（已生成 ' + exps.length + ' 个）';
+          }
+        }
+      } else if (hasModifiers) {
+        currentPhase = 1;
+        phaseText = '正在提取修饰条件...';
+        // 提取修饰词展示
+        const styleMatch = fullText.match(/"style"\s*:\s*\[([^\]]*)\]/);
+        const materialMatch = fullText.match(/"material"\s*:\s*\[([^\]]*)\]/);
+        const crowdMatch = fullText.match(/"crowd"\s*:\s*\[([^\]]*)\]/);
+        const sceneMatch = fullText.match(/"scene"\s*:\s*\[([^\]]*)\]/);
+        const modifiersList = [];
+        if (styleMatch && styleMatch[1]) {
+          const items = styleMatch[1].match(/"([^"]*)"/g);
+          if (items && items.length > 0) modifiersList.push('款式:' + items.map(s=>s.replace(/"/g,'')).join('、'));
+        }
+        if (materialMatch && materialMatch[1]) {
+          const items = materialMatch[1].match(/"([^"]*)"/g);
+          if (items && items.length > 0) modifiersList.push('材质:' + items.map(s=>s.replace(/"/g,'')).join('、'));
+        }
+        if (crowdMatch && crowdMatch[1]) {
+          const items = crowdMatch[1].match(/"([^"]*)"/g);
+          if (items && items.length > 0) modifiersList.push('人群:' + items.map(s=>s.replace(/"/g,'')).join('、'));
+        }
+        if (sceneMatch && sceneMatch[1]) {
+          const items = sceneMatch[1].match(/"([^"]*)"/g);
+          if (items && items.length > 0) modifiersList.push('场景:' + items.map(s=>s.replace(/"/g,'')).join('、'));
+        }
+        if (modifiersList.length > 0) {
+          phaseDetail = '（' + modifiersList.join(' · ') + '）';
+        }
+      } else if (hasCore) {
+        currentPhase = 0;
+        phaseText = '正在提取核心商品词...';
+        const coreMatch = fullText.match(/"coreProduct"\s*:\s*"([^"]*)"/);
+        if (coreMatch && coreMatch[1]) {
+          phaseDetail = '（核心商品：' + coreMatch[1] + '）';
         }
       }
       
-      const crowdMatch = fullText.match(/"crowd"\s*:\s*\[([^\]]*)\]/);
-      if (crowdMatch && crowdMatch[1]) {
-        const crowds = crowdMatch[1].match(/"([^"]*)"/g);
-        if (crowds && crowds.length > 0) {
-          displayText += '人群：' + crowds.map(s => s.replace(/"/g, '')).join('、') + ' · ';
-        }
-      }
-      
-      // 提取 expandedKeywords 数量
-      const expMatch = fullText.match(/"expandedKeywords"\s*:\s*\[([^\]]*)\]/);
-      if (expMatch && expMatch[1]) {
-        const exps = expMatch[1].match(/"([^"]*)"/g);
-        if (exps && exps.length > 0) {
-          displayText += '扩展词：' + exps.length + '个';
-        }
-      }
-      
-      // 如果没提取到结构化内容，就展示原始文本的纯文字部分
-      if (!displayText) {
-        let plainText = fullText.replace(/[{}"\\\[\],:]/g, ' ').replace(/\s+/g, ' ').trim();
-        if (plainText.length > 150) plainText = plainText.substring(0, 150) + '...';
-        displayText = plainText || '分析中...';
-      }
-      
+      displayText = phaseText + phaseDetail;
       step1LiveDetail.textContent = displayText;
     }
     // 实时更新总耗时
