@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11,32 +11,112 @@
   html, body { width:100%; height:100%; overflow:hidden; }
   body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; color:var(--text); background:#f5f6f8; }
   .app { display:flex; width:100%; height:100vh; }
-  .layers { width:224px; flex:0 0 224px; background:#fff; border-right:1px solid var(--border); }
-  .layers-title { height:52px; display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid var(--border); font-size:15px; font-weight:600; }
+
+  /* 侧边栏 */
+  .layers {
+    width:224px; flex:0 0 224px;
+    background:#fff; border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    transition: width .25s ease, flex-basis .25s ease;
+    overflow:hidden;
+  }
+  .layers.collapsed {
+    width:0; flex-basis:0;
+    border-right:0;
+  }
+
+  .layers-title {
+    height:52px; display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding:0 16px; border-bottom:1px solid var(--border);
+    font-size:15px; font-weight:600; flex-shrink:0;
+  }
+  .layers-title-left { display:flex; align-items:center; gap:10px; min-width:0; }
   .layers-title img { width:28px; height:28px; border-radius:6px; flex:0 0 28px; }
-  .search-wrap { padding:10px 12px 0; }
-  .search-input { width:100%; height:34px; padding:0 12px; border:1px solid var(--border); border-radius:8px; color:#1d2129; outline:none; font:13px/1 "PingFang SC","Microsoft YaHei",sans-serif; }
+  .layers-title span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .toggle-btn {
+    width:28px; height:28px; flex-shrink:0;
+    border:0; border-radius:6px;
+    background:transparent; color:#86909c;
+    cursor:pointer; font-size:14px;
+    display:grid; place-items:center;
+    transition:.15s;
+  }
+  .toggle-btn:hover { background:var(--hover); color:var(--text); }
+
+  .search-wrap { padding:10px 12px 0; flex-shrink:0; }
+  .search-input {
+    width:100%; height:34px; padding:0 12px;
+    border:1px solid var(--border); border-radius:8px;
+    color:#1d2129; outline:none;
+    font:13px/1 "PingFang SC","Microsoft YaHei",sans-serif;
+  }
   .search-input:focus { border-color:var(--blue); box-shadow:0 0 0 2px rgba(51,112,255,.10); }
   .search-input::placeholder { color:#a8abb2; }
-  .layer-list { padding:10px 8px; }
-  .version-folder { width:100%; height:34px; padding:0 10px; border:0; border-radius:6px; background:transparent; color:#4e5969; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; text-align:left; }
+
+  .layer-list { padding:10px 8px; flex:1; overflow-y:auto; }
+  .version-folder {
+    width:100%; height:34px; padding:0 10px;
+    border:0; border-radius:6px; background:transparent;
+    color:#4e5969; display:flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:600; text-align:left;
+  }
   .version-pages { padding:4px 0 0 22px; }
   .layer-empty { display:none; padding:18px 12px; color:#a8abb2; font-size:12px; text-align:center; }
-  .layer-item { width:100%; height:42px; padding:0 12px; border:0; border-radius:6px; background:transparent; color:#4e5969; display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer; text-align:left; transition:.16s ease; }
+  .layer-item {
+    width:100%; height:42px; padding:0 12px;
+    border:0; border-radius:6px; background:transparent;
+    color:#4e5969; display:flex; align-items:center; gap:10px;
+    font-size:13px; cursor:pointer; text-align:left;
+    transition:.16s ease;
+  }
   .layer-item:hover { background:var(--hover); color:var(--text); }
   .layer-item.active { color:var(--blue); background:#e8f0ff; font-weight:500; }
-  .layer-icon { width:22px; height:22px; border-radius:5px; display:grid; place-items:center; color:#fff; font-size:11px; font-weight:700; }
+  .layer-icon {
+    width:22px; height:22px; border-radius:5px;
+    display:grid; place-items:center;
+    color:#fff; font-size:11px; font-weight:700;
+  }
   .icon-p { background:#ff6b6b; }
-  .stage { min-width:0; flex:1; height:100%; background:#eef0f3; padding:20px; }
+
+  /* 主内容区 */
+  .stage { min-width:0; flex:1; height:100%; background:#eef0f3; padding:20px; position:relative; }
   .frame-shell { width:100%; height:100%; overflow:hidden; background:#fff; border:1px solid #dfe1e5; border-radius:8px; box-shadow:0 8px 24px rgba(29,33,41,.08); }
   iframe { width:100%; height:100%; border:0; display:block; background:#fff; }
-  @media (max-width:720px) { .layers { width:176px; flex-basis:176px; } .stage { padding:10px; } }
+
+  /* 侧边栏收起时的展开按钮 */
+  .expand-btn {
+    position:fixed; top:12px; left:12px; z-index:100;
+    width:40px; height:40px;
+    border:1px solid var(--border); border-radius:10px;
+    background:#fff; color:#4e5969;
+    cursor:pointer; font-size:16px;
+    display:none; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    transition:.15s;
+  }
+  .expand-btn:hover { background:var(--hover); color:var(--text); }
+  .expand-btn.show { display:flex; }
+
+  @media (max-width:720px) {
+    .layers { width:176px; flex-basis:176px; }
+    .stage { padding:10px; }
+  }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="layers" aria-label="店雷达选品导航">
-    <div class="layers-title"><img src="logo.png" alt="店雷达选品">店雷达选品</div>
+  <!-- 收起时的展开按钮 -->
+  <button class="expand-btn" id="expandBtn" title="展开导航栏">☰</button>
+
+  <aside class="layers collapsed" id="layers" aria-label="店雷达选品导航">
+    <div class="layers-title">
+      <div class="layers-title-left">
+        <img src="logo.png" alt="店雷达选品">
+        <span>店雷达选品</span>
+      </div>
+      <button class="toggle-btn" id="toggleBtn" title="收起导航栏">✕</button>
+    </div>
     <div class="search-wrap">
       <input class="search-input" id="layerSearch" type="search" placeholder="搜索版本或页面">
     </div>
@@ -63,13 +143,42 @@
   const layerSearch = document.getElementById('layerSearch');
   const versionFolder = document.getElementById('versionFolder');
   const layerEmpty = document.getElementById('layerEmpty');
+  const layers = document.getElementById('layers');
+  const toggleBtn = document.getElementById('toggleBtn');
+  const expandBtn = document.getElementById('expandBtn');
 
+  // 切换侧边栏
+  function toggleSidebar(show) {
+    if (show) {
+      layers.classList.remove('collapsed');
+      expandBtn.classList.remove('show');
+      localStorage.setItem('sidebar-collapsed', 'false');
+    } else {
+      layers.classList.add('collapsed');
+      expandBtn.classList.add('show');
+      localStorage.setItem('sidebar-collapsed', 'true');
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => toggleSidebar(false));
+  expandBtn.addEventListener('click', () => toggleSidebar(true));
+
+  // 初始化：从 localStorage 读取状态，默认收起
+  const savedState = localStorage.getItem('sidebar-collapsed');
+  if (savedState === 'false') {
+    toggleSidebar(true);
+  } else {
+    toggleSidebar(false);
+  }
+
+  // 页面切换
   items.forEach(item => item.addEventListener('click', () => {
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
     frame.src = item.dataset.page;
   }));
 
+  // 搜索
   layerSearch.addEventListener('input', () => {
     const keyword = layerSearch.value.trim().toLowerCase();
     let visibleCount = 0;
