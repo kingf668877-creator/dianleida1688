@@ -856,7 +856,12 @@ async function callDianLeiDaAPI(action, params) {
 
 // ===== 扣子智能体API配置 =====
 const USE_COZE_AGENT = true;
-const COZE_BOT_ID = '7660723428240588815';
+// 类目智能体：专门调用 getCategory 插件，只返回类目数据
+const COZE_CATEGORY_BOT_ID = '7660723428240588815';
+// 关键词智能体：只做搜索词分析，不调用插件，返回关键词分析结果
+const COZE_KEYWORD_BOT_ID = '7664543077167808527';
+// 兼容旧变量
+const COZE_BOT_ID = COZE_KEYWORD_BOT_ID;
 const COZE_API_TOKEN = 'sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m';
 const COZE_API_URL = 'https://api.coze.cn/v3/chat';
 
@@ -960,15 +965,14 @@ function parseSSE(response, onMessage, onComplete, onError) {
   read();
 }
 
-async function callCozeSearchAnalysis(query, onStreamDelta) {
-  if (!USE_COZE_AGENT || !COZE_API_TOKEN || !COZE_BOT_ID) return null;
+async function callCozeBot(botId, query, onStreamDelta) {
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN || !botId) return null;
   
-  COZE_DEBUG_LOG = [];
-  addDebugLog(`开始分析: "${query}"`);
+  addDebugLog(`调用智能体[${botId}]: "${query}"`);
   
   try {
     const chatBody = JSON.stringify({
-      bot_id: COZE_BOT_ID,
+      bot_id: botId,
       user_id: 'dianleida_web_' + Date.now(),
       stream: true,
       auto_save_history: true,
@@ -1167,6 +1171,67 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
   }
 }
 
+// ===== 并行调用两个智能体 =====
+// 类目智能体 + 关键词智能体，并行请求，最后合并结果
+async function callCozeSearchAnalysis(query, onStreamDelta) {
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN) return null;
+  
+  COZE_DEBUG_LOG = [];
+  addDebugLog(`并行启动两个智能体: "${query}"`);
+  
+  // 同时发起两个请求
+  const categoryPromise = callCozeBot(COZE_CATEGORY_BOT_ID, query, null);
+  const keywordPromise = callCozeBot(COZE_KEYWORD_BOT_ID, query, onStreamDelta);
+  
+  // 等两个都返回
+  const [categoryResult, keywordResult] = await Promise.all([
+    categoryPromise.catch(e => {
+      addDebugLog('类目智能体失败: ' + e.message);
+      return null;
+    }),
+    keywordPromise.catch(e => {
+      addDebugLog('关键词智能体失败: ' + e.message);
+      return null;
+    })
+  ]);
+  
+  // 合并结果
+  const merged = {};
+  
+  // 优先用关键词智能体的结果作为基底
+  if (keywordResult) {
+    Object.assign(merged, keywordResult);
+  }
+  
+  // 类目数据用类目智能体的结果覆盖
+  if (categoryResult) {
+    if (categoryResult.category) merged.category = categoryResult.category;
+    if (categoryResult.categoryTree !== undefined) merged.categoryTree = categoryResult.categoryTree;
+  }
+  
+  // 兜底：如果两个都失败，返回 null
+  if (!keywordResult && !categoryResult) {
+    addDebugLog('两个智能体都失败了');
+    return null;
+  }
+  
+  // 补全默认结构，避免后面报错
+  if (!merged.category) {
+    merged.category = { mainCategory: '', subCategory: '', categoryId: '', categoryKeywords: [], levelNames: [] };
+  }
+  if (!merged.categoryTree) merged.categoryTree = [];
+  if (!merged.coreProduct) merged.coreProduct = query;
+  if (!merged.modifiers) {
+    merged.modifiers = { style: [], material: [], crowd: [], scene: [] };
+  }
+  if (!merged.expandedKeywords) merged.expandedKeywords = [];
+  if (!merged.excludedKeywords) merged.excludedKeywords = [];
+  if (!merged.requiredKeywords) merged.requiredKeywords = [];
+  
+  addDebugLog('双智能体合并完成');
+  return merged;
+}
+
 // ===== 调用智谱AI（备用）=====
 async function callZhipuSearchAnalysis(query) {
   if (!USE_ZHIPU_AI || !ZHIPU_API_KEY) return null;
@@ -1235,11 +1300,38 @@ function ruleBasedAnalysis(query) {
 }
 
 // ===== 扩展词相关性过滤 =====
-function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
+function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, originalQuery) {
   if (!expandedKeywords || expandedKeywords.length === 0) return [];
   
   const core = coreProduct || '';
   const cat = categoryName || '';
+  const query = originalQuery || '';
+  
+  // 从原始搜索词中提取核心限定词（去掉核心商品词后剩下的）
+  let modifierWords = [];
+  if (query && core) {
+    // 去掉核心商品词，剩余部分按常见分隔符切分
+    let remaining = query.replace(core, '').trim();
+    // 常见修饰词模式：跨境、外贸、亚马逊、户外、透明、86型、PVC、折叠、加厚等
+    const modifierPatterns = [
+      /跨境|外贸|亚马逊|速卖通|出口|海外/,
+      /户外|露营|钓鱼|运动|健身|厨房|办公|家用/,
+      /透明|磨砂|加厚|防水|折叠|便携|迷你|大号|小号/,
+      /86型|118型|120型|明装|暗装|墙壁/,
+      /PVC|硅胶|不锈钢|真皮|棉麻|亚克力|尼龙|帆布/,
+      /女|男|儿童|宝宝|婴儿|老人|成人/,
+      /新款|爆款|热销|批发|厂家直销|现货/,
+    ];
+    for (const p of modifierPatterns) {
+      const m = remaining.match(p);
+      if (m) modifierWords.push(m[0]);
+    }
+    // 也从整句里抓，避免位置问题
+    for (const p of modifierPatterns) {
+      const m = query.match(p);
+      if (m && !modifierWords.includes(m[0])) modifierWords.push(m[0]);
+    }
+  }
   
   // 提取核心产品的关键词（去掉修饰词，保留核心名词）
   let coreNouns = [];
@@ -1248,11 +1340,12 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
   const nounPatterns = [
     /手机壳|手机套|保护壳|保护套/,
     /包|袋|箱/,
-    /衣服|服装|外套|t恤|衬衫|裤子|裙子/,
+    /衣服|服装|外套|t恤|衬衫|裤子|裙子|女装|男装|童装/,
     /鞋|靴/,
     /帽|围巾|手套/,
     /饰品|耳环|项链|手链|戒指/,
     /数码|电子|配件/,
+    /插座|开关|面板/,
   ];
   
   for (const pattern of nounPatterns) {
@@ -1268,7 +1361,7 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
     coreNouns.push(core);
   }
   
-  // 过滤规则：扩展词必须包含至少一个核心名词，或者与类目相关
+  // 过滤规则：扩展词必须包含至少一个核心名词，并且如果有限定词也要保留
   const filtered = expandedKeywords.filter(kw => {
     const lowerKw = kw.toLowerCase();
     
@@ -1286,6 +1379,18 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
       hasCoreWord = true;
     }
     
+    if (!hasCoreWord) return false;
+    
+    // 关键校验：如果原始搜索词有限定词，扩展词也必须至少包含一个限定词
+    // 防止“跨境女装”扩展出“休闲女装”“大码女装”这种跑偏的
+    if (modifierWords.length > 0) {
+      const hasImportantModifier = modifierWords.some(m => 
+        lowerKw.includes(m.toLowerCase())
+      );
+      // 如果扩展词一个限定词都没带，说明跑偏了，过滤掉
+      if (!hasImportantModifier) return false;
+    }
+    
     // 手机壳类特殊过滤：排除手机膜、数据线、充电器等完全不相关的
     if (core.match(/手机壳|手机套|保护壳|保护套/)) {
       const unrelatedPatterns = [/手机膜/, /钢化膜/, /数据线/, /充电器/, /充电线/, /耳机/, /充电宝/];
@@ -1300,7 +1405,7 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName) {
       // 这些是相关的，不过滤
     }
     
-    return hasCoreWord;
+    return true;
   });
   
   return filtered.length > 0 ? filtered : expandedKeywords.slice(0, 3);
@@ -1796,7 +1901,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const searchQueries = [keyword];
   if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
     const catName = aiResult.category?.mainCategory || '';
-    let filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName);
+    let filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName, keyword);
     if (filteredExpanded.length < 2 && aiResult.expandedKeywords.length > filteredExpanded.length) {
       filteredExpanded = aiResult.expandedKeywords.slice(0, 3);
     }
