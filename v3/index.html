@@ -2302,7 +2302,7 @@ async function doSearch() {
   // 重置分析步骤
   document.getElementById('ai-steps').innerHTML = '';
   document.getElementById('analysis-loading').style.display = 'inline-flex';
-  document.getElementById('analysis-sub').textContent = '正在识别核心商品词...';
+  document.getElementById('analysis-sub').textContent = '正在分析用户输入...';
   const timingEl = document.getElementById('analysis-timing');
   if (timingEl) timingEl.classList.remove('show');
   updateTimingDisplay({ category: null, keyword: null, api: null, total: null });
@@ -2314,101 +2314,48 @@ async function doSearch() {
   let aiResult = null;
   let aiSource = 'none';
   
-  // Step 1: 先添加搜索词分析的流式步骤（前端模拟分步分析过程）
-  const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在识别核心商品词...');
+  // Step 1: 先添加搜索词分析的流式步骤（直接展示智能体输出的分析过程原文）
+  const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在分析...');
   const step1LiveDetail = step1Live.querySelector('.ai-step-detail');
   const analysisSubEl = document.getElementById('analysis-sub');
-  let currentPhase = 0;  // 0:核心词, 1:修饰词, 2:扩展词, 3:排除词, 4:完成
-  
-  // 模拟分步分析的阶段描述
-  const analysisPhases = [
-    { keyword: 'coreProduct', text: '正在提取核心商品词...', doneText: '核心商品已识别' },
-    { keyword: 'modifiers', text: '正在分析修饰条件...', doneText: '修饰条件已提取' },
-    { keyword: 'expandedKeywords', text: '正在生成扩展搜索词...', doneText: '扩展词生成中' },
-    { keyword: 'excludedKeywords', text: '正在生成排除词...', doneText: '排除词生成中' },
-  ];
+  let analysisProcessText = '';  // 保存分析过程的纯文本（JSON之前的部分）
   
   const cozeData = await callCozeSearchAnalysis(query, (delta, fullText) => {
-    // 前端模拟分步分析过程，根据JSON输出进度展示不同阶段
-    if (step1LiveDetail) {
-      let displayText = '';
-      
-      // 检查当前已经输出了哪些字段，推进分析阶段
-      const hasCore = fullText.includes('"coreProduct"');
-      const hasModifiers = fullText.includes('"modifiers"');
-      const hasExpanded = fullText.includes('"expandedKeywords"');
-      const hasExcluded = fullText.includes('"excludedKeywords"');
-      
-      // 根据已输出的字段判断当前阶段
-      let phaseText = '正在分析搜索词...';
-      let phaseDetail = '';
-      
-      if (hasExcluded) {
-        currentPhase = 3;
-        phaseText = '正在生成排除词...';
-        // 统计已生成的排除词数量
-        const excMatch = fullText.match(/"excludedKeywords"\s*:\s*\[([^\]]*)\]/);
-        if (excMatch && excMatch[1]) {
-          const excs = excMatch[1].match(/"([^"]*)"/g);
-          if (excs && excs.length > 0) {
-            phaseDetail = '（已生成 ' + excs.length + ' 个）';
-          }
-        }
-      } else if (hasExpanded) {
-        currentPhase = 2;
-        phaseText = '正在生成扩展搜索词...';
-        // 统计已生成的扩展词数量
-        const expMatch = fullText.match(/"expandedKeywords"\s*:\s*\[([^\]]*)\]/);
-        if (expMatch && expMatch[1]) {
-          const exps = expMatch[1].match(/"([^"]*)"/g);
-          if (exps && exps.length > 0) {
-            phaseDetail = '（已生成 ' + exps.length + ' 个）';
-          }
-        }
-      } else if (hasModifiers) {
-        currentPhase = 1;
-        phaseText = '正在提取修饰条件...';
-        // 提取修饰词展示
-        const styleMatch = fullText.match(/"style"\s*:\s*\[([^\]]*)\]/);
-        const materialMatch = fullText.match(/"material"\s*:\s*\[([^\]]*)\]/);
-        const crowdMatch = fullText.match(/"crowd"\s*:\s*\[([^\]]*)\]/);
-        const sceneMatch = fullText.match(/"scene"\s*:\s*\[([^\]]*)\]/);
-        const modifiersList = [];
-        if (styleMatch && styleMatch[1]) {
-          const items = styleMatch[1].match(/"([^"]*)"/g);
-          if (items && items.length > 0) modifiersList.push('款式:' + items.map(s=>s.replace(/"/g,'')).join('、'));
-        }
-        if (materialMatch && materialMatch[1]) {
-          const items = materialMatch[1].match(/"([^"]*)"/g);
-          if (items && items.length > 0) modifiersList.push('材质:' + items.map(s=>s.replace(/"/g,'')).join('、'));
-        }
-        if (crowdMatch && crowdMatch[1]) {
-          const items = crowdMatch[1].match(/"([^"]*)"/g);
-          if (items && items.length > 0) modifiersList.push('人群:' + items.map(s=>s.replace(/"/g,'')).join('、'));
-        }
-        if (sceneMatch && sceneMatch[1]) {
-          const items = sceneMatch[1].match(/"([^"]*)"/g);
-          if (items && items.length > 0) modifiersList.push('场景:' + items.map(s=>s.replace(/"/g,'')).join('、'));
-        }
-        if (modifiersList.length > 0) {
-          phaseDetail = '（' + modifiersList.join(' · ') + '）';
-        }
-      } else if (hasCore) {
-        currentPhase = 0;
-        phaseText = '正在提取核心商品词...';
-        const coreMatch = fullText.match(/"coreProduct"\s*:\s*"([^"]*)"/);
-        if (coreMatch && coreMatch[1]) {
-          phaseDetail = '（核心商品：' + coreMatch[1] + '）';
-        }
-      }
-      
-      displayText = phaseText + phaseDetail;
-      step1LiveDetail.textContent = displayText;
-      // 同步更新顶部副标题，让用户一开始就能看到分析进度
-      if (analysisSubEl) {
-        analysisSubEl.textContent = displayText;
-      }
+    // 实时提取 JSON 之前的分析过程文字，直接展示
+    const jsonStartIndex = fullText.indexOf('{');
+    let processText = fullText;
+    if (jsonStartIndex > 0) {
+      processText = fullText.substring(0, jsonStartIndex);
     }
+    
+    // 清理格式：去掉 markdown 标题符号、多余空行
+    let cleanText = processText
+      .replace(/^##\s*/gm, '')
+      .replace(/^###\s*/gm, '')
+      .replace(/^>\s*/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    
+    // 只取最后一行非空行作为顶部副标题，保持简洁
+    const lines = cleanText.split('\n').filter(l => l.trim());
+    const lastLine = lines.length > 0 ? lines[lines.length - 1].trim() : '正在分析...';
+    
+    // 顶部副标题展示最后一行（当前正在做的事）
+    if (analysisSubEl) {
+      analysisSubEl.textContent = lastLine;
+    }
+    
+    // Step 1 详情展示完整分析过程（多行）
+    if (step1LiveDetail) {
+      // 最多显示最后 4 行，避免太长
+      const recentLines = lines.slice(-4);
+      step1LiveDetail.innerHTML = recentLines.map(l => 
+        '<div style="opacity:' + (recentLines.indexOf(l) === recentLines.length - 1 ? '1' : '0.6') + '; font-size:12px; line-height:1.6;">' + l + '</div>'
+      ).join('');
+    }
+    
+    analysisProcessText = cleanText;
+    
     // 实时更新总耗时
     updateTimingDisplay({ 
       category: categoryDuration, 
