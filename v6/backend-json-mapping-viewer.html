@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -304,6 +304,7 @@
       <button class="mode-tab" data-mode="edit">编辑</button>
     </div>
     <button class="btn btn-ghost" id="importBtn" title="导入 MD 文件">📥 导入</button>
+    <button class="btn btn-ghost" id="exportBtn" title="导出 MD 文件">📤 导出</button>
     <button class="btn btn-ghost" id="copyBtn" title="复制 Markdown">📋 复制 MD</button>
     <button class="btn btn-primary" id="publishBtn">🚀 发布更新</button>
   </div>
@@ -698,6 +699,36 @@ function fallbackCopy(text) {
   } catch (e) {}
   showToast('复制失败', 'error');
 }
+// ============================================================
+//  导出 MD 文件
+// ============================================================
+function exportMD() {
+  const text = editor.value || rawContent;
+  if (!text.trim()) {
+    showToast("内容不能为空", "error");
+    return;
+  }
+
+  // 获取文件名
+  let fileName = document.getElementById("docFile").textContent || "document.md";
+  if (!fileName.endsWith(".md")) {
+    fileName = fileName.replace(/\.[^.]+$/, "") + ".md";
+  }
+
+  // 创建 Blob 并下载
+  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast("导出成功", "success");
+}
+
 
 // ============================================================
 //  导入 MD 文件
@@ -758,6 +789,9 @@ publishBtn.addEventListener('click', publish);
 
 // 复制按钮
 copyBtn.addEventListener('click', copyMD);
+
+// 导出按钮
+document.getElementById('exportBtn').addEventListener('click', exportMD);
 
 // 导入按钮
 importBtn.addEventListener('click', () => {
