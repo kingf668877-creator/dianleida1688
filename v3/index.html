@@ -779,7 +779,8 @@ body {
         <div class="analysis-header-title">AI智能分析 <span class="loading-dots" id="analysis-loading"><span></span><span></span><span></span></span></div>
         <div class="analysis-header-sub" id="analysis-sub">正在启动AI分析引擎...</div>
         <div class="analysis-timing" id="analysis-timing">
-          <span class="timing-chip">智能体：<strong id="timing-agent">--</strong></span>
+          <span class="timing-chip">类目智能体：<strong id="timing-category">--</strong></span>
+          <span class="timing-chip">搜索词智能体：<strong id="timing-keyword">--</strong></span>
           <span class="timing-chip">店雷达API：<strong id="timing-api">--</strong></span>
           <span class="timing-chip">总耗时：<strong id="timing-total">--</strong></span>
         </div>
@@ -1173,27 +1174,41 @@ async function callCozeBot(botId, query, onStreamDelta) {
 
 // ===== 并行调用两个智能体 =====
 // 类目智能体 + 关键词智能体，并行请求，最后合并结果
+// 返回 { result, categoryTime, keywordTime }
 async function callCozeSearchAnalysis(query, onStreamDelta) {
-  if (!USE_COZE_AGENT || !COZE_API_TOKEN) return null;
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN) return { result: null, categoryTime: 0, keywordTime: 0 };
   
   COZE_DEBUG_LOG = [];
   addDebugLog(`并行启动两个智能体: "${query}"`);
   
+  const categoryStart = performance.now();
+  const keywordStart = performance.now();
+  let categoryTime = 0;
+  let keywordTime = 0;
+  
   // 同时发起两个请求
-  const categoryPromise = callCozeBot(COZE_CATEGORY_BOT_ID, query, null);
-  const keywordPromise = callCozeBot(COZE_KEYWORD_BOT_ID, query, onStreamDelta);
+  const categoryPromise = callCozeBot(COZE_CATEGORY_BOT_ID, query, null).then(r => {
+    categoryTime = performance.now() - categoryStart;
+    addDebugLog('类目智能体完成，耗时: ' + formatDuration(categoryTime));
+    return r;
+  }).catch(e => {
+    categoryTime = performance.now() - categoryStart;
+    addDebugLog('类目智能体失败: ' + e.message);
+    return null;
+  });
+  
+  const keywordPromise = callCozeBot(COZE_KEYWORD_BOT_ID, query, onStreamDelta).then(r => {
+    keywordTime = performance.now() - keywordStart;
+    addDebugLog('搜索词智能体完成，耗时: ' + formatDuration(keywordTime));
+    return r;
+  }).catch(e => {
+    keywordTime = performance.now() - keywordStart;
+    addDebugLog('搜索词智能体失败: ' + e.message);
+    return null;
+  });
   
   // 等两个都返回
-  const [categoryResult, keywordResult] = await Promise.all([
-    categoryPromise.catch(e => {
-      addDebugLog('类目智能体失败: ' + e.message);
-      return null;
-    }),
-    keywordPromise.catch(e => {
-      addDebugLog('关键词智能体失败: ' + e.message);
-      return null;
-    })
-  ]);
+  const [categoryResult, keywordResult] = await Promise.all([categoryPromise, keywordPromise]);
   
   // 合并结果
   const merged = {};
@@ -1212,7 +1227,7 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
   // 兜底：如果两个都失败，返回 null
   if (!keywordResult && !categoryResult) {
     addDebugLog('两个智能体都失败了');
-    return null;
+    return { result: null, categoryTime, keywordTime };
   }
   
   // 补全默认结构，避免后面报错
@@ -1229,7 +1244,7 @@ async function callCozeSearchAnalysis(query, onStreamDelta) {
   if (!merged.requiredKeywords) merged.requiredKeywords = [];
   
   addDebugLog('双智能体合并完成');
-  return merged;
+  return { result: merged, categoryTime, keywordTime };
 }
 
 // ===== 调用智谱AI（备用）=====
@@ -2213,7 +2228,7 @@ function addStep(icon, title, detail, tokens) {
   return stepEl;
 }
 
-function addLoadingStep(icon, title) {
+function addLoadingStep(icon, title, detail) {
   const stepsContainer = document.getElementById('ai-steps');
   const stepEl = document.createElement('div');
   stepEl.className = 'ai-step show';
@@ -2221,6 +2236,7 @@ function addLoadingStep(icon, title) {
     <span class="ai-step-icon">${icon}</span>
     <div class="ai-step-content">
       <div class="ai-step-title">${escapeHtml(title)} <span class="loading-dots"><span></span><span></span><span></span></span></div>
+      ${detail ? `<div class="ai-step-detail">${escapeHtml(detail)}</div>` : ''}
     </div>`;
   stepsContainer.appendChild(stepEl);
   return stepEl;
@@ -2235,12 +2251,15 @@ function formatDuration(ms) {
 function updateTimingDisplay(timing) {
   const timingEl = document.getElementById('analysis-timing');
   if (!timingEl) return;
-  const hasValue = ['agent', 'api', 'total'].some(key => typeof timing[key] === 'number');
+  const keys = ['category', 'keyword', 'api', 'total'];
+  const hasValue = keys.some(key => typeof timing[key] === 'number');
   timingEl.classList.toggle('show', hasValue);
-  const agentEl = document.getElementById('timing-agent');
+  const catEl = document.getElementById('timing-category');
+  const kwEl = document.getElementById('timing-keyword');
   const apiEl = document.getElementById('timing-api');
   const totalEl = document.getElementById('timing-total');
-  if (agentEl && timing.agent !== undefined) agentEl.textContent = formatDuration(timing.agent);
+  if (catEl && timing.category !== undefined) catEl.textContent = formatDuration(timing.category);
+  if (kwEl && timing.keyword !== undefined) kwEl.textContent = formatDuration(timing.keyword);
   if (apiEl && timing.api !== undefined) apiEl.textContent = formatDuration(timing.api);
   if (totalEl && timing.total !== undefined) totalEl.textContent = formatDuration(timing.total);
 }
@@ -2267,7 +2286,8 @@ async function doSearch() {
 
   isSearching = true;
   const totalStartTime = performance.now();
-  let agentDuration = null;
+  let categoryDuration = null;
+  let keywordDuration = null;
   let apiDuration = null;
   const btn = document.getElementById('search-btn');
   btn.disabled = true;
@@ -2285,34 +2305,106 @@ async function doSearch() {
   document.getElementById('analysis-sub').textContent = '正在启动AI分析引擎...';
   const timingEl = document.getElementById('analysis-timing');
   if (timingEl) timingEl.classList.remove('show');
-  updateTimingDisplay({ agent: null, api: null, total: null });
+  updateTimingDisplay({ category: null, keyword: null, api: null, total: null });
   document.getElementById('product-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">正在搜索商品...</div>';
   
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // ===== AI智能体分析（后台执行，不展示） =====
+  // ===== AI智能体分析 =====
   let aiResult = null;
   let aiSource = 'none';
-  const agentStartTime = performance.now();
   
-  aiResult = await callCozeSearchAnalysis(query, null);
-  if (aiResult) aiSource = 'coze';
+  // Step 1: 先添加搜索词分析的流式步骤（实时展示）
+  const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在分析搜索词...');
+  const step1LiveDetail = step1Live.querySelector('.ai-step-detail');
+  
+  const cozeData = await callCozeSearchAnalysis(query, (delta, fullText) => {
+    // 实时流式展示搜索词智能体的分析过程
+    if (step1LiveDetail) {
+      // 从JSON中提取可读的字段进行展示
+      let displayText = '';
+      
+      // 尝试提取 coreProduct
+      const coreMatch = fullText.match(/"coreProduct"\s*:\s*"([^"]*)"/);
+      if (coreMatch && coreMatch[1]) {
+        displayText += '核心商品：' + coreMatch[1] + ' · ';
+      }
+      
+      // 提取 modifiers 中的内容
+      const sceneMatch = fullText.match(/"scene"\s*:\s*\[([^\]]*)\]/);
+      if (sceneMatch && sceneMatch[1]) {
+        const scenes = sceneMatch[1].match(/"([^"]*)"/g);
+        if (scenes && scenes.length > 0) {
+          displayText += '场景：' + scenes.map(s => s.replace(/"/g, '')).join('、') + ' · ';
+        }
+      }
+      
+      const crowdMatch = fullText.match(/"crowd"\s*:\s*\[([^\]]*)\]/);
+      if (crowdMatch && crowdMatch[1]) {
+        const crowds = crowdMatch[1].match(/"([^"]*)"/g);
+        if (crowds && crowds.length > 0) {
+          displayText += '人群：' + crowds.map(s => s.replace(/"/g, '')).join('、') + ' · ';
+        }
+      }
+      
+      // 提取 expandedKeywords 数量
+      const expMatch = fullText.match(/"expandedKeywords"\s*:\s*\[([^\]]*)\]/);
+      if (expMatch && expMatch[1]) {
+        const exps = expMatch[1].match(/"([^"]*)"/g);
+        if (exps && exps.length > 0) {
+          displayText += '扩展词：' + exps.length + '个';
+        }
+      }
+      
+      // 如果没提取到结构化内容，就展示原始文本的纯文字部分
+      if (!displayText) {
+        let plainText = fullText.replace(/[{}"\\\[\],:]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (plainText.length > 150) plainText = plainText.substring(0, 150) + '...';
+        displayText = plainText || '分析中...';
+      }
+      
+      step1LiveDetail.textContent = displayText;
+    }
+    // 实时更新总耗时
+    updateTimingDisplay({ 
+      category: categoryDuration, 
+      keyword: keywordDuration, 
+      api: apiDuration, 
+      total: performance.now() - totalStartTime 
+    });
+  });
+  
+  if (cozeData && cozeData.result) {
+    aiResult = cozeData.result;
+    categoryDuration = cozeData.categoryTime;
+    keywordDuration = cozeData.keywordTime;
+    aiSource = 'coze';
+  }
   
   if (!aiResult) {
+    const zhipuStart = performance.now();
     aiResult = await callZhipuSearchAnalysis(query);
-    if (aiResult) aiSource = 'zhipu';
+    if (aiResult) {
+      aiSource = 'zhipu';
+      keywordDuration = performance.now() - zhipuStart;
+    }
   }
   
   if (!aiResult) {
     aiResult = ruleBasedAnalysis(query);
     aiSource = 'rule';
+    keywordDuration = 50;
   }
-  agentDuration = performance.now() - agentStartTime;
-  console.log('[耗时统计] 智能体分析:', formatDuration(agentDuration), '来源:', aiSource);
-  updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: performance.now() - totalStartTime });
+  
+  console.log('[耗时统计] 类目智能体:', formatDuration(categoryDuration), '搜索词智能体:', formatDuration(keywordDuration), '来源:', aiSource);
+  updateTimingDisplay({ 
+    category: categoryDuration, 
+    keyword: keywordDuration, 
+    api: apiDuration, 
+    total: performance.now() - totalStartTime 
+  });
 
-  // ===== Step 1: 核心词提取 =====
-  await new Promise(r => setTimeout(r, 200));
+  // ===== Step 1: 核心词提取（替换流式步骤）=====
   const coreProduct = aiResult.coreProduct || query;
   const modifiers = aiResult.modifiers || {};
   const allModifiers = [];
@@ -2328,7 +2420,8 @@ async function doSearch() {
   if (allModifiers.length > 0) step1Detail += ' · 修饰词：' + allModifiers.join('、');
   if (requiredKws.length > 0) step1Detail += ' · 必含词：' + requiredKws.join('、');
   
-  addStep('🎯', 'Step 1: 核心词提取', step1Detail, tokens);
+  // 替换流式步骤为最终完成状态
+  updateStep(step1Live, '🎯', 'Step 1: 核心词提取', step1Detail, tokens);
 
   // ===== Step 2: 关键词扩展与排除 =====
   await new Promise(r => setTimeout(r, 300));
@@ -2395,7 +2488,7 @@ async function doSearch() {
   } finally {
     apiDuration = performance.now() - apiStartTime;
     console.log('[耗时统计] 店雷达API:', formatDuration(apiDuration));
-    updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: performance.now() - totalStartTime });
+    updateTimingDisplay({ category: categoryDuration, keyword: keywordDuration, api: apiDuration, total: performance.now() - totalStartTime });
   }
   
   if (products.length > 0) {
@@ -2415,7 +2508,7 @@ async function doSearch() {
   // 隐藏顶部loading
   const totalDuration = performance.now() - totalStartTime;
   console.log('[耗时统计] 总调用时间:', formatDuration(totalDuration));
-  updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: totalDuration });
+  updateTimingDisplay({ category: categoryDuration, keyword: keywordDuration, api: apiDuration, total: totalDuration });
   document.getElementById('analysis-loading').style.display = 'none';
   document.getElementById('analysis-sub').textContent = 'AI智能分析完成，已为您精准匹配商品';
 
