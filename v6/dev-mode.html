@@ -60,8 +60,28 @@
     border:0; border-radius:6px; background:transparent;
     color:#4e5969; display:flex; align-items:center; gap:6px;
     font-size:13px; font-weight:600; text-align:left;
+    cursor:pointer; transition:.15s;
   }
-  .version-pages { padding:4px 0 0 22px; }
+  .version-folder:hover { background:var(--hover); }
+  .version-folder .folder-arrow {
+    width:14px; display:inline-block;
+    transition: transform .2s ease;
+    font-size:10px; color:#86909c;
+  }
+  .version-folder.open .folder-arrow { transform: rotate(90deg); }
+  .version-badge {
+    margin-left:auto;
+    font-size:10px; font-weight:500;
+    padding:2px 6px; border-radius:4px;
+    background:#e8f0ff; color:var(--blue);
+  }
+
+  .version-pages {
+    padding:4px 0 0 22px;
+    display:none;
+  }
+  .version-pages.open { display:block; }
+
   .layer-empty { display:none; padding:18px 12px; color:#a8abb2; font-size:12px; text-align:center; }
   .layer-item {
     width:100%; height:42px; padding:0 12px;
@@ -121,15 +141,20 @@
       <input class="search-input" id="layerSearch" type="search" placeholder="搜索版本或页面">
     </div>
     <nav class="layer-list">
-      <div class="version-folder" id="versionFolder">
+
+      <!-- V2.8.9 版本 -->
+      <div class="version-folder open" data-version="v2.8.9">
+        <span class="folder-arrow">▶</span>
         <span>V2.8.9</span>
+        <span class="version-badge">最新</span>
       </div>
-      <div class="version-pages" id="versionPages">
+      <div class="version-pages open" data-version="v2.8.9">
         <button class="layer-item active" data-page="search-agent.html" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">P</span>搜索智能体</button>
         <button class="layer-item" data-page="ai-output-interaction-viewer.html" data-search="V2.8.9 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
         <button class="layer-item" data-page="prototype-spec.html" data-search="V2.8.9 原型说明 版本规划 功能列表"><span class="layer-icon icon-p" style="background:#f59e0b;">P</span>原型说明</button>
         <button class="layer-item" data-page="backend-json-mapping-viewer.html" data-search="V2.8.9 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
       </div>
+
       <div class="layer-empty" id="layerEmpty">暂无匹配内容</div>
     </nav>
   </aside>
@@ -141,13 +166,14 @@
   const frame = document.getElementById('designFrame');
   const items = Array.from(document.querySelectorAll('.layer-item'));
   const layerSearch = document.getElementById('layerSearch');
-  const versionFolder = document.getElementById('versionFolder');
   const layerEmpty = document.getElementById('layerEmpty');
   const layers = document.getElementById('layers');
   const toggleBtn = document.getElementById('toggleBtn');
   const expandBtn = document.getElementById('expandBtn');
+  const versionFolders = Array.from(document.querySelectorAll('.version-folder'));
+  const versionPages = Array.from(document.querySelectorAll('.version-pages'));
 
-  // 切换侧边栏
+  // ===== 侧边栏展开/收起 =====
   function toggleSidebar(show) {
     if (show) {
       layers.classList.remove('collapsed');
@@ -159,41 +185,83 @@
       localStorage.setItem('sidebar-collapsed', 'true');
     }
   }
-
   toggleBtn.addEventListener('click', () => toggleSidebar(false));
   expandBtn.addEventListener('click', () => toggleSidebar(true));
 
-  // 初始化：从 localStorage 读取状态，默认收起
-  const savedState = localStorage.getItem('sidebar-collapsed');
-  if (savedState === 'false') {
-    toggleSidebar(true);
-  } else {
-    toggleSidebar(false);
+  // ===== 版本文件夹展开/收起 =====
+  function toggleVersion(version, open) {
+    const folder = document.querySelector('.version-folder[data-version="' + version + '"]');
+    const pages = document.querySelector('.version-pages[data-version="' + version + '"]');
+    if (!folder || !pages) return;
+
+    if (open) {
+      folder.classList.add('open');
+      pages.classList.add('open');
+    } else {
+      folder.classList.remove('open');
+      pages.classList.remove('open');
+    }
   }
 
-  // 页面切换
+  versionFolders.forEach(folder => {
+    folder.addEventListener('click', () => {
+      const version = folder.dataset.version;
+      const isOpen = folder.classList.contains('open');
+      toggleVersion(version, !isOpen);
+    });
+  });
+
+  // ===== 页面切换 =====
   items.forEach(item => item.addEventListener('click', () => {
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
     frame.src = item.dataset.page;
   }));
 
-  // 搜索
+  // ===== 搜索 =====
   layerSearch.addEventListener('input', () => {
     const keyword = layerSearch.value.trim().toLowerCase();
     let visibleCount = 0;
-    const versionMatched = 'v2.8.9'.includes(keyword) || '2.8.9'.includes(keyword);
+
+    // 搜索时展开所有版本
+    const isSearching = !!keyword;
+    versionFolders.forEach(folder => {
+      const version = folder.dataset.version;
+      const pages = document.querySelector('.version-pages[data-version="' + version + '"]');
+      const versionMatched = version.includes(keyword);
+
+      if (isSearching) {
+        folder.classList.add('open');
+        pages.classList.add('open');
+      } else {
+        // 非搜索状态下，V2.8.9 默认展开
+        if (version === 'v2.8.9') {
+          folder.classList.add('open');
+          pages.classList.add('open');
+        } else {
+          folder.classList.remove('open');
+          pages.classList.remove('open');
+        }
+      }
+    });
 
     items.forEach(item => {
       const text = (item.dataset.search || item.textContent).toLowerCase();
-      const matched = !keyword || versionMatched || text.includes(keyword);
+      const matched = !keyword || text.includes(keyword);
       item.style.display = matched ? 'flex' : 'none';
       if (matched) visibleCount += 1;
     });
 
-    versionFolder.style.display = visibleCount > 0 ? 'flex' : 'none';
     layerEmpty.style.display = visibleCount > 0 ? 'none' : 'block';
   });
+
+  // ===== 初始化 =====
+  const savedState = localStorage.getItem('sidebar-collapsed');
+  if (savedState === 'false') {
+    toggleSidebar(true);
+  } else {
+    toggleSidebar(false);
+  }
 </script>
 </body>
 </html>

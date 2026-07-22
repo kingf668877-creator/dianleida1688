@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型说明 - 店雷达选品</title>
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6f8; position: relative; }
+
+  .frame-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .axure-frame {
+    position: absolute;
+    top: 0;
+    left: -248px;
+    width: calc(100% + 248px);
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #fff;
+    transition: left .25s ease, width .25s ease;
+  }
+
+  .frame-wrapper.show-sidebar .axure-frame {
+    left: 0;
+    width: 100%;
+  }
+
+  /* 切换按钮 */
+  .toggle-sidebar-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e5e6eb;
+    border-radius: 8px;
+    background: #fff;
+    color: #4e5969;
+    cursor: pointer;
+    font-size: 16px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    transition: .15s;
+  }
+  .toggle-sidebar-btn:hover {
+    background: #f2f3f5;
+    color: #1d2129;
+  }
+</style>
+</head>
+<body>
+  <button class="toggle-sidebar-btn" id="toggleBtn" title="展开/收起左侧导航">☰</button>
+  <div class="frame-wrapper" id="frameWrapper">
+    <iframe class="axure-frame" src="https://axhub.im/link/9bb2b905a48c3fd3/?pos=86709&page=fn62rm" title="原型说明" allow="fullscreen"></iframe>
+  </div>
+<script>
+  const toggleBtn = document.getElementById('toggleBtn');
+  const frameWrapper = document.getElementById('frameWrapper');
+  const frame = document.querySelector('.axure-frame');
+
+  function toggleSidebar(show) {
+    if (show) {
+      frameWrapper.classList.add('show-sidebar');
+      toggleBtn.textContent = '✕';
+      toggleBtn.title = '收起左侧导航';
+      localStorage.setItem('proto-sidebar', 'show');
+    } else {
+      frameWrapper.classList.remove('show-sidebar');
+      toggleBtn.textContent = '☰';
+      toggleBtn.title = '展开左侧导航';
+      localStorage.setItem('proto-sidebar', 'hide');
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    const isShow = frameWrapper.classList.contains('show-sidebar');
+    toggleSidebar(!isShow);
+  });
+
+  // 初始化：默认收起
+  const saved = localStorage.getItem('proto-sidebar');
+  if (saved === 'show') {
+    toggleSidebar(true);
+  } else {
+    toggleSidebar(false);
+  }
+</script>
+</body>
+</html>
