@@ -142,14 +142,26 @@
     </div>
     <nav class="layer-list">
 
-      <!-- V2.9.0 版本 -->
-      <div class="version-folder open" data-version="v2.9.0">
+      <!-- V2.9.1 版本 -->
+      <div class="version-folder open" data-version="v2.9.1">
         <span class="folder-arrow">▶</span>
-        <span>V2.9.0</span>
+        <span>V2.9.1</span>
         <span class="version-badge">最新</span>
       </div>
-      <div class="version-pages open" data-version="v2.9.0">
-        <button class="layer-item active" data-page="v2.9.0/search-agent.html" data-search="V2.9.0 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">P</span>搜索智能体</button>
+      <div class="version-pages open" data-version="v2.9.1">
+        <button class="layer-item active" data-page="v2.9.1/search-agent.html" data-search="V2.9.1 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">P</span>搜索智能体</button>
+        <button class="layer-item" data-page="v2.9.1/ai-output-interaction-viewer.html" data-search="V2.9.1 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
+        <button class="layer-item" data-page="v2.9.1/prototype-spec.html" data-search="V2.9.1 原型说明 版本规划 功能列表"><span class="layer-icon icon-p" style="background:#f59e0b;">P</span>原型说明</button>
+        <button class="layer-item" data-page="v2.9.1/backend-json-mapping-viewer.html" data-search="V2.9.1 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
+      </div>
+
+      <!-- V2.9.0 版本 -->
+      <div class="version-folder" data-version="v2.9.0">
+        <span class="folder-arrow">▶</span>
+        <span>V2.9.0</span>
+      </div>
+      <div class="version-pages" data-version="v2.9.0">
+        <button class="layer-item" data-page="v2.9.0/search-agent.html" data-search="V2.9.0 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">P</span>搜索智能体</button>
         <button class="layer-item" data-page="v2.9.0/ai-output-interaction-viewer.html" data-search="V2.9.0 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
         <button class="layer-item" data-page="v2.9.0/prototype-spec.html" data-search="V2.9.0 原型说明 版本规划 功能列表"><span class="layer-icon icon-p" style="background:#f59e0b;">P</span>原型说明</button>
         <button class="layer-item" data-page="v2.9.0/backend-json-mapping-viewer.html" data-search="V2.9.0 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
@@ -171,7 +183,7 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="v2.9.0/search-agent.html" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="v2.9.1/search-agent.html" title="设计页面预览"></iframe></div>
   </main>
 </div>
 <script>
@@ -246,8 +258,8 @@
         folder.classList.add('open');
         pages.classList.add('open');
       } else {
-        // 非搜索状态下，V2.9.0 默认展开
-        if (version === 'v2.9.0') {
+        // 非搜索状态下，V2.9.1 默认展开
+        if (version === 'v2.9.1') {
           folder.classList.add('open');
           pages.classList.add('open');
         } else {
