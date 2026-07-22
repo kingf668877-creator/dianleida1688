@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 输出结果交互</title>
-  <link rel="icon" type="image/png" href="logo.png">
+<title>UI名称</title>
+<link rel="icon" type="image/png" href="logo.png">
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -66,12 +66,9 @@
   }
   .panel.active { display: block; }
 
-  /* 效果图面板 */
-  #panel-preview iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display: block;
+  /* 效果图面板 - 空白 */
+  #panel-preview {
+    background: #fff;
   }
 
   /* 代码面板通用 */
@@ -100,7 +97,7 @@
     transition: .15s;
   }
   .copy-btn:hover { border-color: #6236ff; color: #6236ff; }
-  .copy-btn.ok { background: #16a36a; border-color: #16a36a; color: #fff; }
+  .copy-btn.ok { background: #16a34a; border-color: #16a34a; color: #fff; }
 
   pre.code {
     margin: 0;
@@ -115,10 +112,10 @@
     tab-size: 2;
     min-height: calc(100% - 50px);
   }
-
 </style>
 </head>
 <body>
+
   <div class="tabs-wrap" role="tablist">
     <button class="tab-btn tab-preview active" data-tab="preview" role="tab">
       <span class="tab-dot"></span>效果图
@@ -135,38 +132,36 @@
   </div>
 
   <div class="panels">
-    <!-- 效果图 -->
+    <!-- 效果图 - 空白 -->
     <section class="panel active" id="panel-preview">
-      <iframe id="previewFrame" src="ai-output-interaction-clean.html" title="效果图"></iframe>
     </section>
 
-    <!-- HTML -->
+    <!-- HTML - 空白 -->
     <section class="panel code-panel" id="panel-html">
       <div class="code-header">
-        <small>ai-output-interaction-clean.html</small>
+        <small>ui-name.html</small>
         <button class="copy-btn" data-copy="html">复制 HTML</button>
       </div>
-      <pre class="code" id="codeHtml">正在加载…</pre>
+      <pre class="code" id="codeHtml"></pre>
     </section>
 
-    <!-- CSS -->
+    <!-- CSS - 空白 -->
     <section class="panel code-panel" id="panel-css">
       <div class="code-header">
-        <small>ai-output-interaction-clean.css</small>
+        <small>ui-name.css</small>
         <button class="copy-btn" data-copy="css">复制 CSS</button>
       </div>
-      <pre class="code" id="codeCss">正在加载…</pre>
+      <pre class="code" id="codeCss"></pre>
     </section>
 
-    <!-- JS -->
+    <!-- JS - 空白 -->
     <section class="panel code-panel" id="panel-js">
       <div class="code-header">
-        <small>ai-output-interaction-clean.js</small>
+        <small>ui-name.js</small>
         <button class="copy-btn" data-copy="js">复制 JS</button>
       </div>
-      <pre class="code" id="codeJs">正在加载…</pre>
+      <pre class="code" id="codeJs"></pre>
     </section>
-
   </div>
 
 <script>
@@ -174,6 +169,7 @@
   const panels = document.querySelectorAll('.panel');
   const codeCache = { html: '', css: '', js: '' };
 
+  // tab 切换
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -182,22 +178,7 @@
     });
   });
 
-  function loadCode(type, url, targetId) {
-    fetch(url).then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
-      .then(text => {
-        codeCache[type] = text;
-        document.getElementById(targetId).textContent = text;
-      })
-      .catch(() => {
-        document.getElementById(targetId).textContent = '加载失败：' + url;
-      });
-  }
-
-  loadCode('html', 'ai-output-interaction-clean.html', 'codeHtml');
-  loadCode('css', 'ai-output-interaction-clean.css', 'codeCss');
-  loadCode('js', 'ai-output-interaction-clean.js', 'codeJs');
-
-
+  // 复制按钮
   document.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const type = btn.dataset.copy;
