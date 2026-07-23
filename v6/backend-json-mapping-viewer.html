@@ -829,24 +829,8 @@ window.addEventListener('beforeunload', (e) => {
 //  初始化
 // ============================================================
 function init() {
-  // 先尝试从本地存储加载
-  if (loadFromLocal()) {
-    editor.value = rawContent;
-    markdownEl.innerHTML = renderMarkdown(rawContent);
-
-    // 提取标题
-    const firstLine = rawContent.split('\n').find(l => l.startsWith('# '));
-    if (firstLine) {
-      document.getElementById('docTitle').textContent = firstLine.replace(/^#\s+/, '').trim();
-    }
-
-    updateStats();
-    updateSaveStatus(true);
-    return;
-  }
-
-  // 否则从 MD 文件加载
-  fetch('backend-json-mapping.md')
+  // 优先从 MD 文件加载（带时间戳防浏览器缓存）
+  fetch('backend-json-mapping.md?t=' + Date.now())
     .then(response => {
       if (!response.ok) throw new Error('读取失败');
       return response.text();
@@ -866,8 +850,21 @@ function init() {
       updateSaveStatus(true);
     })
     .catch(() => {
-      markdownEl.textContent = 'MD 文件读取失败';
-      markdownEl.classList.add('error');
+      // MD 文件加载失败时，尝试从 localStorage 兜底
+      if (loadFromLocal()) {
+        editor.value = rawContent;
+        markdownEl.innerHTML = renderMarkdown(rawContent);
+        const firstLine = rawContent.split('\n').find(l => l.startsWith('# '));
+        if (firstLine) {
+          document.getElementById('docTitle').textContent = firstLine.replace(/^#\s+/, '').trim();
+        }
+        updateStats();
+        updateSaveStatus(true);
+        showToast('已从本地缓存加载', 'info');
+      } else {
+        markdownEl.textContent = 'MD 文件读取失败';
+        markdownEl.classList.add('error');
+      }
     });
 }
 
