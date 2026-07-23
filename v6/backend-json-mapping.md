@@ -27,10 +27,10 @@
 
 | 智能体名称 | Bot ID | API Token | 说明 |
 |-----------|--------|-----------|------|
-| 1688获取关键词备选 | - | `sat_4R0kwl9V9vA4d1MaroUhGHNySizh17LvG2Z0gpiSyHgvtqzs1PNbRZCm8xOvZXaS` | 关键词智能体备用 Token |
-| 关键词智能体备选 | `7664543077167808527` | - | 关键词智能体备用 Bot ID |
+| 1688获取关键词备选 | `7665284063716196398` | `sat_YUa7AmsTxeyu1HFViXwtcOEc7TvYxmwUzrAgFVRvwl68CvArSB4KjDY892rCjckU` | 关键词智能体备用 |
 
-> 主智能体不可用时切换到备选配置，备选 Token 和 Bot ID 可独立使用也可组合使用。
+
+> 主智能体不可用时切换到备选配置。
 
 ### 推荐架构：双智能体并行
 
