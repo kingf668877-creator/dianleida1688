@@ -126,6 +126,102 @@ function escapeHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+// ===== 智能拆词函数（前端降级用，智能体没返回时本地计算）=====
+function smartTokenize(keyword) {
+  if (!keyword) return [];
+  const kw = keyword.trim();
+  if (kw.length <= 2) return [kw];
+  
+  // 常见商品后缀词（核心名词）
+  const productSuffixes = [
+    '包包', '女包', '男包', '双肩包', '单肩包', '手提包', '斜挎包', '腰包', '钱包', '零钱包',
+    '手机壳', '手机套', '保护壳', '保护套',
+    'T恤', '衬衫', '外套', '裤子', '裙子', '连衣裙', '衣服', '服装', '卫衣', '毛衣',
+    '鞋子', '靴子', '运动鞋', '高跟鞋', '平底鞋',
+    '耳环', '项链', '手链', '戒指', '饰品', '首饰',
+    '插座', '开关', '插头', '充电器', '数据线',
+    '杯子', '水杯', '保温杯', '马克杯',
+    '枕头', '抱枕', '靠垫',
+    '笔记本', '本子', '文具', '笔',
+    '玩具', '公仔', '玩偶',
+    '麻将包', '麻将',
+    '跨境', '外贸', '亚马逊',
+    '包', '袋', '箱', '盒', '套', '壳', '杯', '鞋', '衣', '裤', '裙', '帽', '袜'
+  ];
+  
+  // 常见修饰词前缀
+  const modifierPrefixes = [
+    '跨境', '外贸', '亚马逊', '速卖通',
+    '透明', '加厚', '防水', '折叠', '便携',
+    '86型', '118型', '120型',
+    'PVC', '硅胶', '不锈钢', '棉麻', '真皮', '帆布',
+    '女', '男', '儿童', '宝宝', '成人', '老人',
+    '创意', '复古', '简约', '可爱', '网红', 'ins',
+    '夏季', '冬季', '春秋', '四季',
+    '户外', '厨房', '办公', '家用', '车载'
+  ];
+  
+  const tokens = [];
+  let remaining = kw;
+  
+  // 第一步：先找商品后缀词（从长到短匹配）
+  const sortedSuffixes = [...productSuffixes].sort((a, b) => b.length - a.length);
+  let foundProduct = '';
+  for (const suffix of sortedSuffixes) {
+    const idx = remaining.indexOf(suffix);
+    if (idx >= 0) {
+      foundProduct = suffix;
+      // 提取前面的修饰部分
+      const before = remaining.substring(0, idx);
+      const after = remaining.substring(idx + suffix.length);
+      remaining = before + after;
+      break;
+    }
+  }
+  
+  // 第二步：从剩余部分中提取修饰词
+  const foundModifiers = [];
+  const sortedModifiers = [...modifierPrefixes].sort((a, b) => b.length - a.length);
+  for (const mod of sortedModifiers) {
+    const idx = remaining.indexOf(mod);
+    if (idx >= 0) {
+      foundModifiers.push(mod);
+      remaining = remaining.substring(0, idx) + remaining.substring(idx + mod.length);
+    }
+  }
+  
+  // 第三步：如果还有剩余且长度>=2，也作为一个词
+  if (remaining.length >= 2) {
+    foundModifiers.unshift(remaining);
+  }
+  
+  // 组装结果：核心商品词在前，修饰词在后
+  if (foundProduct) {
+    tokens.push(foundProduct);
+  }
+  for (const m of foundModifiers) {
+    if (m && !tokens.includes(m)) {
+      tokens.push(m);
+    }
+  }
+  
+  // 如果啥也没拆出来，就返回原词
+  if (tokens.length === 0) {
+    return [kw];
+  }
+  
+  return tokens;
+}
+
+// 为扩展词生成拆词组（降级用）
+function generateExpandedTokenGroups(expandedWords, originalTokens) {
+  if (!expandedWords || expandedWords.length === 0) return [];
+  return expandedWords.map(word => {
+    const tokens = smartTokenize(word);
+    return { word, tokens };
+  });
+}
 </script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2491,14 +2587,21 @@ async function doSearch() {
   }
 
   // ===== Step 2.5: 关键词扩展拆词 =====
-  const keywordTokens = aiResult.keywordTokens || [];
-  const expandedTokenGroups = aiResult.expandedTokenGroups || [];
+  let keywordTokens = aiResult.keywordTokens || [];
+  let expandedTokenGroups = aiResult.expandedTokenGroups || [];
   
+  // 降级：如果智能体没返回拆词数据，用前端本地拆词
+  const isLocalTokenize = keywordTokens.length === 0 && expandedTokenGroups.length === 0;
+  if (isLocalTokenize) {
+    keywordTokens = smartTokenize(query);
+    expandedTokenGroups = generateExpandedTokenGroups(expanded);
+  }
+  
+  // 始终展示拆词步骤（只要有搜索词就展示）
   if (keywordTokens.length > 0 || expandedTokenGroups.length > 0) {
     await new Promise(r => setTimeout(r, 200));
     
     let tokenDetail = '';
-    const totalTokenGroups = keywordTokens.length > 0 ? 1 + expandedTokenGroups.length : expandedTokenGroups.length;
     
     if (keywordTokens.length > 0) {
       tokenDetail += '原词拆为 ' + keywordTokens.length + ' 个单元词 · ';
@@ -2507,6 +2610,9 @@ async function doSearch() {
       tokenDetail += expandedTokenGroups.length + ' 个扩展词均已拆词';
     }
     tokenDetail += ' · 采用 AND 匹配（词无需连在一起）';
+    if (isLocalTokenize) {
+      tokenDetail += ' · 本地智能拆词';
+    }
     
     addStep('🧩', 'Step 2.5: 关键词扩展拆词', tokenDetail, []);
     
@@ -2521,7 +2627,7 @@ async function doSearch() {
         // 原词拆词
         if (keywordTokens.length > 0) {
           tokenDetailEl.innerHTML += '<div style="margin-bottom:10px;">' +
-            '<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">📝 搜索词拆词（AND匹配：标题需同时包含所有词）</div>' +
+            '<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">📝 搜索词拆词（AND匹配：标题需同时包含所有词）' + (isLocalTokenize ? ' <span style="color:#9CA3AF;">(本地拆词)</span>' : '') + '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' +
             keywordTokens.map(t => '<span style="display:inline-block;padding:4px 10px;background:#DBEAFE;color:#1D4ED8;border-radius:6px;font-size:13px;font-weight:500;">' + escapeHtml(t) + '</span>').join('') +
             '<span style="font-size:11px;color:#9CA3AF;margin-left:4px;">(' + keywordTokens.length + ' 个词，全部命中才通过)</span>' +
@@ -2561,6 +2667,10 @@ async function doSearch() {
       }
     }
   }
+  
+  // 把拆词数据写回 aiResult，供后续搜索使用
+  aiResult.keywordTokens = keywordTokens;
+  aiResult.expandedTokenGroups = expandedTokenGroups;
 
   // ===== Step 3: 类目获取（getCategory插件返回） =====
   await new Promise(r => setTimeout(r, 250));
