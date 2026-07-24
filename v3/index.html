@@ -2216,6 +2216,16 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const keywordTokens = (aiResult && aiResult.keywordTokens) ? aiResult.keywordTokens : [];
   const expandedTokenGroups = (aiResult && aiResult.expandedTokenGroups) ? aiResult.expandedTokenGroups : [];
   
+  // ====== 调试信息 ======
+  console.log('[搜索调试] 搜索词:', keyword);
+  console.log('[搜索调试] 核心商品词:', coreProduct);
+  console.log('[搜索调试] 类目ID列表:', categoryIdList);
+  console.log('[搜索调试] 类目过滤模式:', categoryTreeFilter ? 'categoryTree严格' : '宽松');
+  console.log('[搜索调试] 原词拆词:', keywordTokens);
+  console.log('[搜索调试] 扩展词:', filteredExpanded);
+  console.log('[搜索调试] 扩展词拆词组:', expandedTokenGroups);
+  // ======================
+  
   // 辅助函数：根据扩展词找对应的拆词组
   function getTokensForWord(word) {
     if (!word) return [];
@@ -2245,6 +2255,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     const result = await callDianLeiDaAPI('search', params);
     
     if (result.code === 200 && result.result && result.result.list) {
+      const apiCount = result.result.list.length;
       const products = processAPIProducts(
         result.result.list,
         excludedKeywords,
@@ -2255,6 +2266,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         categoryTreeFilter
         // 主搜索不用拆词AND匹配，用核心商品词匹配即可（避免"跨境"等词过滤太严）
       );
+      console.log('[搜索调试] 第一轮主搜索: API返回', apiCount, '条 → 过滤后', products.length, '条');
       for (const p of products) {
         if (!seenIds.has(p.id)) {
           seenIds.add(p.id);
@@ -2322,6 +2334,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         const result = await callDianLeiDaAPI('search', params);
         if (result.code === 200 && result.result && result.result.list) {
           const expTokens = getTokensForWord(expWord);
+          const apiCount = result.result.list.length;
           const products = processAPIProducts(
             result.result.list,
             excludedKeywords,
@@ -2332,6 +2345,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             categoryTreeFilter,
             expTokens  // 每个扩展词用自己的拆词做AND匹配
           );
+          console.log('[搜索调试] 扩展词搜索["' + expWord + '"]: API返回', apiCount, '条 → 拆词AND+类目过滤后', products.length, '条 (拆词:', expTokens, ')');
           for (const p of products) {
             if (!seenIds.has(p.id)) {
               seenIds.add(p.id);
@@ -2377,6 +2391,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         }
         const result = await callDianLeiDaAPI('search', params);
         if (result.code === 200 && result.result && result.result.list) {
+          const apiCount = result.result.list.length;
           const products = processAPIProducts(
             result.result.list,
             excludedKeywords,
@@ -2387,6 +2402,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             looseCategoryFilter
             // 兜底搜索不用拆词AND匹配，最宽松模式
           );
+          console.log('[搜索调试] 第一次兜底["' + combinedFallback + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
           for (const p of products) {
             if (!seenIds.has(p.id)) {
               seenIds.add(p.id);
@@ -2414,6 +2430,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       };
       const result = await callDianLeiDaAPI('search', params);
       if (result.code === 200 && result.result && result.result.list) {
+        const apiCount = result.result.list.length;
         const products = processAPIProducts(
           result.result.list,
           excludedKeywords,
@@ -2424,6 +2441,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           looseCategoryFilter
           // 二次兜底也不用拆词AND匹配
         );
+        console.log('[搜索调试] 二次兜底["' + keyword + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
         for (const p of products) {
           if (!seenIds.has(p.id)) {
             seenIds.add(p.id);
@@ -2435,6 +2453,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
       console.warn('二次兜底搜索失败:', e.message);
     }
   }
+  
+  console.log('[搜索调试] ===== 最终结果:', allProducts.length, '条 =====');
   
   return allProducts;
 }
