@@ -142,6 +142,23 @@ function smartTokenize(keyword) {
     '热销', '爆款', '新款', '新品'
   ];
   
+  // 品牌词（这些是品牌名，不是商品词，需要保留为独立词参与AND匹配）
+  const brandWords = [
+    // 母婴品牌
+    'babycare', '全棉时代', '好奇', '帮宝适', '花王', '大王', '尤妮佳',
+    '可心柔', '德佑', '十月结晶', '子初', '好孩子', '英氏', '巴拉巴拉',
+    '安慕斯', '洁柔', '维达', '清风', '心相印', '舒洁', '棉柔世家',
+    // 3C品牌
+    '小米', '华为', '苹果', 'apple', '三星', 'oppo', 'vivo', '荣耀',
+    '飞利浦', '公牛', '小米', '绿联', '倍思', 'anker', '品胜',
+    // 运动品牌
+    'nike', '耐克', 'adidas', '阿迪达斯', '李宁', '安踏', '特步', '361',
+    // 其他知名品牌
+    '无印良品', 'muji', '优衣库', 'uniqlo', '名创优品', 'miniso',
+    '迪士尼', 'disney', 'hellokitty', '三丽鸥',
+    '星巴克', 'starbucks',
+  ].map(w => w.toLowerCase());
+  
   // 常见商品后缀词（核心名词）
   const productSuffixes = [
     // 包袋类
@@ -212,6 +229,17 @@ function smartTokenize(keyword) {
   const tokens = [];
   let remaining = kw;
   
+  // 第零步：先识别品牌词（品牌名要作为独立词保留，参与AND匹配）
+  const sortedBrands = [...brandWords].sort((a, b) => b.length - a.length);
+  const foundBrandWords = [];
+  for (const bw of sortedBrands) {
+    const idx = remaining.toLowerCase().indexOf(bw);
+    if (idx >= 0) {
+      foundBrandWords.push(remaining.substring(idx, idx + bw.length));
+      remaining = remaining.substring(0, idx) + remaining.substring(idx + bw.length);
+    }
+  }
+  
   // 第一步：先去掉平台/场景词（这些是修饰，不是核心商品词）
   const sortedPlatform = [...platformSceneWords].sort((a, b) => b.length - a.length);
   const foundPlatformWords = [];
@@ -254,13 +282,18 @@ function smartTokenize(keyword) {
     foundModifiers.unshift(remaining);
   }
   
-  // 组装结果：核心商品词在前，修饰词在中，平台词在后
+  // 组装结果：核心商品词在前，修饰词在中，品牌词随后，平台词最后
   if (foundProduct) {
     tokens.push(foundProduct);
   }
   for (const m of foundModifiers) {
     if (m && !tokens.includes(m)) {
       tokens.push(m);
+    }
+  }
+  for (const b of foundBrandWords) {
+    if (b && !tokens.includes(b)) {
+      tokens.push(b);
     }
   }
   for (const p of foundPlatformWords) {
