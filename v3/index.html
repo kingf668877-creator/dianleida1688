@@ -126,198 +126,6 @@ function escapeHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
-// ===== 智能拆词函数（前端降级用，智能体没返回时本地计算）=====
-function smartTokenize(keyword) {
-  if (!keyword) return [];
-  const kw = keyword.trim();
-  if (kw.length <= 2) return [kw];
-  
-  // 平台/场景词（这些不是商品词，是修饰属性）
-  const platformSceneWords = [
-    '跨境电商', '外贸出口', '跨境专供', '出口外贸',
-    '跨境', '亚马逊', '外贸', '速卖通', '出口', '独立站',
-    'ebay', 'temu', 'shein', 'shopee', 'lazada', 'wish',
-    '户外', '厨房', '办公', '家用', '车载', '旅行', '运动', '健身',
-    '热销', '爆款', '新款', '新品'
-  ];
-  
-  // 品牌词（这些是品牌名，不是商品词，需要保留为独立词参与AND匹配）
-  const brandWords = [
-    // 母婴品牌
-    'babycare', '全棉时代', '好奇', '帮宝适', '花王', '大王', '尤妮佳',
-    '可心柔', '德佑', '十月结晶', '子初', '好孩子', '英氏', '巴拉巴拉',
-    '安慕斯', '洁柔', '维达', '清风', '心相印', '舒洁', '棉柔世家',
-    // 3C品牌
-    '小米', '华为', '苹果', 'apple', '三星', 'oppo', 'vivo', '荣耀',
-    '飞利浦', '公牛', '小米', '绿联', '倍思', 'anker', '品胜',
-    // 运动品牌
-    'nike', '耐克', 'adidas', '阿迪达斯', '李宁', '安踏', '特步', '361',
-    // 其他知名品牌
-    '无印良品', 'muji', '优衣库', 'uniqlo', '名创优品', 'miniso',
-    '迪士尼', 'disney', 'hellokitty', '三丽鸥',
-    '星巴克', 'starbucks',
-  ].map(w => w.toLowerCase());
-  
-  // 常见商品后缀词（核心名词）
-  const productSuffixes = [
-    // 包袋类
-    '麻将包', '帆布包', '托特包', '手提包', '单肩包', '双肩包', '斜挎包',
-    '零钱包', '手机包', '胸包', '腰包', '钱包', '卡包', '化妆包',
-    '公文包', '电脑包', '书包', '背包', '挎包', '拎包',
-    '女包', '男包', '包包', '皮包', '布包',
-    '包', '袋', '箱', '盒',
-    // 3C配件类
-    '手机壳', '手机套', '保护壳', '保护套', '手机膜', '钢化膜',
-    '充电器', '数据线', '充电线', '充电宝', '耳机', '蓝牙音箱',
-    // 服装类
-    'T恤', '衬衫', '外套', '裤子', '裙子', '连衣裙', '半身裙',
-    '卫衣', '毛衣', '羽绒服', '风衣', '大衣', '夹克',
-    '衣服', '服装', '上衣', '下装',
-    // 鞋类
-    '运动鞋', '高跟鞋', '平底鞋', '凉鞋', '拖鞋', '靴子', '帆布鞋',
-    '鞋子', '女鞋', '男鞋', '童鞋',
-    // 饰品类
-    '耳环', '项链', '手链', '戒指', '手镯', '胸针', '发夹', '发圈',
-    '饰品', '首饰',
-    // 家居日用
-    '杯子', '水杯', '保温杯', '马克杯', '玻璃杯', '塑料杯',
-    '枕头', '抱枕', '靠垫', '坐垫', '地毯', '地垫',
-    '毛巾', '浴巾', '牙刷', '牙膏', '香皂', '洗衣液',
-    // 文具办公
-    '笔记本', '本子', '文具', '钢笔', '圆珠笔', '铅笔', '橡皮',
-    '文件夹', '文件袋', '订书机', '计算器',
-    // 玩具礼品
-    '玩具', '公仔', '玩偶', '毛绒玩具', '积木', '拼图',
-    '礼品', '礼物', '纪念品',
-    // 电工电气
-    '插座', '开关', '插头', '插排', '接线板', '断路器', '漏保',
-    // 其他
-    '袜子', '帽子', '围巾', '手套', '腰带', '领带',
-    '伞', '雨伞', '太阳镜', '眼镜', '手表', '钟',
-    '厨房用品', '收纳盒', '收纳箱', '整理箱'
-  ];
-  
-  // 常见修饰词前缀
-  const modifierPrefixes = [
-    // 平台/渠道
-    '跨境', '亚马逊', '外贸', '速卖通', '出口', '独立站',
-    'ebay', 'temu', 'shein', 'shopee', 'lazada', 'wish',
-    // 属性/材质
-    '透明', '加厚', '防水', '折叠', '便携', '防摔', '耐磨',
-    '透气', '吸汗', '保暖', '清凉', '柔软', '硬壳', '软壳',
-    'PVC', '硅胶', '不锈钢', '棉麻', '真皮', '帆布', '尼龙',
-    '皮质', '布艺', '塑料', '玻璃', '陶瓷', '木质', '金属',
-    // 人群
-    '女', '男', '儿童', '宝宝', '成人', '老人', '学生', '女士', '男士',
-    '女童', '男童', '婴儿', '幼儿',
-    // 款式/风格
-    '创意', '复古', '简约', '可爱', '网红', 'ins', '时尚', '百搭',
-    '韩版', '日系', '欧美', '国风', '英伦', '法式', '休闲', '商务',
-    '运动', '户外', '家用', '办公', '车载', '旅行',
-    // 季节
-    '夏季', '冬季', '春秋', '四季', '春夏', '秋冬', '春天', '夏天', '秋天', '冬天',
-    // 功能/规格
-    '86型', '118型', '120型',
-    '大容量', '小号', '大号', '中号', '迷你', '超薄', '超大',
-    '多功能', '智能', '电动', '手动', '自动', '遥控',
-    // 颜色
-    '黑色', '白色', '红色', '蓝色', '绿色', '黄色', '粉色', '紫色',
-    '透明', '彩色', '纯色', '印花', '渐变'
-  ];
-  
-  const tokens = [];
-  let remaining = kw;
-  
-  // 第零步：先识别品牌词（品牌名要作为独立词保留，参与AND匹配）
-  const sortedBrands = [...brandWords].sort((a, b) => b.length - a.length);
-  const foundBrandWords = [];
-  for (const bw of sortedBrands) {
-    const idx = remaining.toLowerCase().indexOf(bw);
-    if (idx >= 0) {
-      foundBrandWords.push(remaining.substring(idx, idx + bw.length));
-      remaining = remaining.substring(0, idx) + remaining.substring(idx + bw.length);
-    }
-  }
-  
-  // 第一步：先去掉平台/场景词（这些是修饰，不是核心商品词）
-  const sortedPlatform = [...platformSceneWords].sort((a, b) => b.length - a.length);
-  const foundPlatformWords = [];
-  for (const pw of sortedPlatform) {
-    const idx = remaining.toLowerCase().indexOf(pw.toLowerCase());
-    if (idx >= 0) {
-      foundPlatformWords.push(remaining.substring(idx, idx + pw.length));
-      remaining = remaining.substring(0, idx) + remaining.substring(idx + pw.length);
-    }
-  }
-  
-  // 第二步：找商品后缀词（从长到短匹配）
-  const sortedSuffixes = [...productSuffixes].sort((a, b) => b.length - a.length);
-  let foundProduct = '';
-  for (const suffix of sortedSuffixes) {
-    const idx = remaining.indexOf(suffix);
-    if (idx >= 0) {
-      foundProduct = suffix;
-      // 提取前面的修饰部分
-      const before = remaining.substring(0, idx);
-      const after = remaining.substring(idx + suffix.length);
-      remaining = before + after;
-      break;
-    }
-  }
-  
-  // 第三步：从剩余部分中提取修饰词
-  const foundModifiers = [];
-  const sortedModifiers = [...modifierPrefixes].sort((a, b) => b.length - a.length);
-  for (const mod of sortedModifiers) {
-    const idx = remaining.indexOf(mod);
-    if (idx >= 0) {
-      foundModifiers.push(mod);
-      remaining = remaining.substring(0, idx) + remaining.substring(idx + mod.length);
-    }
-  }
-  
-  // 第四步：如果还有剩余且长度>=2，也作为一个词
-  if (remaining.length >= 2) {
-    foundModifiers.unshift(remaining);
-  }
-  
-  // 组装结果：核心商品词在前，修饰词在中，品牌词随后，平台词最后
-  if (foundProduct) {
-    tokens.push(foundProduct);
-  }
-  for (const m of foundModifiers) {
-    if (m && !tokens.includes(m)) {
-      tokens.push(m);
-    }
-  }
-  for (const b of foundBrandWords) {
-    if (b && !tokens.includes(b)) {
-      tokens.push(b);
-    }
-  }
-  for (const p of foundPlatformWords) {
-    if (p && !tokens.includes(p)) {
-      tokens.push(p);
-    }
-  }
-  
-  // 如果啥也没拆出来，就返回原词
-  if (tokens.length === 0) {
-    return [kw];
-  }
-  
-  return tokens;
-}
-
-// 为扩展词生成拆词组（降级用）
-function generateExpandedTokenGroups(expandedWords, originalTokens) {
-  if (!expandedWords || expandedWords.length === 0) return [];
-  return expandedWords.map(word => {
-    const tokens = smartTokenize(word);
-    return { word, tokens };
-  });
-}
 </script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1759,77 +1567,13 @@ function deriveCategoryFilterFromTree(categoryTree) {
   };
 }
 
-// ===== 拆词匹配辅助函数 =====
-// 检查一个token是否在标题中匹配，支持商品词的核心名词模糊匹配
-function tokenMatchesTitle(title, token) {
-  // 直接精确匹配
-  if (title.includes(token)) return true;
-  
-  // 商品词核心名词模糊匹配表
-  // key: 核心名词, value: 包含该核心名词的词也会匹配
-  const coreNounMap = [
-    // 包袋类
-    { core: '包', variants: ['包包', '女包', '男包', '手提包', '单肩包', '双肩包', '斜挎包', '腰包', '钱包', '零钱包', '手机包', '胸包', '卡包', '化妆包', '公文包', '电脑包', '书包', '背包', '挎包', '拎包', '皮包', '布包', '帆布包', '托特包', '麻将包'] },
-    { core: '袋', variants: ['袋子', '手提袋', '购物袋', '收纳袋', '包装袋', '塑料袋', '无纺布袋'] },
-    { core: '箱', variants: ['箱子', '行李箱', '收纳箱', '整理箱', '纸箱', '木箱'] },
-    { core: '盒', variants: ['盒子', '包装盒', '收纳盒', '礼品盒', '纸盒', '铁盒'] },
-    // 服装类
-    { core: '衣', variants: ['衣服', '服装', '上衣', '毛衣', '卫衣', '风衣', '大衣', '羽绒服', '夹克', '外套', '衬衫', 'T恤'] },
-    { core: '裤', variants: ['裤子', '长裤', '短裤', '牛仔裤', '休闲裤', '运动裤'] },
-    { core: '裙', variants: ['裙子', '连衣裙', '半身裙', '短裙', '长裙'] },
-    // 鞋类
-    { core: '鞋', variants: ['鞋子', '女鞋', '男鞋', '童鞋', '运动鞋', '高跟鞋', '平底鞋', '凉鞋', '拖鞋', '靴子', '帆布鞋'] },
-    // 3C类
-    { core: '壳', variants: ['手机壳', '保护壳', '手机套', '保护套', '硬壳', '软壳'] },
-    // 饰品类
-    { core: '饰', variants: ['饰品', '首饰', '装饰品', '配饰'] },
-    // 杯类
-    { core: '杯', variants: ['杯子', '水杯', '保温杯', '马克杯', '玻璃杯', '塑料杯'] },
-    // 其他
-    { core: '帽', variants: ['帽子', '鸭舌帽', '棒球帽', '渔夫帽', '贝雷帽'] },
-    { core: '袜', variants: ['袜子', '棉袜', '丝袜', '船袜', '长袜'] },
-  ];
-  
-  // 检查token是否是某个核心名词的变体
-  for (const item of coreNounMap) {
-    if (item.variants.includes(token)) {
-      // token是变体，检查标题是否包含核心名词（作为名词用法）
-      const core = item.core;
-      // 简单检查：标题包含核心词，且不是量词用法
-      if (title.includes(core)) {
-        // 简单排除量词用法（"一包"、"两包"等）
-        const measurePrefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '半', '数', '每'];
-        let isMeasureWord = false;
-        for (const prefix of measurePrefixes) {
-          if (title.includes(prefix + core)) {
-            // 检查是否是唯一的核心词出现
-            const idx = title.indexOf(prefix + core);
-            if (idx >= 0) {
-              // 可能是量词，但也可能标题其他地方有核心名词用法
-              // 简单起见，只要标题包含核心词就通过（类目筛选已经保证了相关性）
-              break;
-            }
-          }
-        }
-        // 只要标题包含核心名词就算通过（由类目筛选保证相关性）
-        return true;
-      }
-      break;
-    }
-  }
-  
-  return false;
-}
-
 // ===== 处理API返回的商品 =====
-function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter, andTokens) {
+function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter) {
   const result = [];
   const excluded = (excludedKeywords || []).map(k => k.toLowerCase());
   const required = (requiredKeywords || []).map(k => k.toLowerCase());
   const core = coreProduct ? coreProduct.toLowerCase() : '';
   const levelNames = categoryLevelNames || [];
-  const tokens = (andTokens || []).map(k => k.toLowerCase()).filter(t => t && t.length > 0);
-  
   // 提取核心名词（用于宽松匹配）
   let coreNoun = '';
   const nounPatterns = [
@@ -2016,42 +1760,10 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     }
     
     // 核心词匹配检查（必选词已满足时，这里进一步确认相关性）
-    // 使用拆词 AND 匹配：平台/场景词不强制要求在标题中出现（1688标题很少有跨境/亚马逊等词）
-    // 只要求商品词和属性词必须全部命中
     let hasCoreMatch = false;
     
-    // 平台/场景词白名单：这些词不强制要求在标题中出现
-    // （因为1688商品标题很少直接写"跨境""亚马逊"等词，相关性由API搜索和类目保证）
-    const platformSceneWords = [
-      '跨境', '亚马逊', '外贸', '速卖通', '出口', 'ebay', 'temu', 'shein',
-      '独立站', 'shopee', 'lazada', 'wish', '跨境电商', '外贸出口',
-      '户外', '厨房', '办公', '家用', '车载', '旅行', '运动', '健身'
-    ].map(w => w.toLowerCase());
-    
-    // 0. 拆词 AND 匹配（最高优先级：商品词/属性词必须全部命中，平台词跳过）
-    // 商品词支持核心名词模糊匹配：如"包包"→"包"、"女包"→"包"，标题有"包"也算
-    if (tokens.length > 0) {
-      let requiredTokens = tokens.filter(t => !platformSceneWords.includes(t));
-      // 如果过滤后没有必须匹配的词（所有词都是平台词），则至少要有1个词命中
-      if (requiredTokens.length === 0) {
-        requiredTokens = tokens;
-      }
-      let allRequiredMatched = true;
-      let hitCount = 0;
-      for (const token of requiredTokens) {
-        if (tokenMatchesTitle(title, token)) {
-          hitCount++;
-        } else {
-          allRequiredMatched = false;
-          break;
-        }
-      }
-      if (allRequiredMatched && hitCount > 0) {
-        hasCoreMatch = true;
-      }
-    }
     // 1. 完全匹配核心产品词
-    else if (core && title.includes(core)) {
+    if (core && title.includes(core)) {
       hasCoreMatch = true;
     }
     // 2. 匹配核心名词（如"异形包" → 匹配"包"）
@@ -2115,18 +1827,6 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     
     // 计算相关性评分（用于排序，不影响是否通过）
     let relevanceScore = 0;
-    // 拆词 AND 匹配全部命中 +12（比整词匹配更高，因为是智能拆词）
-    if (tokens.length > 0) {
-      let tokenHitCount = 0;
-      for (const token of tokens) {
-        if (title.includes(token)) tokenHitCount++;
-      }
-      if (tokenHitCount === tokens.length) {
-        relevanceScore += 12; // 全部拆词命中
-      } else if (tokenHitCount > 0) {
-        relevanceScore += tokenHitCount * 3; // 部分命中，每个3分
-      }
-    }
     // 完全匹配核心产品词 +10
     if (core && title.includes(core)) relevanceScore += 10;
     // 包含明确的"XX包"结构（前面不是量词）+5
@@ -2254,30 +1954,17 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const requiredKeywords = (aiResult && aiResult.requiredKeywords) ? aiResult.requiredKeywords : [];
   const coreProduct = (aiResult && aiResult.coreProduct) ? aiResult.coreProduct : keyword;
   
-  // 拆词数据：用于 AND 匹配（词不需要连在一起）
-  const keywordTokens = (aiResult && aiResult.keywordTokens) ? aiResult.keywordTokens : [];
-  const expandedTokenGroups = (aiResult && aiResult.expandedTokenGroups) ? aiResult.expandedTokenGroups : [];
-  
   // ====== 调试信息 ======
   console.log('[搜索调试] 搜索词:', keyword);
   console.log('[搜索调试] 核心商品词:', coreProduct);
   console.log('[搜索调试] 类目ID列表:', categoryIdList);
   console.log('[搜索调试] 类目过滤模式:', categoryTreeFilter ? 'categoryTree严格' : '宽松');
-  console.log('[搜索调试] 原词拆词:', keywordTokens);
   console.log('[搜索调试] 扩展词:', filteredExpanded);
-  console.log('[搜索调试] 扩展词拆词组:', expandedTokenGroups);
   // ======================
   
-  // 辅助函数：根据扩展词找对应的拆词组
-  function getTokensForWord(word) {
-    if (!word) return [];
-    const group = expandedTokenGroups.find(g => g.word === word);
-    return group ? group.tokens : [];
-  }
+  // ===== 搜索策略：类目过滤 + 扩展词整词搜索 =====
   
-  // ===== 搜索策略：类目过滤 + 扩展词搜索 + 拆词AND匹配 =====
-  
-  // 第一轮：类目ID + 主关键词（宽松匹配，不用原词拆词AND，避免太严）
+  // 第一轮：类目ID + 主关键词（宽松匹配）
   try {
     const params = {
       pageSize: 50,
@@ -2306,7 +1993,6 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         categoryLevelNames,
         null,
         categoryTreeFilter
-        // 主搜索不用拆词AND匹配，用核心商品词匹配即可（避免"跨境"等词过滤太严）
       );
       console.log('[搜索调试] 第一轮主搜索: API返回', apiCount, '条 → 过滤后', products.length, '条');
       for (const p of products) {
@@ -2338,7 +2024,6 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           categoryLevelNames,
           null,
           looseCategoryFilter
-          // 重试也不用拆词AND匹配
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -2352,14 +2037,14 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     console.warn('第一轮搜索失败:', e.message);
   }
   
-  // 第二轮：类目范围内，用扩展词搜索 + 扩展词拆词AND匹配（核心搜索方式）
+  // 第二轮：类目范围内，用扩展词搜索（核心搜索方式）
   // 注意：API搜索词去掉平台词（跨境/亚马逊/外贸等），因为1688标题很少有这些词
-  // 相关性由类目筛选 + 商品词AND匹配保证，平台词仅用于排序加分
+  // 相关性由类目筛选 + 核心商品词匹配保证，平台词仅用于排序加分
   if (filteredExpanded.length > 0) {
     // 平台词列表（搜索时去掉这些词）
     const platformWords = ['跨境', '亚马逊', '外贸', '速卖通', '出口', '独立站', 'ebay', 'temu', 'shein', 'shopee', 'lazada', 'wish', '跨境电商', '外贸出口'];
     
-    // 用前4个扩展词，每个单独搜（带类目过滤 + 拆词AND匹配）
+    // 用前4个扩展词，每个单独搜（带类目过滤 + 核心词匹配）
     const expandWords = filteredExpanded.slice(0, 4);
     for (const expWord of expandWords) {
       if (allProducts.length >= 60) break;
@@ -2390,7 +2075,6 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         
         const result = await callDianLeiDaAPI('search', params);
         if (result.code === 200 && result.result && result.result.list) {
-          const expTokens = getTokensForWord(expWord);
           const apiCount = result.result.list.length;
           const products = processAPIProducts(
             result.result.list,
@@ -2399,10 +2083,9 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            categoryTreeFilter,
-            expTokens  // 每个扩展词用自己的拆词做AND匹配（平台词自动跳过）
+            categoryTreeFilter
           );
-          console.log('[搜索调试] 扩展词搜索["' + expWord + '"] → API搜"' + apiSearchWord + '": 返回' + apiCount + '条 → 过滤后' + products.length + '条 (拆词:' + JSON.stringify(expTokens) + ')');
+          console.log('[搜索调试] 扩展词搜索["' + expWord + '"] → API搜"' + apiSearchWord + '": 返回' + apiCount + '条 → 过滤后' + products.length + '条');
           for (const p of products) {
             if (!seenIds.has(p.id)) {
               seenIds.add(p.id);
@@ -2457,7 +2140,6 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             categoryLevelNames,
             null,
             looseCategoryFilter
-            // 兜底搜索不用拆词AND匹配，最宽松模式
           );
           console.log('[搜索调试] 第一次兜底["' + combinedFallback + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
           for (const p of products) {
@@ -2496,7 +2178,6 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           categoryLevelNames,
           null,
           looseCategoryFilter
-          // 二次兜底也不用拆词AND匹配
         );
         console.log('[搜索调试] 二次兜底["' + keyword + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
         for (const p of products) {
@@ -2811,92 +2492,6 @@ async function doSearch() {
       if (contentEl) contentEl.appendChild(excludedEl);
     }
   }
-
-  // ===== Step 2.5: 关键词扩展拆词 =====
-  let keywordTokens = aiResult.keywordTokens || [];
-  let expandedTokenGroups = aiResult.expandedTokenGroups || [];
-  
-  // 降级：如果智能体没返回拆词数据，用前端本地拆词
-  const isLocalTokenize = keywordTokens.length === 0 && expandedTokenGroups.length === 0;
-  if (isLocalTokenize) {
-    keywordTokens = smartTokenize(query);
-    expandedTokenGroups = generateExpandedTokenGroups(expanded);
-  }
-  
-  // 始终展示拆词步骤（只要有搜索词就展示）
-  if (keywordTokens.length > 0 || expandedTokenGroups.length > 0) {
-    await new Promise(r => setTimeout(r, 200));
-    
-    let tokenDetail = '';
-    
-    if (keywordTokens.length > 0) {
-      tokenDetail += '原词拆为 ' + keywordTokens.length + ' 个单元词 · ';
-    }
-    if (expandedTokenGroups.length > 0) {
-      tokenDetail += expandedTokenGroups.length + ' 个扩展词均已拆词';
-    }
-    tokenDetail += ' · 采用 AND 匹配（词无需连在一起）';
-    if (isLocalTokenize) {
-      tokenDetail += ' · 本地智能拆词';
-    }
-    
-    addStep('🧩', 'Step 2.5: 关键词扩展拆词', tokenDetail, []);
-    
-    // 添加详细拆词展示到步骤里
-    const lastStep = document.getElementById('ai-steps').lastElementChild;
-    if (lastStep) {
-      const contentEl = lastStep.querySelector('.ai-step-content');
-      if (contentEl) {
-        const tokenDetailEl = document.createElement('div');
-        tokenDetailEl.style.cssText = 'margin-top:12px;';
-        
-        // 原词拆词
-        if (keywordTokens.length > 0) {
-          tokenDetailEl.innerHTML += '<div style="margin-bottom:10px;">' +
-            '<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">📝 搜索词拆词（AND匹配：标题需同时包含所有词）' + (isLocalTokenize ? ' <span style="color:#9CA3AF;">(本地拆词)</span>' : '') + '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' +
-            keywordTokens.map(t => '<span style="display:inline-block;padding:4px 10px;background:#DBEAFE;color:#1D4ED8;border-radius:6px;font-size:13px;font-weight:500;">' + escapeHtml(t) + '</span>').join('') +
-            '<span style="font-size:11px;color:#9CA3AF;margin-left:4px;">(' + keywordTokens.length + ' 个词，全部命中才通过)</span>' +
-            '</div></div>';
-        }
-        
-        // 扩展词拆词
-        if (expandedTokenGroups.length > 0) {
-          tokenDetailEl.innerHTML += '<div>' +
-            '<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">🔍 扩展词拆词（每个扩展词独立 AND 匹配，扩大召回）</div>' +
-            '<div style="display:flex;flex-direction:column;gap:6px;">';
-          
-          expandedTokenGroups.slice(0, 6).forEach((group, idx) => {
-            const isPrecise = idx < 2;
-            const layerLabel = isPrecise ? '<span style="font-size:10px;padding:1px 5px;background:#FEF3C7;color:#D97706;border-radius:3px;margin-right:6px;">精准层</span>' : '<span style="font-size:10px;padding:1px 5px;background:#E0E7FF;color:#4F46E5;border-radius:3px;margin-right:6px;">宽泛层</span>';
-            tokenDetailEl.innerHTML += '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">' +
-              layerLabel +
-              '<span style="font-size:12px;color:#4B5563;font-weight:500;min-width:100px;">' + escapeHtml(group.word) + '</span>' +
-              '<span style="font-size:11px;color:#D1D5DB;">→</span>' +
-              group.tokens.map(t => '<span style="display:inline-block;padding:2px 8px;background:#F3F4F6;color:#4B5563;border-radius:4px;font-size:12px;">' + escapeHtml(t) + '</span>').join('') +
-              '</div>';
-          });
-          
-          if (expandedTokenGroups.length > 6) {
-            tokenDetailEl.innerHTML += '<div style="font-size:11px;color:#9CA3AF;">(共 ' + expandedTokenGroups.length + ' 个扩展词，已展示前 6 个)</div>';
-          }
-          tokenDetailEl.innerHTML += '</div></div>';
-        }
-        
-        // 匹配规则说明
-        tokenDetailEl.innerHTML += '<div style="margin-top:10px;padding:8px 10px;background:#F0FDF4;border-radius:6px;border:1px solid #BBF7D0;">' +
-          '<div style="font-size:11px;color:#15803D;font-weight:500;">💡 匹配规则</div>' +
-          '<div style="font-size:11px;color:#166534;margin-top:2px;">拆词后采用 AND 匹配：标题中同时包含所有拆词单元即算匹配，词不需要连在一起。配合类目筛选，既能保证相关性又能扩大召回范围。</div>' +
-          '</div>';
-        
-        contentEl.appendChild(tokenDetailEl);
-      }
-    }
-  }
-  
-  // 把拆词数据写回 aiResult，供后续搜索使用
-  aiResult.keywordTokens = keywordTokens;
-  aiResult.expandedTokenGroups = expandedTokenGroups;
 
   // ===== Step 3: 类目获取（getCategory插件返回） =====
   await new Promise(r => setTimeout(r, 250));
