@@ -707,7 +707,7 @@ body {
       <textarea 
         class="search-input" 
         id="search-input" 
-        placeholder="想找什么类目商品？输入关键词，AI帮你智能分析选品，比如：麻将包、异形包、苹果手机壳..."
+        placeholder="输入任意商品词，自动匹配1688类目 + AI扩展搜索词，比如：麻将包、异形包、苹果手机壳..."
         rows="2"
       ></textarea>
       <div class="search-box-footer">
@@ -718,7 +718,7 @@ body {
         <div class="search-box-right">
           <span class="mode-toggle">专业模式 ⇧</span>
           <button class="search-btn" id="search-btn" onclick="doSearch()">
-            <span>🔍</span> 智能选品
+            <span>🔍</span> 智能匹配类目
           </button>
         </div>
       </div>
@@ -1568,12 +1568,13 @@ function deriveCategoryFilterFromTree(categoryTree) {
 }
 
 // ===== 处理API返回的商品 =====
-function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter) {
+function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter, andTokens) {
   const result = [];
   const excluded = (excludedKeywords || []).map(k => k.toLowerCase());
   const required = (requiredKeywords || []).map(k => k.toLowerCase());
   const core = coreProduct ? coreProduct.toLowerCase() : '';
   const levelNames = categoryLevelNames || [];
+  const tokens = (andTokens || []).map(k => k.toLowerCase()).filter(t => t && t.length > 0);
   
   // 提取核心名词（用于宽松匹配）
   let coreNoun = '';
@@ -1752,10 +1753,24 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     }
     
     // 核心词匹配检查（必选词已满足时，这里进一步确认相关性）
+    // 优先使用拆词 AND 匹配（所有拆词单元都要在标题中出现，不需要连在一起）
     let hasCoreMatch = false;
     
+    // 0. 拆词 AND 匹配（最高优先级：如果有 andTokens，所有词都要命中）
+    if (tokens.length > 0) {
+      let allTokensMatched = true;
+      for (const token of tokens) {
+        if (!title.includes(token)) {
+          allTokensMatched = false;
+          break;
+        }
+      }
+      if (allTokensMatched) {
+        hasCoreMatch = true;
+      }
+    }
     // 1. 完全匹配核心产品词
-    if (core && title.includes(core)) {
+    else if (core && title.includes(core)) {
       hasCoreMatch = true;
     }
     // 2. 匹配核心名词（如"异形包" → 匹配"包"）
@@ -1819,6 +1834,18 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     
     // 计算相关性评分（用于排序，不影响是否通过）
     let relevanceScore = 0;
+    // 拆词 AND 匹配全部命中 +12（比整词匹配更高，因为是智能拆词）
+    if (tokens.length > 0) {
+      let tokenHitCount = 0;
+      for (const token of tokens) {
+        if (title.includes(token)) tokenHitCount++;
+      }
+      if (tokenHitCount === tokens.length) {
+        relevanceScore += 12; // 全部拆词命中
+      } else if (tokenHitCount > 0) {
+        relevanceScore += tokenHitCount * 3; // 部分命中，每个3分
+      }
+    }
     // 完全匹配核心产品词 +10
     if (core && title.includes(core)) relevanceScore += 10;
     // 包含明确的"XX包"结构（前面不是量词）+5
@@ -1946,6 +1973,17 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const requiredKeywords = (aiResult && aiResult.requiredKeywords) ? aiResult.requiredKeywords : [];
   const coreProduct = (aiResult && aiResult.coreProduct) ? aiResult.coreProduct : keyword;
   
+  // 拆词数据：用于 AND 匹配（词不需要连在一起）
+  const keywordTokens = (aiResult && aiResult.keywordTokens) ? aiResult.keywordTokens : [];
+  const expandedTokenGroups = (aiResult && aiResult.expandedTokenGroups) ? aiResult.expandedTokenGroups : [];
+  
+  // 辅助函数：根据扩展词找对应的拆词组
+  function getTokensForWord(word) {
+    if (!word) return [];
+    const group = expandedTokenGroups.find(g => g.word === word);
+    return group ? group.tokens : [];
+  }
+  
   // ===== 搜索策略：先类目过滤 → 再关键词扩展搜索 → 最后排除词过滤 =====
   
   // 第一轮：类目ID + 主关键词（最精准）
@@ -1975,7 +2013,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         coreProduct,
         categoryLevelNames,
         null,
-        categoryTreeFilter
+        categoryTreeFilter,
+        keywordTokens  // 原词拆词 AND 匹配
       );
       for (const p of products) {
         if (!seenIds.has(p.id)) {
@@ -2005,7 +2044,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter
+          looseCategoryFilter,
+          keywordTokens  // 原词拆词 AND 匹配
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -2042,6 +2082,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         
         const result = await callDianLeiDaAPI('search', params);
         if (result.code === 200 && result.result && result.result.list) {
+          const expTokens = getTokensForWord(expWord);
           const products = processAPIProducts(
             result.result.list,
             excludedKeywords,
@@ -2049,7 +2090,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            categoryTreeFilter
+            categoryTreeFilter,
+            expTokens.length > 0 ? expTokens : keywordTokens  // 用扩展词的拆词，兜底用原词拆词
           );
           for (const p of products) {
             if (!seenIds.has(p.id)) {
@@ -2445,6 +2487,78 @@ async function doSearch() {
     if (lastStep) {
       const contentEl = lastStep.querySelector('.ai-step-content');
       if (contentEl) contentEl.appendChild(excludedEl);
+    }
+  }
+
+  // ===== Step 2.5: 关键词扩展拆词 =====
+  const keywordTokens = aiResult.keywordTokens || [];
+  const expandedTokenGroups = aiResult.expandedTokenGroups || [];
+  
+  if (keywordTokens.length > 0 || expandedTokenGroups.length > 0) {
+    await new Promise(r => setTimeout(r, 200));
+    
+    let tokenDetail = '';
+    const totalTokenGroups = keywordTokens.length > 0 ? 1 + expandedTokenGroups.length : expandedTokenGroups.length;
+    
+    if (keywordTokens.length > 0) {
+      tokenDetail += '原词拆为 ' + keywordTokens.length + ' 个单元词 · ';
+    }
+    if (expandedTokenGroups.length > 0) {
+      tokenDetail += expandedTokenGroups.length + ' 个扩展词均已拆词';
+    }
+    tokenDetail += ' · 采用 AND 匹配（词无需连在一起）';
+    
+    addStep('🧩', 'Step 2.5: 关键词扩展拆词', tokenDetail, []);
+    
+    // 添加详细拆词展示到步骤里
+    const lastStep = document.getElementById('ai-steps').lastElementChild;
+    if (lastStep) {
+      const contentEl = lastStep.querySelector('.ai-step-content');
+      if (contentEl) {
+        const tokenDetailEl = document.createElement('div');
+        tokenDetailEl.style.cssText = 'margin-top:12px;';
+        
+        // 原词拆词
+        if (keywordTokens.length > 0) {
+          tokenDetailEl.innerHTML += '<div style="margin-bottom:10px;">' +
+            '<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">📝 搜索词拆词（AND匹配：标题需同时包含所有词）</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' +
+            keywordTokens.map(t => '<span style="display:inline-block;padding:4px 10px;background:#DBEAFE;color:#1D4ED8;border-radius:6px;font-size:13px;font-weight:500;">' + escapeHtml(t) + '</span>').join('') +
+            '<span style="font-size:11px;color:#9CA3AF;margin-left:4px;">(' + keywordTokens.length + ' 个词，全部命中才通过)</span>' +
+            '</div></div>';
+        }
+        
+        // 扩展词拆词
+        if (expandedTokenGroups.length > 0) {
+          tokenDetailEl.innerHTML += '<div>' +
+            '<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">🔍 扩展词拆词（每个扩展词独立 AND 匹配，扩大召回）</div>' +
+            '<div style="display:flex;flex-direction:column;gap:6px;">';
+          
+          expandedTokenGroups.slice(0, 6).forEach((group, idx) => {
+            const isPrecise = idx < 2;
+            const layerLabel = isPrecise ? '<span style="font-size:10px;padding:1px 5px;background:#FEF3C7;color:#D97706;border-radius:3px;margin-right:6px;">精准层</span>' : '<span style="font-size:10px;padding:1px 5px;background:#E0E7FF;color:#4F46E5;border-radius:3px;margin-right:6px;">宽泛层</span>';
+            tokenDetailEl.innerHTML += '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">' +
+              layerLabel +
+              '<span style="font-size:12px;color:#4B5563;font-weight:500;min-width:100px;">' + escapeHtml(group.word) + '</span>' +
+              '<span style="font-size:11px;color:#D1D5DB;">→</span>' +
+              group.tokens.map(t => '<span style="display:inline-block;padding:2px 8px;background:#F3F4F6;color:#4B5563;border-radius:4px;font-size:12px;">' + escapeHtml(t) + '</span>').join('') +
+              '</div>';
+          });
+          
+          if (expandedTokenGroups.length > 6) {
+            tokenDetailEl.innerHTML += '<div style="font-size:11px;color:#9CA3AF;">(共 ' + expandedTokenGroups.length + ' 个扩展词，已展示前 6 个)</div>';
+          }
+          tokenDetailEl.innerHTML += '</div></div>';
+        }
+        
+        // 匹配规则说明
+        tokenDetailEl.innerHTML += '<div style="margin-top:10px;padding:8px 10px;background:#F0FDF4;border-radius:6px;border:1px solid #BBF7D0;">' +
+          '<div style="font-size:11px;color:#15803D;font-weight:500;">💡 匹配规则</div>' +
+          '<div style="font-size:11px;color:#166534;margin-top:2px;">拆词后采用 AND 匹配：标题中同时包含所有拆词单元即算匹配，词不需要连在一起。配合类目筛选，既能保证相关性又能扩大召回范围。</div>' +
+          '</div>';
+        
+        contentEl.appendChild(tokenDetailEl);
+      }
     }
   }
 
