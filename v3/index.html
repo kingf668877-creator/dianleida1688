@@ -1818,6 +1818,7 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     /零食|饼干|糖果|巧克力|坚果|干货|调料|饮料|牛奶/,
     /轴承|齿轮|螺丝|螺母|螺栓|弹簧|密封|阀门|管件|焊条|润滑脂|润滑油|机油|柴油|汽油|燃料|白油/,
     /打包袋|包装袋|包装盒|纸箱|泡沫|气泡膜|材料包|工具包|配件包/,
+    /包带|肩带|背带|提手|把手|包配件|箱包配件|五金配件|辅料配件/,
   ];
   
   for (const item of items) {
@@ -1837,6 +1838,14 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       if (pattern.test(title)) { inBlacklist = true; break; }
     }
     if (inBlacklist) continue;
+    
+    // 配件类目强制排除（不管什么模式，只要末级类目是配件/附件类就排除）
+    if (levelName) {
+      const levelParts = levelName.split('>').map(s => s.trim()).filter(s => s);
+      const lastLevel = levelParts[levelParts.length - 1] || '';
+      const isAccessoryCategory = /配件|附件|零件|工具|材料|辅料|包装|维修|修理|修补|修复|安装|五金|辅料|配件包|配件袋|配件盒/.test(lastLevel);
+      if (isAccessoryCategory) continue;
+    }
     
     // 类目路径匹配（使用getCategory插件返回的三级类目ID对应名称进行过滤）
     // 店雷达API不支持categoryId参数，商品也不含categoryId字段
