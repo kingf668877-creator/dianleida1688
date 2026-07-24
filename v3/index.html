@@ -2228,6 +2228,10 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           cycle: 30,
           pageIndex: 1
         };
+        // 如果有类目ID，带上类目过滤
+        if (categoryIdList.length > 0) {
+          params.categoryIdList = categoryIdList.join(',');
+        }
         const result = await callDianLeiDaAPI('search', params);
         if (result.code === 200 && result.result && result.result.list) {
           const products = processAPIProducts(
@@ -2237,7 +2241,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            looseCategoryFilter
+            looseCategoryFilter,
+            keywordTokens  // 兜底也用拆词 AND 匹配
           );
           for (const p of products) {
             if (!seenIds.has(p.id)) {
@@ -2273,7 +2278,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter
+          looseCategoryFilter,
+          keywordTokens  // 二次兜底也用拆词 AND 匹配
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
