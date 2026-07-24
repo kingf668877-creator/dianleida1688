@@ -2080,9 +2080,9 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     return group ? group.tokens : [];
   }
   
-  // ===== 搜索策略：先类目过滤 → 再关键词扩展搜索 → 最后排除词过滤 =====
+  // ===== 搜索策略：类目过滤 + 扩展词搜索 + 拆词AND匹配 =====
   
-  // 第一轮：类目ID + 主关键词（最精准）
+  // 第一轮：类目ID + 主关键词（宽松匹配，不用原词拆词AND，避免太严）
   try {
     const params = {
       pageSize: 50,
@@ -2109,8 +2109,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         coreProduct,
         categoryLevelNames,
         null,
-        categoryTreeFilter,
-        keywordTokens  // 原词拆词 AND 匹配
+        categoryTreeFilter
+        // 主搜索不用拆词AND匹配，用核心商品词匹配即可（避免"跨境"等词过滤太严）
       );
       for (const p of products) {
         if (!seenIds.has(p.id)) {
@@ -2140,8 +2140,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter,
-          keywordTokens  // 原词拆词 AND 匹配
+          looseCategoryFilter
+          // 重试也不用拆词AND匹配
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -2155,12 +2155,12 @@ async function fetchProductsFromAPI(keyword, aiResult) {
     console.warn('第一轮搜索失败:', e.message);
   }
   
-  // 第二轮：类目范围内，用扩展词补充搜索（词组搜索）
+  // 第二轮：类目范围内，用扩展词搜索 + 扩展词拆词AND匹配（核心搜索方式）
   if (filteredExpanded.length > 0) {
-    // 用前2个扩展词，每个单独搜（带类目过滤）
-    const expandWords = filteredExpanded.slice(0, 2);
+    // 用前4个扩展词，每个单独搜（带类目过滤 + 拆词AND匹配）
+    const expandWords = filteredExpanded.slice(0, 4);
     for (const expWord of expandWords) {
-      if (allProducts.length >= 50) break;
+      if (allProducts.length >= 60) break;
       try {
         const params = {
           pageSize: 30,
@@ -2187,7 +2187,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             categoryLevelNames,
             null,
             categoryTreeFilter,
-            expTokens.length > 0 ? expTokens : keywordTokens  // 用扩展词的拆词，兜底用原词拆词
+            expTokens  // 每个扩展词用自己的拆词做AND匹配
           );
           for (const p of products) {
             if (!seenIds.has(p.id)) {
@@ -2241,8 +2241,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            looseCategoryFilter,
-            keywordTokens  // 兜底也用拆词 AND 匹配
+            looseCategoryFilter
+            // 兜底搜索不用拆词AND匹配，最宽松模式
           );
           for (const p of products) {
             if (!seenIds.has(p.id)) {
@@ -2278,8 +2278,8 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter,
-          keywordTokens  // 二次兜底也用拆词 AND 匹配
+          looseCategoryFilter
+          // 二次兜底也不用拆词AND匹配
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
