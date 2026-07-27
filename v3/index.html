@@ -1668,32 +1668,34 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
         }
         
         // 匹配策略：
-        // 1. 具体类目匹配末级（最精确）
-        // 2. 宽泛类目匹配倒数第二级（二级类目）
-        // 注意：有 categoryTree 时不使用一级前缀兜底，避免太宽泛
+        // 1. 具体类目匹配末级（最精确）→ 'exact'
+        // 2. 宽泛类目匹配倒数第二级（二级类目）→ 'broad'
+        // 3. 不匹配 → false（但不排除，只降权）
         categoryMatch = false;
         const lastLevel = levelParts[levelParts.length - 1] || '';
         const secondLastLevel = levelParts[levelParts.length - 2] || '';
         
         // 第1轮：具体类目匹配末级
         if (lastLevel && specificCatNames.length > 0) {
-          categoryMatch = specificCatNames.some(catName => matchExact(catName, lastLevel));
+          if (specificCatNames.some(catName => matchExact(catName, lastLevel))) {
+            categoryMatch = 'exact';
+          }
         }
         
         // 第2轮：宽泛类目匹配倒数第二级
         if (!categoryMatch && secondLastLevel && broadCatNames.length > 0) {
           // 额外校验：末级类目如果是"配件/附件/工具/材料/包装/维修/安装/盒/罩/盖/框"等非主产品类目，即使二级匹配也排除
           const isAccessoryLevel = /配件|附件|零件|工具|材料|辅料|包装|维修|修理|修补|修复|安装|防水盒|防溅盒|保护盖|保护罩|底盒|接线盒|明盒|暗盒|线盒/.test(lastLevel);
-          if (!isAccessoryLevel) {
-            categoryMatch = broadCatNames.some(catName => matchExact(catName, secondLastLevel));
+          if (!isAccessoryLevel && broadCatNames.some(catName => matchExact(catName, secondLastLevel))) {
+            categoryMatch = 'broad';
           }
         }
         
-        // 有categoryTree时，严格排除不在目标类目中的商品
-        if (!categoryMatch) continue;
+        // 有categoryTree时，类目不匹配也不排除（只降权），避免漏掉相关商品
+        // 注意：配件类目的严格排除已在上方 isAccessoryLevel 中处理
       } else if (levelNames.length > 0) {
         // 回退到本地CATEGORY_MAP（宽松匹配，不排除）
-        categoryMatch = levelNames.some(ln => levelName.startsWith(ln));
+        categoryMatch = levelNames.some(ln => levelName.startsWith(ln)) ? 'loose' : false;
       }
     }
     
@@ -1766,25 +1768,42 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     if (core && title.includes(core)) {
       hasCoreMatch = true;
     }
-    // 2. 匹配核心名词（如"异形包" → 匹配"包"）
-    else if (coreNoun && coreNoun.length > 1 && title.includes(coreNoun)) {
+    // 2. 匹配核心名词的基础词（如"包包"→匹配"包"，"女包"→匹配"包"，"手机壳"→匹配"壳/套"）
+    // 用更基础的词做宽松匹配，避免"包包"不匹配"女包"的问题
+    else if (coreNoun && title.includes(coreNoun)) {
       hasCoreMatch = true;
     }
-    // 3. 必选词已经全部满足，也算通过（兜底）
-    else if (required.length > 0) {
+    // 3. 匹配最基础的品类词（兜底：如所有带"包"的都算包包类）
+    else {
+      const baseNounMap = [
+        { pattern: /包|袋|箱|盒/, base: '包' },
+        { pattern: /鞋|靴/, base: '鞋' },
+        { pattern: /服|衣|裤|裙|衫|袄|外套|T恤|t恤/, base: '衣' },
+        { pattern: /壳|套|膜/, base: '壳' },
+        { pattern: /饰品|首饰|耳环|项链|手链|戒指|手镯|手环/, base: '饰' },
+      ];
+      for (const item of baseNounMap) {
+        if (item.pattern.test(core) && item.pattern.test(title)) {
+          hasCoreMatch = true;
+          break;
+        }
+      }
+    }
+    // 4. 必选词已经全部满足，也算通过（兜底）
+    if (!hasCoreMatch && required.length > 0) {
       hasCoreMatch = true;
     }
     
-    // categoryTree过滤已在上方处理（严格排除不在目标类目中的商品）
+    // categoryTree过滤已在上方处理（类目不匹配仅降权，不排除）
     // 无categoryTree时，类目不匹配仅降低相关性评分（宽松模式）
     
     if (!hasCoreMatch) continue;
     
-    // 容器类名词检查：如果核心产品是"XX包/袋/箱/盒"，商品标题必须包含容器类名词
-    // 且不能是量词用法（一包、两包等）
+    // 容器类名词检查：如果核心产品是单字容器词（如"包""袋""箱"），商品标题必须包含容器类名词且不是量词用法
+    // 多字词（如"包包""女包""手提包"）直接通过，因为核心词本身就明确是商品
     const containerWords = ['包', '袋', '箱', '盒', '套', '组'];
-    const isContainerProduct = containerWords.some(cw => core.includes(cw));
-    if (isContainerProduct) {
+    const isContainerProduct = containerWords.some(cw => core === cw);
+    if (isContainerProduct && core.length <= 1) {
       // 检查标题里有没有容器类名词（不是量词用法）
       const measurePrefixes = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '半', '数'];
       const nonNounSuffixes = ['邮', '头', '边', '角', '胶', '浆', '裹', '装'];
@@ -1842,8 +1861,14 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     } else if (coreNoun && coreNoun.length > 1 && title.includes(coreNoun)) {
       relevanceScore += 5;
     }
-    // 类目匹配 +3
-    if (categoryMatch) relevanceScore += 3;
+    // 类目匹配加分（精确匹配+8，宽泛匹配+5，宽松匹配+3，不匹配0分但不排除）
+    if (categoryMatch === 'exact') {
+      relevanceScore += 8;
+    } else if (categoryMatch === 'broad') {
+      relevanceScore += 5;
+    } else if (categoryMatch === 'loose' || categoryMatch === true) {
+      relevanceScore += 3;
+    }
     // 属性标签匹配：智能体返回的属性值在标题中命中则加分（每个+2，最高+6）
     if (productAttrs && productAttrs.tags && Array.isArray(productAttrs.tags)) {
       let attrHitCount = 0;
