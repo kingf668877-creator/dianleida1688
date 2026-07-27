@@ -1675,10 +1675,12 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
         // 匹配策略：
         // 1. 具体类目匹配末级（最精确）→ 'exact'
         // 2. 宽泛类目匹配倒数第二级（二级类目）→ 'broad'
-        // 3. 不匹配 → false（但不排除，只降权）
+        // 3. 一级类目匹配（兜底，确保大类对）→ 'loose'
+        // 4. 完全不匹配 → false（排除，避免毛绒玩具等完全不相关的）
         categoryMatch = false;
         const lastLevel = levelParts[levelParts.length - 1] || '';
         const secondLastLevel = levelParts[levelParts.length - 2] || '';
+        const firstLevel = levelParts[0] || '';
         
         // 第1轮：具体类目匹配末级
         if (lastLevel && specificCatNames.length > 0) {
@@ -1696,8 +1698,36 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
           }
         }
         
-        // 有categoryTree时，类目不匹配也不排除（只降权），避免漏掉相关商品
-        // 注意：配件类目的严格排除已在上方 isAccessoryLevel 中处理
+        // 第3轮：一级类目匹配（宽松兜底，确保大类对）
+        // 比如搜索"包包"，一级类目是"箱包皮具"，只要商品一级类目也是"箱包皮具"就算通过
+        // 这样不同类型的包（手提包、双肩包、钱包、化妆包）都能进来
+        if (!categoryMatch && firstLevel && validCatNames.length > 0) {
+          // 找第一个类目名的第一个字所在的一级类目（粗略判断大类）
+          // 更准确的方式：判断 levelParts[0] 是否和 categoryTree 的一级类目属于同一大类
+          const firstLevelCat = categoryTreeFilter.categoryTree && categoryTreeFilter.categoryTree[0] 
+            ? (categoryTreeFilter.categoryTree[0].category_name || '') 
+            : '';
+          if (firstLevelCat && firstLevel === firstLevelCat) {
+            categoryMatch = 'loose';
+          }
+          // 如果没有categoryTree，就用validCatNames里最宽泛的词去匹配一级类目
+          else if (broadCatNames.length > 0) {
+            // 检查一级类目是否包含宽泛类目名（粗略判断大类）
+            const firstLevelLower = firstLevel.toLowerCase();
+            const isSameBigCategory = broadCatNames.some(bc => {
+              // 取宽泛类目的核心字，判断一级类目是否相关
+              // 比如"女包" → 找"包"字，一级类目"箱包皮具"包含"包"相关
+              const coreChars = ['包', '箱', '袋', '皮具'];
+              return coreChars.some(c => firstLevelLower.includes(c) && bc.includes(c));
+            });
+            if (isSameBigCategory) {
+              categoryMatch = 'loose';
+            }
+          }
+        }
+        
+        // 有categoryTree时，类目完全不匹配的要排除（避免毛绒玩具等完全不相关品类）
+        if (!categoryMatch) continue;
       } else if (levelNames.length > 0) {
         // 回退到本地CATEGORY_MAP（宽松匹配，不排除）
         categoryMatch = levelNames.some(ln => levelName.startsWith(ln)) ? 'loose' : false;
