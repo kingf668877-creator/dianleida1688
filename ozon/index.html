@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>店雷达 OZON 选品助手</title>
+<script>
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ===== 俄语编码修复：latin-1 字节 -> UTF-8 字符串
+function fixRussianEncoding(str) {
+  if (!str) return str;
+  if (typeof str !== 'string') return str;
+  try {
+    if (/[\u0400-\u04FF]/.test(str)) return str;
+    const bytes = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+      bytes[i] = str.charCodeAt(i) & 0xFF;
+    }
+    const decoder = new TextDecoder('utf-8');
+    return decoder.decode(bytes);
+  } catch(e) {
+    return str;
+  }
+}
+</script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #fff;
+  color: #333;
+  min-height: 100vh;
+}
+
+/* ===== Hero Section ===== */
+.hero-section {
+  text-align: center;
+  padding: 80px 20px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle, #f0f0f0 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hero-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+  position: relative;
+}
+.hero-subtitle {
+  font-size: 18px;
+  color: #888;
+  margin-bottom: 48px;
+  position: relative;
+}
+
+/* ===== Search Box ===== */
+.search-box-container {
+  max-width: 880px;
+  margin: 0 auto;
+  position: relative;
+}
+.search-box {
+  background: #fff;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+.search-box:focus-within {
+  border-color: #6366F1;
+  box-shadow: 0 4px 32px rgba(99, 102, 241, 0.15);
+}
+.search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #333;
+  background: transparent;
+  resize: none;
+  min-height: 60px;
+  line-height: 1.6;
+  font-family: inherit;
+}
+.search-input::placeholder { color: #bbb; }
+.search-box-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.search-box-left { display: flex; gap: 8px; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+.icon-btn:hover { background: #f5f5f5; border-color: #ddd; }
+.search-box-right { display: flex; align-items: center; gap: 12px; }
+.mode-toggle {
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.search-btn {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.search-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+.search-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ===== Tip Banner ===== */
+.tip-banner {
+  max-width: 880px;
+  margin: 16px auto 0;
+  background: linear-gradient(90deg, #D1FAE5 0%, #ECFDF5 50%, #F0FDF4 100%);
+  border-radius: 12px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #065F46;
+}
+.tip-banner-left { display: flex; align-items: center; gap: 6px; }
+.tip-banner-right { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; }
+
+/* 历史搜索词 */
+.search-history {
+  max-width: 880px;
+  margin: 12px auto 0;
+  padding: 12px 16px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+}
+.search-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.search-history-title {
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+}
+.search-history-clear {
+  font-size: 12px;
+  color: #9CA3AF;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.search-history-clear:hover {
+  color: #EF4444;
+  background: #FEE2E2;
+}
+.search-history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.history-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.history-tag:hover {
+  background: #6366F1;
+  border-color: #6366F1;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+/* ===== Quick Tools ===== */
+.quick-tools {
+  max-width: 880px;
+  margin: 48px auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative;
+}
+.tool-item:hover { transform: translateY(-4px); }
+.tool-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.tool-name { font-size: 13px; color: #555; }
+.tool-badge {
+  position: absolute;
+  top: -4px; right: -8px;
+  background: linear-gradient(135deg, #FF6B6B, #FF4757);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* ===== Results Section ===== */
+.results-section {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: none;
+}
+.results-section.active { display: block; }
+
+/* Analysis Card - 新版样式 */
+.analysis-card {
+  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+}
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.analysis-header-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.analysis-header-text { flex: 1; min-width: 0; }
+.analysis-header-title { font-size: 18px; font-weight: 600; color: #4C1D95; }
+.analysis-header-sub { font-size: 13px; color: #7C3AED; margin-top: 2px; }
+.analysis-timing {
+  margin-top: 10px;
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: #6D28D9;
+}
+.analysis-timing.show { display: flex; }
+.timing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(124,58,237,0.14);
+}
+.timing-chip strong { font-weight: 700; color: #4C1D95; }
+
+/* Step 2 渐变分析过程展示 */
+.step-analysis-box {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(245,243,255,0.9) 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(124, 58, 237, 0.12);
+}
+.step-analysis-row {
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #6D28D9;
+  opacity: 0;
+  transform: translateX(-6px);
+  animation: fadeSlideIn 0.4s ease forwards;
+}
+.step-analysis-row:last-child {
+  margin-bottom: 0;
+}
+.step-analysis-row .label {
+  font-weight: 600;
+  color: #4C1D95;
+  margin-right: 6px;
+}
+.step-analysis-row .keywords {
+  color: #7C3AED;
+  word-break: break-all;
+}
+@keyframes fadeSlideIn {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Steps */
+.ai-steps { display: flex; flex-direction: column; gap: 10px; }
+.ai-step {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+.ai-step.show { opacity: 1; transform: translateY(0); }
+.ai-step.completed { border-left-color: #6366F1; }
+.ai-step-icon {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #EDE9FE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.ai-step-content { flex: 1; min-width: 0; }
+.ai-step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4C1D95;
+  margin-bottom: 4px;
+}
+.ai-step-detail {
+  font-size: 13px;
+  color: #6D28D9;
+  line-height: 1.5;
+}
+.ai-step-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ai-token {
+  font-size: 12px;
+  padding: 3px 10px;
+  background: #fff;
+  border-radius: 12px;
+  color: #7C3AED;
+  border: 1px solid #DDD6FE;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: fadeSlideUp 0.4s ease forwards;
+}
+.ai-token.main-token {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  color: #fff;
+  border-color: #6D28D9;
+  font-weight: 600;
+}
+@keyframes fadeSlideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 俄语关键词特殊展示 */
+.russian-keywords-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-radius: 10px;
+  border: 1px solid #BFDBFE;
+}
+.russian-keywords-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E40AF;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.russian-keywords-text {
+  font-size: 13px;
+  color: #1E3A8A;
+  line-height: 1.8;
+  word-break: break-all;
+  font-weight: 500;
+}
+.russian-keyword-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 4px 2px 0;
+  padding: 3px 10px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #93C5FD;
+  font-size: 12px;
+  color: #1D4ED8;
+}
+.russian-keyword-item .meaning {
+  color: #64748B;
+  font-size: 11px;
+  font-weight: 400;
+}
+.copy-btn {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: #3B82F6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-btn:hover { background: #2563EB; }
+.copy-btn.copied { background: #10B981; }
+
+/* 英文搜索词展示 */
+.english-keywords-box {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+.english-keywords-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6D28D9;
+  margin-bottom: 6px;
+}
+.english-keyword-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  margin: 2px 4px 2px 0;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #DDD6FE;
+  font-size: 12px;
+  color: #7C3AED;
+}
+
+/* Products */
+.products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.products-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+.products-count { font-size: 14px; color: #999; font-weight: 400; }
+.filter-row { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 13px; color: #888; }
+.chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chip:hover { background: #eee; }
+.chip.active { background: #6366F1; color: #fff; }
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.product-img-wrap {
+  width: 100%;
+  height: 200px;
+  background: #f5f5f5;
+  overflow: hidden;
+  position: relative;
+}
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.product-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+}
+.product-info { padding: 12px; }
+.product-title {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 36px;
+}
+.product-chinese-title {
+  font-size: 12px;
+  color: #1890ff;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 500;
+}
+.product-price {
+  font-size: 17px;
+  font-weight: 700;
+  color: #FF4D4F;
+  margin-bottom: 6px;
+}
+.product-price-rmb {
+  font-size: 12px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 4px;
+}
+.product-price span { font-size: 12px; font-weight: 400; }
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.product-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+.badge-cross { background: #E6F7FF; color: #1890FF; }
+.badge-local { background: #FFF1F0; color: #FF4D4F; }
+.badge-fbo { background: #FCF5E5; color: #D48806; }
+.badge-fbs { background: #F6FFED; color: #52C41A; }
+.badge-hot { background: #FFF1F0; color: #FF4D4F; }
+
+/* 分页样式 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.page-btn {
+  padding: 8px 16px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.page-numbers {
+  display: flex;
+  gap: 4px;
+}
+.page-num {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.page-num:hover {
+  background: #F3F4F6;
+}
+.page-num.active {
+  background: #6366F1;
+  color: #fff;
+  border-color: #6366F1;
+}
+.page-num.ellipsis {
+  cursor: default;
+}
+.page-num.ellipsis:hover {
+  background: transparent;
+}
+.page-info {
+  font-size: 13px;
+  color: #9CA3AF;
+  margin-left: 8px;
+}
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6B7280;
+  margin-left: 16px;
+}
+.page-jump input {
+  width: 50px;
+  height: 32px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.page-jump input:focus {
+  border-color: #6366F1;
+}
+.page-jump input::-webkit-outer-spin-button,
+.page-jump input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.page-jump-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Loading */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+.loading-dots span {
+  width: 6px; height: 6px;
+  background: #6366F1;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-title { font-size: 28px; }
+  .hero-subtitle { font-size: 15px; }
+  .quick-tools { gap: 24px; }
+  .tool-icon { width: 48px; height: 48px; font-size: 24px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<div class="hero-section">
+  <h1 class="hero-title">店雷达 OZON 选品助手</h1>
+  <p class="hero-subtitle">俄罗斯电商选品 · 数据分析 · 市场调研</p>
+
+  <div class="search-box-container">
+    <div class="search-box">
+      <textarea 
+        class="search-input" 
+        id="search-input" 
+        placeholder="想找什么类目商品？用中文描述需求，AI帮你分析OZON选品，比如：连衣裙、手机壳、户外用品..."
+        rows="2"
+      ></textarea>
+      <div class="search-box-footer">
+        <div class="search-box-left">
+          <button class="icon-btn" title="清空" onclick="document.getElementById('search-input').value=''">📋</button>
+          <button class="icon-btn" title="语音">✏️</button>
+        </div>
+        <div class="search-box-right">
+          <span class="mode-toggle">专业模式 ⇧</span>
+          <button class="search-btn" id="search-btn" onclick="doSearch()">
+            <span>🔍</span> 智能选品
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tip-banner">
+      <div class="tip-banner-left">
+        <span>✨</span>
+        <span>AI智能分析关键词，精准匹配OZON热销商品</span>
+      </div>
+      <div class="tip-banner-right">
+        <span>🛡️</span>
+        <span>免费体验</span>
+      </div>
+    </div>
+    <!-- 历史搜索词 -->
+    <div class="search-history" id="search-history" style="display:none;">
+      <div class="search-history-header">
+        <span class="search-history-title">🕐 最近搜索</span>
+        <button class="search-history-clear" onclick="clearSearchHistory()">清空</button>
+      </div>
+      <div class="search-history-tags" id="search-history-tags"></div>
+    </div>
+  </div>
+
+  <!-- Quick Tools -->
+  <div class="quick-tools">
+    <div class="tool-item" onclick="quickSearch('dress', '连衣裙选品')">
+      <div class="tool-badge">🔥 热门</div>
+      <div class="tool-icon">👗</div>
+      <span class="tool-name">连衣裙选品</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('women top', '女装上装')">
+      <div class="tool-icon">👚</div>
+      <span class="tool-name">女装上装</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('women pants', '女装下装')">
+      <div class="tool-icon">👖</div>
+      <span class="tool-name">女装下装</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('swimsuit', '泳衣沙滩装')">
+      <div class="tool-icon">👙</div>
+      <span class="tool-name">泳衣沙滩装</span>
+    </div>
+    <div class="tool-item" onclick="quickSearch('bag', '箱包配饰')">
+      <div class="tool-icon">👜</div>
+      <span class="tool-name">箱包配饰</span>
+    </div>
+  </div>
+</div>
+
+<!-- Results Section -->
+<div class="results-section" id="results-section">
+  <!-- Analysis Card -->
+  <div class="analysis-card">
+    <div class="analysis-header">
+      <div class="analysis-header-icon">🧠</div>
+      <div class="analysis-header-text">
+        <div class="analysis-header-title">AI智能分析 <span class="loading-dots" id="analysis-loading"><span></span><span></span><span></span></span></div>
+        <div class="analysis-header-sub" id="analysis-sub">正在启动AI分析引擎...</div>
+        <div class="analysis-timing" id="analysis-timing">
+          <span class="timing-chip">智能体分析：<strong id="timing-agent">--</strong></span>
+          <span class="timing-chip">OZON API：<strong id="timing-api">--</strong></span>
+          <span class="timing-chip">总耗时：<strong id="timing-total">--</strong></span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="ai-steps" id="ai-steps">
+      <!-- Steps will be added dynamically -->
+    </div>
+  </div>
+
+  <!-- Products -->
+  <div class="products-header">
+    <div class="products-title">
+      推荐商品 <span class="products-count" id="products-count">0 件</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">排序：</span>
+      <div class="chip-group" id="sort-filter">
+        <span class="chip active" data-sort="score">综合相关</span>
+        <span class="chip" data-sort="sales">30天销量</span>
+        <span class="chip" data-sort="revenue">30天销售额</span>
+        <span class="chip" data-sort="growth">增长率</span>
+        <span class="chip" data-sort="price-low">价格↓</span>
+        <span class="chip" data-sort="price-high">价格↑</span>
+        <span class="chip" data-sort="rating">评分</span>
+      </div>
+    </div>
+  </div>
+  <div class="product-grid" id="product-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">正在搜索商品...</div>
+  </div>
+  <!-- 分页组件 -->
+  <div class="pagination" id="pagination" style="display:none;">
+    <button class="page-btn" id="prev-btn" onclick="changePage(-1)">上一页</button>
+    <div class="page-numbers" id="page-numbers"></div>
+    <button class="page-btn" id="next-btn" onclick="changePage(1)">下一页</button>
+    <span class="page-info" id="page-info"></span>
+    <div class="page-jump">
+      跳至 <input type="number" id="jump-input" min="1" value="1"> 页
+      <button class="page-btn page-jump-btn" onclick="jumpToPage()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== OZON MCP API 配置 =====
+const MCP_API_URL = 'https://mcp.dianleida.net/mcp?secret-key=9b921e202725436ba193b4ef9812345';
+let mcpInitialized = false;
+let mcpRequestId = 0;
+
+// ===== MCP 初始化 =====
+async function initMCP() {
+  if (mcpInitialized) return;
+  
+  try {
+    const initResp = await fetch(MCP_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: ++mcpRequestId,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'dianleida-ozon-web', version: '1.0.0' }
+        }
+      })
+    });
+    
+    if (!initResp.ok) {
+      console.warn('MCP init HTTP error:', initResp.status);
+    } else {
+      const initData = await initResp.json().catch(() => ({}));
+      console.log('[MCP] initialize response:', initData);
+    }
+    
+    await fetch(MCP_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'notifications/initialized'
+      })
+    }).catch(() => {});
+    
+    mcpInitialized = true;
+    console.log('[MCP] initialized successfully');
+  } catch(e) {
+    console.warn('[MCP] init failed, will try direct call:', e.message);
+    mcpInitialized = true;
+  }
+}
+
+// ===== 调用 OZON 类目搜索接口 =====
+async function callOzonCategorySearch(keyWord) {
+  await initMCP();
+  
+  const resp = await fetch(MCP_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: ++mcpRequestId,
+      method: 'tools/call',
+      params: {
+        name: 'get_ozon_category',
+        arguments: { keyWord: keyWord }
+      }
+    })
+  });
+  
+  if (!resp.ok) throw new Error('MCP HTTP错误: ' + resp.status);
+  
+  const data = await resp.json();
+  
+  if (data.error) {
+    throw new Error(data.error.message || 'MCP调用错误');
+  }
+  
+  let resultText = '';
+  if (data.result && data.result.content) {
+    if (Array.isArray(data.result.content)) {
+      const textItem = data.result.content.find(c => c.type === 'text');
+      if (textItem) resultText = textItem.text;
+    } else if (data.result.content.text) {
+      resultText = data.result.content.text;
+    }
+  }
+  
+  if (!resultText) return [];
+  
+  try {
+    const parsed = JSON.parse(resultText);
+    if (parsed && parsed.result && Array.isArray(parsed.result)) {
+      return parsed.result.filter(c => c.category_id).map(c => ({
+        id: c.category_id,
+        name: c.category_name || '',
+        hasChild: c.has_child || false
+      }));
+    }
+  } catch (e) {
+    console.warn('[MCP] 类目搜索结果解析失败:', e.message);
+  }
+  
+  return [];
+}
+
+// ===== 调用 OZON MCP 搜索接口 =====
+async function callOzonSearch(req) {
+  await initMCP();
+  
+  const resp = await fetch(MCP_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: ++mcpRequestId,
+      method: 'tools/call',
+      params: {
+        name: 'ozon_query_list',
+        arguments: { req: req }
+      }
+    })
+  });
+  
+  if (!resp.ok) throw new Error('MCP HTTP错误: ' + resp.status);
+  
+  const data = await resp.json();
+  
+  if (data.error) {
+    throw new Error(data.error.message || 'MCP调用错误');
+  }
+  
+  let resultText = '';
+  if (data.result && data.result.content) {
+    if (Array.isArray(data.result.content)) {
+      const textItem = data.result.content.find(c => c.type === 'text');
+      if (textItem) resultText = textItem.text;
+    } else if (data.result.content.text) {
+      resultText = data.result.content.text;
+    }
+  }
+  
+  if (!resultText) {
+    console.warn('[MCP] No text content not found, raw result:', data.result);
+    return { list: [] };
+  }
+  
+  try {
+    const parsed = JSON.parse(resultText);
+    // 兼容不同的数据结构：可能是 {list: [...]} 或 {result: {list: [...]}}
+    if (parsed && parsed.result && parsed.result.list && Array.isArray(parsed.result.list)) {
+      return {
+        list: parsed.result.list,
+        totalCount: parsed.result.totalCount || 0,
+        totalPages: parsed.result.totalPages || 0,
+        pageIndex: parsed.result.pageIndex || 1,
+        pageSize: parsed.result.pageSize || 0
+      };
+    }
+    return parsed;
+  } catch(e) {
+    console.error('[MCP] Failed to parse result text:', e.message);
+    return { list: [] };
+  }
+}
+
+// ===== 扣子智能体配置 =====
+const USE_COZE_AGENT = true;
+const COZE_BOT_ID = '7665184702596169782';
+const COZE_API_TOKEN = 'sat_M2oVUcRcmShLQVJuvMdLm7K7DSxC9KvvuZI8Yj9eqt4uSvelfMmeMsYSGqveGK1m';
+const COZE_API_URL = 'https://api.coze.cn/v3/chat';
+
+// ===== 智谱AI配置（备用）=====
+const USE_ZHIPU_AI = true;
+const ZHIPU_API_KEY = '48507e7734c94be7b4fa468a5ff2d0f2.v3dQklLAxlJZmU1f';
+const ZHIPU_MODEL = 'glm-4-flash';
+const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+const ZHIPU_SEARCH_SYSTEM_PROMPT = `你是OZON俄罗斯电商选品搜索分析专家。用户输入中文搜索关键词后，只输出前端商品搜索所需的精简JSON。
+
+【重要规则】
+1. 只输出JSON，不要解释、Markdown、代码块标记或额外文字
+2. searchKeyword必须是英文（OZON是俄语平台，搜索词用英文）
+3. expandedKeywords 最多6个，全部为英文搜索词
+4. categorySuggestion 给出OZON类目建议，包含categoryId和categoryName
+5. 如果无法确定类目，categoryId留空字符串
+
+【输出格式】
+{
+  "searchKeyword": "dress",
+  "coreProduct": "连衣裙",
+  "categorySuggestion": {
+    "categoryId": "93182",
+    "categoryName": "Одежда"
+  },
+  "modifiers": {
+    "style": [],
+    "material": [],
+    "crowd": [],
+    "scene": []
+  },
+  "expandedKeywords": ["summer dress", "casual dress", "women dress"],
+  "excludedKeywords": [],
+  "requiredKeywords": []
+}`;
+
+// ===== 调用扣子智能体API（流式）=====
+let COZE_DEBUG_LOG = [];
+function addDebugLog(msg) {
+  const time = new Date().toLocaleTimeString();
+  COZE_DEBUG_LOG.push(`[${time}] ${msg}`);
+  if (COZE_DEBUG_LOG.length > 50) COZE_DEBUG_LOG.shift();
+  console.log('[Coze Debug]', msg);
+}
+
+// 流式解析SSE响应
+function parseSSE(response, onMessage, onComplete, onError) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let eventType = null;
+  
+  function processLine(line) {
+    if (line.startsWith('event:')) {
+      eventType = line.substring(6).trim();
+    } else if (line.startsWith('data:')) {
+      const dataStr = line.substring(5).trim();
+      if (dataStr === '[DONE]') {
+        onComplete && onComplete();
+        return;
+      }
+      try {
+        const data = JSON.parse(dataStr);
+        onMessage && onMessage(eventType, data);
+      } catch (e) {}
+    }
+  }
+  
+  function read() {
+    reader.read().then(({ done, value }) => {
+      if (done) {
+        onComplete && onComplete();
+        return;
+      }
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        if (line.trim()) {
+          processLine(line.trim());
+        }
+      }
+      
+      read();
+    }).catch(err => {
+      onError && onError(err);
+    });
+  }
+  
+  read();
+}
+
+async function callCozeBot(botId, query, onStreamDelta) {
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN || !botId) return null;
+  
+  addDebugLog(`调用智能体[${botId}]: "${query}"`);
+  
+  try {
+    const chatBody = JSON.stringify({
+      bot_id: botId,
+      user_id: 'dianleida_ozon_' + Date.now(),
+      stream: true,
+      auto_save_history: true,
+      additional_messages: [
+        { role: 'user', content: query, content_type: 'text' }
+      ]
+    });
+    
+    addDebugLog('发起流式对话请求（超时60秒）...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    
+    const response = await fetch(COZE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + COZE_API_TOKEN,
+        'Accept': 'text/event-stream'
+      },
+      body: chatBody,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error('HTTP ' + response.status + ': ' + errText.substring(0, 200));
+    }
+    
+    return new Promise((resolve, reject) => {
+      let answerContent = '';
+      let hasError = false;
+      let errorMsg = '';
+      let answerStarted = false;
+      
+      const sseTimeoutId = setTimeout(() => {
+        addDebugLog('SSE解析超时60秒，强制结束');
+        if (answerContent && answerContent.length > 10) {
+          try {
+            const json = extractJSON(answerContent);
+            if (json) {
+              addDebugLog('超时但提取到JSON，返回结果');
+              resolve(json);
+              return;
+            }
+          } catch(e) {}
+        }
+        reject(new Error('智能体分析超时（60秒），请重试'));
+      }, 60000);
+      
+      parseSSE(
+        response,
+        (eventType, data) => {
+          addDebugLog(`收到事件: ${eventType}, data.type: ${data.type || 'N/A'}, content长度: ${(data.content || '').length}`);
+          
+          if (eventType === 'conversation.message.delta') {
+            const msgType = data.type || '';
+            const content = data.content || '';
+            const reasoningContent = data.reasoning_content || '';
+            
+            if (msgType === 'answer') {
+              answerStarted = true;
+              const textChunk = content || reasoningContent;
+              if (textChunk) {
+                answerContent += textChunk;
+                if (onStreamDelta) {
+                  onStreamDelta(textChunk, answerContent);
+                }
+              }
+            } else if (!answerStarted && msgType === '' && content) {
+              if (content.trim().startsWith('{') || answerContent.length > 0) {
+                answerContent += content;
+                if (onStreamDelta) {
+                  onStreamDelta(content, answerContent);
+                }
+              }
+            }
+          } else if (eventType === 'conversation.message.completed') {
+            const msgType = data.type || '';
+            const content = data.content || '';
+            const reasoningContent = data.reasoning_content || '';
+            addDebugLog(`消息完成, type: ${msgType}, content长度: ${content.length}, reasoning长度: ${reasoningContent.length}`);
+            if (msgType === 'answer') {
+              const finalText = content || reasoningContent;
+              if (finalText) {
+                answerContent = finalText;
+              }
+            }
+          } else if (eventType === 'conversation.chat.failed') {
+            hasError = true;
+            const lastError = data.last_error || {};
+            errorMsg = lastError.msg || '未知错误';
+            addDebugLog(`对话失败: ${errorMsg}`);
+          }
+        },
+        () => {
+          clearTimeout(sseTimeoutId);
+          if (hasError) {
+            reject(new Error(errorMsg || '扣子智能体调用失败'));
+            return;
+          }
+          
+          addDebugLog(`流式完成，回答内容长度: ${answerContent.length}`);
+          
+          let contentToParse = answerContent;
+          if (!contentToParse || contentToParse.length < 10) {
+            addDebugLog('answer内容为空，尝试从完整内容中提取JSON');
+            reject(new Error('未获取到有效的回答内容'));
+            return;
+          }
+          
+          try {
+            const result = JSON.parse(contentToParse);
+            addDebugLog('JSON解析成功');
+            resolve(result);
+          } catch (e) {
+            addDebugLog('直接解析失败，尝试提取第一个完整JSON...');
+            
+            let depth = 0;
+            let start = -1;
+            let end = -1;
+            for (let i = 0; i < contentToParse.length; i++) {
+              if (contentToParse[i] === '{') {
+                if (depth === 0) start = i;
+                depth++;
+              } else if (contentToParse[i] === '}') {
+                depth--;
+                if (depth === 0 && start >= 0) {
+                  end = i;
+                  break;
+                }
+              }
+            }
+            
+            if (start >= 0 && end > start) {
+              const extracted = contentToParse.substring(start, end + 1);
+              try {
+                const result = JSON.parse(extracted);
+                addDebugLog('提取第一个JSON对象成功，长度: ' + extracted.length);
+                resolve(result);
+                return;
+              } catch (e2) {
+                addDebugLog('提取的JSON解析失败: ' + e2.message);
+              }
+            }
+            
+            addDebugLog('尝试提取最后一个JSON...');
+            let lastStart = -1;
+            let lastEnd = -1;
+            depth = 0;
+            for (let i = contentToParse.length - 1; i >= 0; i--) {
+              if (contentToParse[i] === '}') {
+                if (depth === 0) lastEnd = i;
+                depth++;
+              } else if (contentToParse[i] === '{') {
+                depth--;
+                if (depth === 0 && lastEnd >= 0) {
+                  lastStart = i;
+                  break;
+                }
+              }
+            }
+            
+            if (lastStart >= 0 && lastEnd > lastStart) {
+              const extracted = contentToParse.substring(lastStart, lastEnd + 1);
+              try {
+                const result = JSON.parse(extracted);
+                addDebugLog('提取最后一个JSON对象成功，长度: ' + extracted.length);
+                resolve(result);
+                return;
+              } catch (e3) {
+                addDebugLog('最后一个JSON解析也失败: ' + e3.message);
+              }
+            }
+            
+            addDebugLog('所有JSON解析尝试失败，原始内容前300字: ' + contentToParse.substring(0, 300));
+            reject(new Error('返回内容不是有效的JSON格式'));
+          }
+        },
+        (err) => {
+          addDebugLog('流式读取失败: ' + err.message);
+          reject(err);
+        }
+      );
+    });
+    
+  } catch (e) {
+    addDebugLog('最终失败: ' + e.message);
+    console.warn('[Coze AI] 调用失败:', e.message);
+    return null;
+  }
+}
+
+function extractJSON(text) {
+  if (!text) return null;
+  try { return JSON.parse(text); } catch(e) {}
+  let depth = 0, start = -1, end = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { if (depth === 0) start = i; depth++; }
+    else if (text[i] === '}') { depth--; if (depth === 0 && start >= 0) { end = i; break; } }
+  }
+  if (start >= 0 && end > start) {
+    try { return JSON.parse(text.substring(start, end + 1)); } catch(e) {}
+  }
+  return null;
+}
+
+// ===== 调用单个智能体 =====
+async function callCozeSearchAnalysis(query, onStreamDelta) {
+  if (!USE_COZE_AGENT || !COZE_API_TOKEN) return { result: null, agentTime: 0 };
+  
+  COZE_DEBUG_LOG = [];
+  addDebugLog(`启动智能体: "${query}"`);
+  
+  const agentStart = performance.now();
+  
+  try {
+    const result = await callCozeBot(COZE_BOT_ID, query, onStreamDelta);
+    const agentTime = performance.now() - agentStart;
+    addDebugLog('智能体完成，耗时: ' + formatDuration(agentTime));
+    return { result, agentTime };
+  } catch (e) {
+    addDebugLog('智能体调用失败: ' + e.message);
+    console.warn('[Coze] 智能体调用失败:', e.message);
+    return { result: null, agentTime: performance.now() - agentStart };
+  }
+}
+
+// ===== 调用智谱AI（备用）=====
+async function callZhipuSearchAnalysis(query) {
+  if (!USE_ZHIPU_AI || !ZHIPU_API_KEY) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(ZHIPU_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + ZHIPU_API_KEY
+      },
+      body: JSON.stringify({
+        model: ZHIPU_MODEL,
+        messages: [
+          { role: 'system', content: ZHIPU_SEARCH_SYSTEM_PROMPT },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error('API错误 ' + response.status);
+    const data = await response.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+    if (!content) throw new Error('API返回内容为空');
+    try { return JSON.parse(content); } catch (e) {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+      throw new Error('返回内容不是有效的JSON格式');
+    }
+  } catch (e) {
+    clearTimeout(timeoutId);
+    console.warn('[Zhipu AI] 分析失败:', e.message);
+    return null;
+  }
+}
+
+// ===== 简单规则引擎（最后兜底）=====
+function ruleBasedAnalysis(query) {
+  const keywordMap = {
+    '连衣裙': 'dress', '裙子': 'dress', '裙': 'dress',
+    '女装上装': 'women top', 't恤': 't-shirt', '上衣': 'top',
+    '女装下装': 'women pants', '裤子': 'pants',
+    '泳衣': 'swimsuit', '比基尼': 'bikini', '沙滩': 'beach',
+    '包包': 'bag', '女包': 'women bag', '箱包': 'bag',
+    '手机壳': 'phone case', '手机套': 'phone case',
+    '鞋': 'shoes', '运动鞋': 'sneakers',
+    '家居': 'home', '厨房': 'kitchen',
+    '户外': 'outdoor', '运动': 'sports',
+    '饰品': 'jewelry', '耳环': 'earrings',
+    '玩具': 'toy', '儿童': 'kids',
+    '美妆': 'beauty', '化妆品': 'cosmetics'
+  };
+  
+  let englishKeyword = query;
+  for (const [cn, en] of Object.entries(keywordMap)) {
+    if (query.includes(cn)) {
+      englishKeyword = en;
+      break;
+    }
+  }
+  
+  return {
+    searchKeyword: englishKeyword,
+    coreProduct: query,
+    categorySuggestion: { categoryId: '', categoryName: '' },
+    modifiers: { style: [], material: [], crowd: [], scene: [] },
+    expandedKeywords: [englishKeyword],
+    excludedKeywords: [],
+    requiredKeywords: [],
+    russianKeywords: [],
+    russianKeywordsExplain: [],
+    chineseKeywords: [],
+    bilingualMapping: []
+  };
+}
+
+// ===== 处理OZON商品数据 =====
+function processOzonProducts(items, excludedKeywords, requiredKeywords, coreProduct, bilingualMapping, chineseKeywords) {
+  const result = [];
+  const excluded = (excludedKeywords || []).map(k => k.toLowerCase());
+  const required = (requiredKeywords || []).map(k => k.toLowerCase());
+  const core = coreProduct ? coreProduct.toLowerCase() : '';
+  const mapping = bilingualMapping || [];
+  const chineseKws = (chineseKeywords || []).map(k => k.toLowerCase());
+  
+  // 构建俄语->中文映射词典
+  const ruToCnMap = {};
+  for (const item of mapping) {
+    if (item.russian && item.chinese) {
+      ruToCnMap[item.russian.toLowerCase()] = item.chinese;
+    }
+  }
+  
+  // 生成中文翻译标题的函数
+  function translateTitle(russianTitle) {
+    const titleLower = russianTitle.toLowerCase();
+    const translations = [];
+    for (const [ruWord, cnWord] of Object.entries(ruToCnMap)) {
+      if (titleLower.includes(ruWord)) {
+        translations.push(cnWord);
+      }
+    }
+    // 去重并返回
+    return [...new Set(translations)].join(' · ');
+  }
+  
+  // 计算中文匹配分数
+  function calcChineseMatchScore(chineseTitle, coreProductName) {
+    let score = 0;
+    const titleLower = chineseTitle.toLowerCase();
+    const coreLower = coreProductName ? coreProductName.toLowerCase() : '';
+    
+    // 核心产品名匹配
+    if (coreLower && titleLower.includes(coreLower)) {
+      score += 15;
+    }
+    
+    // 中文关键词匹配
+    for (const kw of chineseKws) {
+      if (kw && titleLower.includes(kw)) {
+        score += 5;
+      }
+    }
+    
+    return score;
+  }
+  
+  // 计算俄语匹配分数
+  function calcRussianMatchScore(russianTitle) {
+    let score = 0;
+    const titleLower = russianTitle.toLowerCase();
+    
+    for (const item of mapping) {
+      if (item.russian && titleLower.includes(item.russian.toLowerCase())) {
+        score += 3;
+      }
+    }
+    
+    return score;
+  }
+  
+  for (const item of items) {
+    const subjectRaw = item.subject || '';
+    const subject = fixRussianEncoding(subjectRaw);
+    const levelName = fixRussianEncoding(item.levelName || '');
+    
+    const title = subject.toLowerCase();
+    
+    let skip = false;
+    for (const ex of excluded) {
+      if (ex.length >= 2 && title.includes(ex)) { skip = true; break; }
+    }
+    if (skip) continue;
+    
+    if (required.length > 0) {
+      let matchCount = 0;
+      for (const rq of required) {
+        if (!rq) continue;
+        if (title.includes(rq.toLowerCase())) matchCount++;
+      }
+      const threshold = required.length <= 2 ? required.length : Math.ceil(required.length * 2 / 3);
+      if (matchCount < threshold) continue;
+    }
+    
+    let relevanceScore = 0;
+    if (core && title.includes(core)) relevanceScore += 10;
+    
+    // 双语匹配打分
+    const chineseTitle = translateTitle(subject);
+    const chineseScore = calcChineseMatchScore(chineseTitle, coreProduct);
+    const russianScore = calcRussianMatchScore(subject);
+    const bilingualScore = chineseScore + russianScore;
+    relevanceScore += bilingualScore;
+    
+    const salesScore = Math.min(2, Math.log10((item.saleQuantity30d || 0) + 1) / 3);
+    relevanceScore += salesScore;
+    
+    if (item.score) relevanceScore += Math.min(2, item.score / 2.5);
+    
+    result.push({
+      id: String(item.offerId || ''),
+      title: subject,
+      chineseTitle: chineseTitle,
+      price: item.price || 0,
+      priceRmb: item.priceRmb || 0,
+      sales: item.saleQuantity30d || 0,
+      saleVolume30d: item.saleVolume30d || 0,
+      saleVolume30dRate: item.saleVolume30dRate || 0,
+      score: item.score || 0,
+      ratingNum: item.ratingNum || 0,
+      img: item.image || '',
+      link: item.offerUrl || '',
+      category: levelName,
+      typeId: String(item.typeId || ''),
+      categoryName: levelName,
+      companyType: item.companyType || 0,
+      workingMode: item.workingMode || '',
+      brand: fixRussianEncoding(item.brand || ''),
+      _relevance: relevanceScore,
+      _chineseScore: chineseScore,
+      _russianScore: russianScore,
+      _raw: item
+    });
+  }
+  
+  result.sort((a, b) => {
+    const scoreDiff = (b._relevance || 0) - (a._relevance || 0);
+    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+    return (b.sales || 0) - (a.sales || 0);
+  });
+  
+  return result;
+}
+
+// ===== 从OZON MCP获取商品 =====
+async function fetchProductsFromAPI(keyword, aiResult) {
+  const allProducts = [];
+  const seenIds = new Set();
+  
+  const englishKeyword = (aiResult && aiResult.searchKeyword) || keyword;
+  const expandedKeywords = (aiResult && aiResult.expandedKeywords) || [];
+  const russianKeywords = (aiResult && aiResult.russianKeywords) || [];
+  const excludedKeywords = (aiResult && aiResult.excludedKeywords) || [];
+  const requiredKeywords = (aiResult && aiResult.requiredKeywords) || [];
+  const coreProduct = (aiResult && aiResult.coreProduct) || keyword;
+  const bilingualMapping = (aiResult && aiResult.bilingualMapping) || [];
+  const chineseKeywords = (aiResult && aiResult.chineseKeywords) || [];
+  
+  // 主搜索词：优先用俄语第一个关键词，没有则用英文
+  const mainSearchKeyword = (russianKeywords.length > 0) ? russianKeywords[0] : englishKeyword;
+  
+  // 扩展搜索词：俄语关键词剩余的 + 英文扩展词
+  const extraSearchKeywords = [];
+  if (russianKeywords.length > 1) {
+    extraSearchKeywords.push(...russianKeywords.slice(1, 4));
+  }
+  if (expandedKeywords.length > 0) {
+    extraSearchKeywords.push(...expandedKeywords.slice(0, 2));
+  }
+  
+  console.log('[搜索策略] 主关键词:', mainSearchKeyword, '扩展词:', extraSearchKeywords);
+  
+  // 第一轮：主关键词搜索（词组匹配，不加类目过滤）
+  try {
+    const req = {
+      keyWord: mainSearchKeyword,
+      searchType: 2,
+      pageIndex: 1,
+      pageSize: 50,
+      sortField: 'saleVolume30d',
+      sortType: 'desc'
+    };
+    
+    const result = await callOzonSearch(req);
+    
+    if (result && result.list && Array.isArray(result.list)) {
+      const products = processOzonProducts(
+        result.list,
+        excludedKeywords,
+        requiredKeywords,
+        coreProduct,
+        bilingualMapping,
+        chineseKeywords
+      );
+      for (const p of products) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          allProducts.push(p);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('第一轮搜索失败:', e.message);
+  }
+  
+  // 第二轮：扩展词搜索（不加类目过滤）
+  if (extraSearchKeywords.length > 0 && allProducts.length < 60) {
+    const expandWords = extraSearchKeywords.slice(0, 4);
+    for (const expWord of expandWords) {
+      if (allProducts.length >= 60) break;
+      try {
+        const req = {
+          keyWord: expWord,
+          searchType: 2,
+          pageIndex: 1,
+          pageSize: 30,
+          sortField: 'saleVolume30d',
+          sortType: 'desc'
+        };
+        
+        const result = await callOzonSearch(req);
+        if (result && result.list && Array.isArray(result.list)) {
+          const products = processOzonProducts(
+            result.list,
+            excludedKeywords,
+            [],
+            coreProduct,
+            bilingualMapping,
+            chineseKeywords
+          );
+          for (const p of products) {
+            if (!seenIds.has(p.id)) {
+              seenIds.add(p.id);
+              allProducts.push(p);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('扩展词搜索失败 [' + expWord + ']:', e.message);
+      }
+    }
+  }
+  
+  // 兜底：如果结果太少，用英文关键词+模糊匹配(searchType=1)试试
+  if (allProducts.length < 5 && englishKeyword !== mainSearchKeyword) {
+    try {
+      const req = {
+        keyWord: englishKeyword,
+        searchType: 1,
+        pageIndex: 1,
+        pageSize: 30,
+        sortField: 'saleVolume30d',
+        sortType: 'desc'
+      };
+      const result = await callOzonSearch(req);
+      if (result && result.list && Array.isArray(result.list)) {
+        const products = processOzonProducts(
+          result.list,
+          excludedKeywords,
+          [],
+          coreProduct,
+          bilingualMapping,
+          chineseKeywords
+        );
+        for (const p of products) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            allProducts.push(p);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('英文兜底搜索失败:', e.message);
+    }
+  }
+  
+  // 统计类目分布（用于展示，不做过滤）
+  const categoryStats = {};
+  for (const p of allProducts) {
+    if (p.typeId) {
+      if (!categoryStats[p.typeId]) {
+        categoryStats[p.typeId] = { count: 0, name: p.categoryName || '' };
+      }
+      categoryStats[p.typeId].count++;
+    }
+  }
+  
+  // 排序取Top类目
+  const topCategories = Object.entries(categoryStats)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 5)
+    .map(([id, data]) => ({
+      id: id,
+      count: data.count,
+      name: data.name || ('类目' + id),
+      ratio: Math.round((data.count / allProducts.length) * 100)
+    }));
+  
+  console.log('[类目分布]', topCategories);
+  
+  return {
+    products: allProducts,
+    categoryId: '',
+    categoryName: '',
+    categoryStats: topCategories,
+    totalCount: allProducts.length
+  };
+}
+
+// ===== 状态 =====
+let currentResults = [];
+let isSearching = false;
+let currentPage = 1;
+const PAGE_SIZE = 24;
+
+// ===== 搜索历史功能 =====
+const HISTORY_KEY = 'dianleida_ozon_history';
+const HISTORY_MAX = 10;
+
+function getSearchHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  } catch(e) { return []; }
+}
+
+function saveSearchHistory(keyword) {
+  let history = getSearchHistory();
+  history = history.filter(item => item !== keyword);
+  history.unshift(keyword);
+  if (history.length > HISTORY_MAX) history = history.slice(0, HISTORY_MAX);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderSearchHistory();
+}
+
+function renderSearchHistory() {
+  const history = getSearchHistory();
+  const container = document.getElementById('search-history');
+  const tagsContainer = document.getElementById('search-history-tags');
+  if (history.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+  tagsContainer.innerHTML = history.map(function(kw) {
+    var safeKw = kw.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return '<span class="history-tag" onclick="clickHistoryTag(\'' + safeKw + '\')">' + escapeHtml(kw) + '</span>';
+  }).join('');
+}
+
+function clickHistoryTag(keyword) {
+  document.getElementById('search-input').value = keyword;
+  doSearch();
+}
+
+function clearSearchHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderSearchHistory();
+}
+
+// 页面加载时渲染历史
+renderSearchHistory();
+
+// ===== 添加分析步骤 =====
+function addStep(icon, title, detail, tokens) {
+  const stepsContainer = document.getElementById('ai-steps');
+  const stepEl = document.createElement('div');
+  stepEl.className = 'ai-step show completed';
+  let tokensHtml = '';
+  if (tokens && tokens.length > 0) {
+    tokensHtml = '<div class="ai-step-tokens">' + tokens.map(t => '<span class="ai-token">' + escapeHtml(t) + '</span>').join('') + '</div>';
+  }
+  stepEl.innerHTML = `
+    <span class="ai-step-icon">${icon}</span>
+    <div class="ai-step-content">
+      <div class="ai-step-title">${escapeHtml(title)}</div>
+      <div class="ai-step-detail">${escapeHtml(detail)}</div>
+      ${tokensHtml}
+    </div>`;
+  stepsContainer.appendChild(stepEl);
+  return stepEl;
+}
+
+function addLoadingStep(icon, title, detail) {
+  const stepsContainer = document.getElementById('ai-steps');
+  const stepEl = document.createElement('div');
+  stepEl.className = 'ai-step show';
+  stepEl.innerHTML = `
+    <span class="ai-step-icon">${icon}</span>
+    <div class="ai-step-content">
+      <div class="ai-step-title">${escapeHtml(title)} <span class="loading-dots"><span></span><span></span><span></span></span></div>
+      ${detail ? `<div class="ai-step-detail">${escapeHtml(detail)}</div>` : ''}
+    </div>`;
+  stepsContainer.appendChild(stepEl);
+  return stepEl;
+}
+
+function formatDuration(ms) {
+  if (ms === null || ms === undefined || Number.isNaN(ms)) return '--';
+  if (ms < 1000) return Math.round(ms) + 'ms';
+  return (ms / 1000).toFixed(2) + 's';
+}
+
+function updateTimingDisplay(timing) {
+  const timingEl = document.getElementById('analysis-timing');
+  if (!timingEl) return;
+  const keys = ['agent', 'api', 'total'];
+  const hasValue = keys.some(key => typeof timing[key] === 'number');
+  timingEl.classList.toggle('show', hasValue);
+  const agentEl = document.getElementById('timing-agent');
+  const apiEl = document.getElementById('timing-api');
+  const totalEl = document.getElementById('timing-total');
+  if (agentEl && timing.agent !== undefined) agentEl.textContent = formatDuration(timing.agent);
+  if (apiEl && timing.api !== undefined) apiEl.textContent = formatDuration(timing.api);
+  if (totalEl && timing.total !== undefined) totalEl.textContent = formatDuration(timing.total);
+}
+
+function updateStep(stepEl, icon, title, detail, tokens) {
+  let tokensHtml = '';
+  if (tokens && tokens.length > 0) {
+    tokensHtml = '<div class="ai-step-tokens">' + tokens.map(t => '<span class="ai-token">' + escapeHtml(t) + '</span>').join('') + '</div>';
+  }
+  stepEl.className = 'ai-step show completed';
+  stepEl.innerHTML = `
+    <span class="ai-step-icon">${icon}</span>
+    <div class="ai-step-content">
+      <div class="ai-step-title">${escapeHtml(title)}</div>
+      <div class="ai-step-detail">${escapeHtml(detail)}</div>
+      ${tokensHtml}
+    </div>`;
+}
+
+// ===== 搜索主函数 =====
+async function doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query || isSearching) return;
+
+  isSearching = true;
+  const totalStartTime = performance.now();
+  let agentDuration = null;
+  let apiDuration = null;
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true;
+
+  try {
+
+  // 保存搜索历史
+  saveSearchHistory(query);
+
+  // 显示结果区域
+  const resultsSection = document.getElementById('results-section');
+  resultsSection.classList.add('active');
+  
+  // 重置分析步骤
+  document.getElementById('ai-steps').innerHTML = '';
+  document.getElementById('analysis-loading').style.display = 'inline-flex';
+  document.getElementById('analysis-sub').textContent = '正在分析用户输入...';
+  const timingEl = document.getElementById('analysis-timing');
+  if (timingEl) timingEl.classList.remove('show');
+  updateTimingDisplay({ agent: null, api: null, total: null });
+  document.getElementById('product-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">正在搜索商品...</div>';
+  
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // ===== AI智能体分析 =====
+  let aiResult = null;
+  let aiSource = 'none';
+  
+  // Step 1: 智能体分析流式步骤
+  const step1Live = addLoadingStep('🎯', 'Step 1: 需求分析中...', 'AI正在解析您的搜索需求...');
+  const step1LiveDetail = step1Live.querySelector('.ai-step-detail');
+  const analysisSubEl = document.getElementById('analysis-sub');
+  
+  const cozeData = await callCozeSearchAnalysis(query, (delta, fullText) => {
+    // 顶部副标题只显示简洁状态
+    if (analysisSubEl) {
+      analysisSubEl.textContent = 'AI智能体分析中，请稍候...';
+    }
+    
+    // Step 1 流式过程中只显示简洁的进度提示，不显示大段分析文字
+    if (step1LiveDetail) {
+      const progressDots = '.'.repeat((Math.floor(performance.now() / 500) % 3) + 1);
+      step1LiveDetail.innerHTML = '<div style="font-size:13px; color:#6B7280;">正在提取核心关键词和修饰维度' + progressDots + '</div>';
+    }
+    
+    updateTimingDisplay({ 
+      agent: agentDuration, 
+      api: apiDuration, 
+      total: performance.now() - totalStartTime 
+    });
+  });
+  
+  if (cozeData && cozeData.result) {
+    aiResult = cozeData.result;
+    agentDuration = cozeData.agentTime;
+    aiSource = 'coze';
+  }
+  
+  if (!aiResult) {
+    const zhipuStart = performance.now();
+    aiResult = await callZhipuSearchAnalysis(query);
+    if (aiResult) {
+      aiSource = 'zhipu';
+      agentDuration = performance.now() - zhipuStart;
+    }
+  }
+  
+  if (!aiResult) {
+    aiResult = ruleBasedAnalysis(query);
+    aiSource = 'rule';
+    agentDuration = 50;
+  }
+  
+  console.log('[耗时统计] 智能体:', formatDuration(agentDuration), '来源:', aiSource);
+  updateTimingDisplay({ 
+    agent: agentDuration, 
+    api: apiDuration, 
+    total: performance.now() - totalStartTime 
+  });
+
+  // ===== Step 1: 需求分析与关键词提取（结构化渐变展示）=====
+  const searchKeyword = aiResult.searchKeyword || query;
+  const coreProduct = aiResult.coreProduct || query;
+  const modifiers = aiResult.modifiers || {};
+  
+  // 先更新标题和基础信息
+  updateStep(step1Live, '🎯', 'Step 1: 需求分析与关键词提取', '', null);
+  
+  // 添加结构化分析框（渐变逐行展示）
+  const step1Content = step1Live.querySelector('.ai-step-content');
+  if (step1Content) {
+    const step1Box = document.createElement('div');
+    step1Box.className = 'step-analysis-box';
+    
+    const rows = [];
+    
+    // 1. 核心产品
+    rows.push({ label: '核心产品：', content: coreProduct });
+    
+    // 2. 英文搜索词
+    rows.push({ label: '搜索词：', content: searchKeyword });
+    
+    // 3. 修饰词分类
+    const modParts = [];
+    if (modifiers.style && modifiers.style.length > 0) {
+      modParts.push('风格：' + modifiers.style.join('、'));
+    }
+    if (modifiers.material && modifiers.material.length > 0) {
+      modParts.push('材质：' + modifiers.material.join('、'));
+    }
+    if (modifiers.crowd && modifiers.crowd.length > 0) {
+      modParts.push('人群：' + modifiers.crowd.join('、'));
+    }
+    if (modifiers.scene && modifiers.scene.length > 0) {
+      modParts.push('场景：' + modifiers.scene.join('、'));
+    }
+    if (modParts.length > 0) {
+      rows.push({ label: '修饰维度：', content: modParts.join(' ｜ ') });
+    }
+    
+    // 4. 类目建议
+    if (aiResult.categorySuggestion && aiResult.categorySuggestion.categoryName) {
+      rows.push({ label: '推荐类目：', content: aiResult.categorySuggestion.categoryName });
+    }
+    
+    rows.forEach((row, index) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'step-analysis-row';
+      rowEl.style.animationDelay = (index * 0.12) + 's';
+      rowEl.innerHTML = 
+        '<span class="label">' + escapeHtml(row.label) + '</span>' +
+        '<span class="keywords">' + escapeHtml(row.content) + '</span>';
+      step1Box.appendChild(rowEl);
+    });
+    
+    step1Content.appendChild(step1Box);
+    
+    // 关键词标签（搜索词 + 修饰词）
+    const allMods = [];
+    if (modifiers.style) allMods.push(...modifiers.style);
+    if (modifiers.material) allMods.push(...modifiers.material);
+    if (modifiers.crowd) allMods.push(...modifiers.crowd);
+    if (modifiers.scene) allMods.push(...modifiers.scene);
+    
+    if (allMods.length > 0) {
+      const tokensEl = document.createElement('div');
+      tokensEl.className = 'ai-step-tokens';
+      tokensEl.style.animationDelay = (rows.length * 0.12) + 's';
+      tokensEl.innerHTML = 
+        '<span class="ai-token main-token">' + escapeHtml(searchKeyword) + '</span>' +
+        allMods.map(m => '<span class="ai-token">' + escapeHtml(m) + '</span>').join('');
+      step1Content.appendChild(tokensEl);
+    }
+  }
+
+  // ===== Step 2: 关键词扩展分析（渐变流式展示）=====
+  await new Promise(r => setTimeout(r, 300));
+  const expanded = aiResult.expandedKeywords || [];
+  const excluded = aiResult.excludedKeywords || [];
+  const russianKeywords = aiResult.russianKeywords || [];
+  const russianKeywordsExplain = aiResult.russianKeywordsExplain || [];
+  
+  // 构建候选词列表（修饰词 + 扩展词）
+  const candidateKeywords = [];
+  if (modifiers.style) candidateKeywords.push(...modifiers.style);
+  if (modifiers.material) candidateKeywords.push(...modifiers.material);
+  if (modifiers.scene) candidateKeywords.push(...modifiers.scene);
+  if (expanded.length > 0) candidateKeywords.push(...expanded.slice(0, 6));
+  
+  // 选择的搜索词（主关键词 + 扩展词前3个）
+  const selectedKeywords = [searchKeyword];
+  if (expanded.length > 0) selectedKeywords.push(...expanded.slice(0, 3));
+  
+  let step2Detail = '候选 ' + candidateKeywords.length + ' 个 · 选择 ' + selectedKeywords.length + ' 个搜索词';
+  if (russianKeywords.length > 0) step2Detail += ' · 俄语 ' + russianKeywords.length + ' 个';
+  if (excluded.length > 0) step2Detail += ' · 排除 ' + excluded.length + ' 个';
+  
+  addStep('🔗', 'Step 2: 搜索词分析扩展', step2Detail, null);
+  
+  // 添加渐变分析过程展示框
+  const lastStep = document.getElementById('ai-steps').lastElementChild;
+  if (lastStep) {
+    const contentEl = lastStep.querySelector('.ai-step-content');
+    if (contentEl) {
+      const analysisBox = document.createElement('div');
+      analysisBox.className = 'step-analysis-box';
+      
+      // 逐行添加分析内容，带渐入动画
+      const analysisRows = [];
+      
+      // 1. 候选词
+      if (candidateKeywords.length > 0) {
+        analysisRows.push({
+          label: '候选：',
+          content: candidateKeywords.slice(0, 12).join('、') + (candidateKeywords.length > 12 ? ' 等' : '')
+        });
+      }
+      
+      // 2. 选择的搜索词
+      analysisRows.push({
+        label: '选择：',
+        content: selectedKeywords.join('、')
+      });
+      
+      // 3. 俄语关键词
+      if (russianKeywords.length > 0) {
+        analysisRows.push({
+          label: '俄语：',
+          content: russianKeywords.slice(0, 8).join('、') + (russianKeywords.length > 8 ? ' 等' : '')
+        });
+      }
+      
+      // 4. 排除词
+      if (excluded.length > 0) {
+        analysisRows.push({
+          label: '排除：',
+          content: excluded.join('、')
+        });
+      }
+      
+      // 5. 原则/说明
+      analysisRows.push({
+        label: '原则：',
+        content: '俄语词用于主搜索（词组匹配），英文词作为备用搜索，排除词过滤不相关商品'
+      });
+      
+      analysisRows.forEach((row, index) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'step-analysis-row';
+        rowEl.style.animationDelay = (index * 0.15) + 's';
+        rowEl.innerHTML = 
+          '<span class="label">' + escapeHtml(row.label) + '</span>' +
+          '<span class="keywords">' + escapeHtml(row.content) + '</span>';
+        analysisBox.appendChild(rowEl);
+      });
+      
+      contentEl.appendChild(analysisBox);
+    }
+  }
+  
+  // 俄语关键词详情框（如果有）
+  if (russianKeywords.length > 0) {
+    const russianEl = document.createElement('div');
+    russianEl.className = 'russian-keywords-box';
+    
+    let keywordsHtml = '';
+    if (russianKeywordsExplain && russianKeywordsExplain.length > 0) {
+      keywordsHtml = russianKeywordsExplain.map(item => 
+        '<span class="russian-keyword-item">' + 
+          escapeHtml(item.keyword || item) + 
+          (item.meaning ? ' <span class="meaning">(' + escapeHtml(item.meaning) + ')</span>' : '') +
+        '</span>'
+      ).join('');
+    } else {
+      keywordsHtml = russianKeywords.map(kw => 
+        '<span class="russian-keyword-item">' + escapeHtml(kw) + '</span>'
+      ).join('');
+    }
+    
+    const russianText = russianKeywords.join(', ');
+    
+    russianEl.innerHTML = 
+      '<div class="russian-keywords-title">🇷🇺 俄语关键词（主搜索词·词组匹配）</div>' +
+      '<div class="russian-keywords-text">' + keywordsHtml + '</div>' +
+      '<button class="copy-btn" onclick="navigator.clipboard.writeText(\'' + escapeHtml(russianText).replace(/'/g, "\\'") + '\');this.textContent=\'已复制✓\';this.classList.add(\'copied\');setTimeout(()=>{this.textContent=\'复制\';this.classList.remove(\'copied\')},2000)">复制全部</button>';
+    
+    const lastStep2 = document.getElementById('ai-steps').lastElementChild;
+    if (lastStep2) {
+      const contentEl2 = lastStep2.querySelector('.ai-step-content');
+      if (contentEl2) contentEl2.appendChild(russianEl);
+    }
+  }
+  
+  // 英文搜索词标签
+  if (expanded.length > 0) {
+    const englishEl = document.createElement('div');
+    englishEl.className = 'english-keywords-box';
+    englishEl.innerHTML = 
+      '<div class="english-keywords-title">🔤 英文搜索词（备用）</div>' +
+      expanded.map(kw => '<span class="english-keyword-tag">' + escapeHtml(kw) + '</span>').join('');
+    
+    const lastStep3 = document.getElementById('ai-steps').lastElementChild;
+    if (lastStep3) {
+      const contentEl3 = lastStep3.querySelector('.ai-step-content');
+      if (contentEl3) contentEl3.appendChild(englishEl);
+    }
+  }
+  
+  if (excluded.length > 0) {
+    const excludedEl = document.createElement('div');
+    excludedEl.style.cssText = 'margin-top:8px;font-size:12px;color:#9CA3AF;';
+    excludedEl.innerHTML = '<span style="color:#9CA3AF;">排除词：</span>' + 
+      excluded.slice(0, 6).map(k => '<span style="display:inline-block;padding:2px 8px;margin:2px;background:#FEF2F2;color:#EF4444;border-radius:10px;font-size:11px;">' + escapeHtml(k) + '</span>').join('');
+    const lastStep4 = document.getElementById('ai-steps').lastElementChild;
+    if (lastStep4) {
+      const contentEl4 = lastStep4.querySelector('.ai-step-content');
+      if (contentEl4) contentEl4.appendChild(excludedEl);
+    }
+  }
+
+  // ===== Step 3: 类目分布分析（搜索后统计）=====
+  await new Promise(r => setTimeout(r, 250));
+  const step3 = addLoadingStep('📊', 'Step 3: 类目分布分析中...', '搜索完成后将展示类目分布...');
+  
+  // ===== Step 4: 调用OZON MCP获取商品 =====
+  const step4 = addLoadingStep('📡', 'Step 4: OZON商品搜索');
+  
+  let products = [];
+  let categoryStats = [];
+  const apiStartTime = performance.now();
+  try {
+    const result = await fetchProductsFromAPI(query, aiResult);
+    products = result.products || [];
+    categoryStats = result.categoryStats || [];
+  } catch (e) {
+    console.warn('API调用失败:', e.message);
+  } finally {
+    apiDuration = performance.now() - apiStartTime;
+    console.log('[耗时统计] OZON API:', formatDuration(apiDuration));
+    updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: performance.now() - totalStartTime });
+  }
+  
+  // 更新 Step 3: 类目分布分析结果
+  if (categoryStats.length > 0) {
+    const topCat = categoryStats[0];
+    const catTags = categoryStats.map(c => '类目' + c.id + ' (' + c.ratio + '%)');
+    updateStep(step3, '✅', 'Step 3: 类目分布分析', 
+      '共覆盖 ' + categoryStats.length + ' 个类目 · Top类目占比 ' + topCat.ratio + '%',
+      catTags
+    );
+  } else {
+    updateStep(step3, '⚠️', 'Step 3: 类目分布分析', 
+      '暂无类目数据');
+  }
+  
+  if (products.length > 0) {
+    const searchWords = russianKeywords.slice(0, 2);
+    if (expanded.length > 0) searchWords.push(...expanded.slice(0, 2));
+    const displaySearch = searchWords.join('、');
+    updateStep(step4, '✅', 'Step 4: OZON商品搜索完成', 
+      '搜索词：' + displaySearch + ' · 从OZON实时获取 ' + products.length + ' 条商品数据',
+      ['实时API', products.length + '件商品']
+    );
+  } else {
+    updateStep(step4, '⚠️', 'Step 4: OZON商品搜索', 
+      '暂未获取到商品数据，请稍后重试或更换关键词');
+  }
+  
+  // 隐藏顶部loading
+  const totalDuration = performance.now() - totalStartTime;
+  console.log('[耗时统计] 总调用时间:', formatDuration(totalDuration));
+  updateTimingDisplay({ agent: agentDuration, api: apiDuration, total: totalDuration });
+  document.getElementById('analysis-loading').style.display = 'none';
+  document.getElementById('analysis-sub').textContent = 'AI智能分析完成，已为您精准匹配OZON商品';
+
+  // ===== 渲染商品 =====
+  currentResults = products;
+  renderProducts(products);
+  
+  } catch (e) {
+    console.error('[搜索出错]', e);
+    document.getElementById('product-grid').innerHTML = 
+      '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">搜索出错: ' + escapeHtml(e.message) + '<br><br>请稍后重试或尝试其他关键词</div>';
+  } finally {
+    isSearching = false;
+    btn.disabled = false;
+  }
+}
+
+// ===== 渲染商品 =====
+function renderProducts(products, page) {
+  const total = products?.length || 0;
+  document.getElementById('products-count').textContent = total + ' 件';
+  const grid = document.getElementById('product-grid');
+  const paginationEl = document.getElementById('pagination');
+  
+  if (!products || products.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999;">暂无相关商品，请尝试其他关键词</div>';
+    paginationEl.style.display = 'none';
+    return;
+  }
+  
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (!page) page = 1;
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  currentPage = page;
+  
+  const start = (page - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const pageProducts = products.slice(start, end);
+  
+  grid.innerHTML = '';
+  pageProducts.forEach(p => {
+    const card = document.createElement('a');
+    card.className = 'product-card';
+    card.href = p.link || '#';
+    card.target = '_blank';
+    card.rel = 'noopener noreferrer';
+    
+    let imgHtml = '';
+    if (p.img) {
+      imgHtml = '<img class="product-img" src="' + escapeHtml(p.img) + '" alt="' + escapeHtml(p.title) + '" onerror="this.parentElement.innerHTML=\'<div class=\\\'product-img-placeholder\\\'>📦</div>\'">';
+    } else {
+      imgHtml = '<div class="product-img-placeholder">📦</div>';
+    }
+    
+    let badges = '';
+    if (p.companyType === 1) {
+      badges += '<span class="product-badge badge-cross">跨境</span>';
+    } else if (p.companyType === 2) {
+      badges += '<span class="product-badge badge-local">本地</span>';
+    }
+    if (p.workingMode) {
+      const wm = String(p.workingMode).toUpperCase();
+      if (wm.includes('FBO')) {
+        badges += '<span class="product-badge badge-fbo">FBO</span>';
+      } else if (wm.includes('FBS')) {
+        badges += '<span class="product-badge badge-fbs">FBS</span>';
+      }
+    }
+    if ((p.sales || 0) > 1000) badges += '<span class="product-badge badge-hot">热销</span>';
+    
+    const priceRub = p.price ? Number(p.price).toLocaleString() : '0';
+    const priceRmb = p.priceRmb ? '¥' + Number(p.priceRmb).toFixed(0) : '';
+    
+    const saleVol = p.saleVolume30d ? Number(p.saleVolume30d).toLocaleString() + ' ₽' : '--';
+    
+    card.innerHTML = `
+      <div class="product-img-wrap">${imgHtml}</div>
+      <div class="product-info">
+        <div class="product-title">${badges}${escapeHtml(p.title)}</div>
+        ${p.chineseTitle ? '<div class="product-chinese-title">📝 ' + escapeHtml(p.chineseTitle) + '</div>' : ''}
+        <div class="product-price">${priceRub} <span>₽</span><span class="product-price-rmb">${priceRmb}</span></div>
+        <div class="product-meta">
+          <span>月销 ${(p.sales || 0).toLocaleString()}</span>
+          <span>⭐ ${p.score ? p.score.toFixed(1) : '--'}</span>
+        </div>
+        <div class="product-meta" style="margin-top:4px;">
+          <span>月额 ${saleVol}</span>
+          <span>${p.ratingNum ? p.ratingNum.toLocaleString() + '评价' : ''}</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  
+  renderPagination(total, totalPages, page);
+  
+  grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== 渲染分页组件 =====
+function renderPagination(total, totalPages, currentPage) {
+  const paginationEl = document.getElementById('pagination');
+  const pageNumbersEl = document.getElementById('page-numbers');
+  const pageInfoEl = document.getElementById('page-info');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  
+  if (totalPages <= 1) {
+    paginationEl.style.display = 'none';
+    return;
+  }
+  
+  paginationEl.style.display = 'flex';
+  
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+  
+  pageInfoEl.textContent = `共 ${total} 件 · 第 ${currentPage}/${totalPages} 页`;
+  
+  const jumpInput = document.getElementById('jump-input');
+  if (jumpInput) {
+    jumpInput.value = currentPage;
+    jumpInput.max = totalPages;
+  }
+  
+  let pages = [];
+  const showPages = 5;
+  
+  if (totalPages <= showPages + 2) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (currentPage <= 3) {
+      pages = [1, 2, 3, 4, '...', totalPages];
+    } else if (currentPage >= totalPages - 2) {
+      pages = [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    } else {
+      pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+    }
+  }
+  
+  pageNumbersEl.innerHTML = '';
+  pages.forEach(p => {
+    const span = document.createElement('span');
+    if (p === '...') {
+      span.className = 'page-num ellipsis';
+      span.textContent = '...';
+    } else {
+      span.className = 'page-num' + (p === currentPage ? ' active' : '');
+      span.textContent = p;
+      span.onclick = () => goToPage(p);
+    }
+    pageNumbersEl.appendChild(span);
+  });
+}
+
+// ===== 翻页 =====
+function changePage(delta) {
+  goToPage(currentPage + delta);
+}
+
+function goToPage(page) {
+  if (!currentResults || currentResults.length === 0) return;
+  renderProducts(currentResults, page);
+}
+
+// ===== 跳转到指定页 =====
+function jumpToPage() {
+  const input = document.getElementById('jump-input');
+  if (!input) return;
+  const page = parseInt(input.value);
+  const totalPages = Math.ceil(currentResults.length / PAGE_SIZE);
+  if (!isNaN(page) && page >= 1 && page <= totalPages) {
+    goToPage(page);
+  } else {
+    input.value = currentPage;
+  }
+}
+
+// ===== 快捷搜索 =====
+function quickSearch(keyword, displayName) {
+  document.getElementById('search-input').value = displayName || keyword;
+  doSearch();
+}
+
+// ===== 回车搜索 =====
+document.getElementById('search-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    doSearch();
+  }
+});
+
+// ===== 跳转输入框回车跳转 =====
+document.addEventListener('DOMContentLoaded', function() {
+  const jumpInput = document.getElementById('jump-input');
+  if (jumpInput) {
+    jumpInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        jumpToPage();
+      }
+    });
+  }
+});
+
+// ===== 排序切换 =====
+document.getElementById('sort-filter').addEventListener('click', function(e) {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('#sort-filter .chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  
+  const sort = e.target.dataset.sort;
+  let sorted = [...currentResults];
+  
+  if (sort === 'score') {
+    sorted.sort((a, b) => {
+      const scoreDiff = (b._relevance || 0) - (a._relevance || 0);
+      if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+      return (b.sales || 0) - (a.sales || 0);
+    });
+  } else if (sort === 'sales') {
+    sorted.sort((a, b) => (b.sales || 0) - (a.sales || 0));
+  } else if (sort === 'revenue') {
+    sorted.sort((a, b) => (b.saleVolume30d || 0) - (a.saleVolume30d || 0));
+  } else if (sort === 'growth') {
+    sorted.sort((a, b) => (b.saleVolume30dRate || 0) - (a.saleVolume30dRate || 0));
+  } else if (sort === 'price-low') {
+    sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+  } else if (sort === 'price-high') {
+    sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+  } else if (sort === 'rating') {
+    sorted.sort((a, b) => (b.score || 0) - (a.score || 0));
+  }
+  
+  currentResults = sorted;
+  renderProducts(sorted, 1);
+});
+</script>
+
+</body>
+</html>
