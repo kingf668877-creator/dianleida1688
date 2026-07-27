@@ -1417,6 +1417,88 @@ async function callZhipuSearchAnalysis(query) {
 }
 
 // ===== 简单规则引擎（最后兜底）=====
+// ===== 内置品类词典（兜底用，当AI返回不完整时补充）=====
+const BUILTIN_CATEGORY_DICT = {
+  '包包': {
+    englishKeyword: 'bag',
+    russianKeywords: ['сумка', 'сумки', 'женская сумка', 'сумка через плечо', 'рюкзак', 'клатч', 'шоппер', 'торба'],
+    bilingualMapping: [
+      { russian: 'сумка', chinese: '包' },
+      { russian: 'сумки', chinese: '包' },
+      { russian: 'женская сумка', chinese: '女包' },
+      { russian: 'сумка через плечо', chinese: '斜挎包' },
+      { russian: 'рюкзак', chinese: '背包' },
+      { russian: 'клатч', chinese: '手拿包' },
+      { russian: 'шоппер', chinese: '购物袋' },
+      { russian: 'торба', chinese: '手提包' },
+      { russian: 'сумочка', chinese: '小包' },
+      { russian: 'портфель', chinese: '公文包' }
+    ],
+    chineseKeywords: ['包包', '女包', '背包', '手提包', '斜挎包'],
+    excludedKeywords: ['shoe', 'shoes', 'обувь', 'туфли', 'кроссовки', 'ботинки', 'сапоги', 'носки', 'носки'],
+    requiredKeywords: ['сумк', 'рюкзак', 'клатч', 'торба', 'шоппер', 'портфель', 'bag', 'backpack', 'handbag']
+  },
+  '连衣裙': {
+    englishKeyword: 'dress',
+    russianKeywords: ['платье', 'платья', 'летнее платье', 'сарафан', 'платье миди', 'вечернее платье'],
+    bilingualMapping: [
+      { russian: 'платье', chinese: '连衣裙' },
+      { russian: 'платья', chinese: '连衣裙' },
+      { russian: 'летнее платье', chinese: '夏季连衣裙' },
+      { russian: 'сарафан', chinese: '吊带裙' },
+      { russian: 'платье миди', chinese: '中长裙' },
+      { russian: 'вечернее платье', chinese: '晚礼服' }
+    ],
+    chineseKeywords: ['连衣裙', '裙子', '女装裙'],
+    excludedKeywords: ['брюки', 'джинсы', 'юбка', 'футболка', 'кофта'],
+    requiredKeywords: ['плать', 'сарафан', 'dress']
+  },
+  '厨房玩具': {
+    englishKeyword: 'kitchen toy',
+    russianKeywords: ['кухонный набор игрушек', 'детская кухня', 'игрушечная кухня', 'набор посуды игрушка', 'игрушка кухня'],
+    bilingualMapping: [
+      { russian: 'кухонный', chinese: '厨房' },
+      { russian: 'игрушка', chinese: '玩具' },
+      { russian: 'игрушек', chinese: '玩具' },
+      { russian: 'детская кухня', chinese: '儿童厨房' },
+      { russian: 'игрушечная кухня', chinese: '玩具厨房' },
+      { russian: 'набор', chinese: '套装' },
+      { russian: 'посуда', chinese: '餐具' }
+    ],
+    chineseKeywords: ['厨房玩具', '厨房', '玩具', '儿童厨房'],
+    excludedKeywords: [],
+    requiredKeywords: ['игруш', 'кухн', 'toy', 'kitchen']
+  },
+  '手机壳': {
+    englishKeyword: 'phone case',
+    russianKeywords: ['чехол для телефона', 'чехол на телефон', 'накладка на телефон', 'защитный чехол'],
+    bilingualMapping: [
+      { russian: 'чехол', chinese: '手机壳' },
+      { russian: 'телефон', chinese: '手机' },
+      { russian: 'накладка', chinese: '保护壳' },
+      { russian: 'защитный', chinese: '保护' }
+    ],
+    chineseKeywords: ['手机壳', '手机套', '保护壳'],
+    excludedKeywords: ['наушники', 'наушник', 'earphone', 'headphone', 'кабель', 'зарядка'],
+    requiredKeywords: ['чехол', 'накладка', 'case', 'phone']
+  },
+  '鞋': {
+    englishKeyword: 'shoes',
+    russianKeywords: ['обувь', 'туфли', 'кроссовки', 'ботинки', 'сапоги', 'сандалии'],
+    bilingualMapping: [
+      { russian: 'обувь', chinese: '鞋' },
+      { russian: 'туфли', chinese: '鞋子' },
+      { russian: 'кроссовки', chinese: '运动鞋' },
+      { russian: 'ботинки', chinese: '靴子' },
+      { russian: 'сапоги', chinese: '长靴' },
+      { russian: 'сандалии', chinese: '凉鞋' }
+    ],
+    chineseKeywords: ['鞋子', '鞋', '运动鞋'],
+    excludedKeywords: ['сумк', 'плать', 'юбк', 'брюк'],
+    requiredKeywords: ['обув', 'туфл', 'кроссовк', 'ботинк', 'сапог', 'сандал', 'shoe', 'sneaker']
+  }
+};
+
 function ruleBasedAnalysis(query) {
   const keywordMap = {
     '连衣裙': 'dress', '裙子': 'dress', '裙': 'dress',
@@ -1434,11 +1516,35 @@ function ruleBasedAnalysis(query) {
   };
   
   let englishKeyword = query;
+  let matchedCategory = null;
+  
   for (const [cn, en] of Object.entries(keywordMap)) {
     if (query.includes(cn)) {
       englishKeyword = en;
+      matchedCategory = cn;
       break;
     }
+  }
+  
+  // 如果匹配到内置品类，返回完整数据
+  if (matchedCategory && BUILTIN_CATEGORY_DICT[matchedCategory]) {
+    const dict = BUILTIN_CATEGORY_DICT[matchedCategory];
+    return {
+      searchKeyword: dict.englishKeyword,
+      coreProduct: matchedCategory,
+      categorySuggestion: { categoryId: '', categoryName: matchedCategory },
+      modifiers: { style: [], material: [], crowd: [], scene: [] },
+      expandedKeywords: [dict.englishKeyword],
+      excludedKeywords: dict.excludedKeywords || [],
+      requiredKeywords: dict.requiredKeywords || [],
+      russianKeywords: dict.russianKeywords || [],
+      russianKeywordsExplain: (dict.bilingualMapping || []).map(m => ({
+        keyword: m.russian,
+        meaning: m.chinese
+      })),
+      chineseKeywords: dict.chineseKeywords || [matchedCategory],
+      bilingualMapping: dict.bilingualMapping || []
+    };
   }
   
   return {
@@ -1534,18 +1640,7 @@ function processOzonProducts(items, excludedKeywords, requiredKeywords, coreProd
     }
     if (skip) continue;
     
-    if (required.length > 0) {
-      let matchCount = 0;
-      for (const rq of required) {
-        if (!rq) continue;
-        if (title.includes(rq.toLowerCase())) matchCount++;
-      }
-      const threshold = required.length <= 2 ? required.length : Math.ceil(required.length * 2 / 3);
-      if (matchCount < threshold) continue;
-    }
-    
     let relevanceScore = 0;
-    if (core && title.includes(core)) relevanceScore += 10;
     
     // 双语匹配打分
     const chineseTitle = translateTitle(subject);
@@ -1553,6 +1648,23 @@ function processOzonProducts(items, excludedKeywords, requiredKeywords, coreProd
     const russianScore = calcRussianMatchScore(subject);
     const bilingualScore = chineseScore + russianScore;
     relevanceScore += bilingualScore;
+    
+    // 硬性过滤：有双语映射时，完全不匹配的商品直接过滤
+    if (mapping.length > 0 && bilingualScore === 0) {
+      continue;
+    }
+    
+    // 硬性过滤：有必需词时，必须至少匹配1个必需词
+    if (required.length > 0) {
+      let hasMatch = false;
+      for (const rq of required) {
+        if (rq && title.includes(rq.toLowerCase())) {
+          hasMatch = true;
+          break;
+        }
+      }
+      if (!hasMatch) continue;
+    }
     
     const salesScore = Math.min(2, Math.log10((item.saleQuantity30d || 0) + 1) / 3);
     relevanceScore += salesScore;
@@ -1601,12 +1713,40 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   
   const englishKeyword = (aiResult && aiResult.searchKeyword) || keyword;
   const expandedKeywords = (aiResult && aiResult.expandedKeywords) || [];
-  const russianKeywords = (aiResult && aiResult.russianKeywords) || [];
-  const excludedKeywords = (aiResult && aiResult.excludedKeywords) || [];
-  const requiredKeywords = (aiResult && aiResult.requiredKeywords) || [];
+  let russianKeywords = (aiResult && aiResult.russianKeywords) || [];
+  let excludedKeywords = (aiResult && aiResult.excludedKeywords) || [];
+  let requiredKeywords = (aiResult && aiResult.requiredKeywords) || [];
   const coreProduct = (aiResult && aiResult.coreProduct) || keyword;
-  const bilingualMapping = (aiResult && aiResult.bilingualMapping) || [];
-  const chineseKeywords = (aiResult && aiResult.chineseKeywords) || [];
+  let bilingualMapping = (aiResult && aiResult.bilingualMapping) || [];
+  let chineseKeywords = (aiResult && aiResult.chineseKeywords) || [];
+  
+  // AI结果补充：如果关键字段为空，用内置词典兜底
+  if ((russianKeywords.length === 0 || bilingualMapping.length === 0) && coreProduct) {
+    for (const [category, dict] of Object.entries(BUILTIN_CATEGORY_DICT)) {
+      if (coreProduct.includes(category) || keyword.includes(category)) {
+        if (russianKeywords.length === 0 && dict.russianKeywords) {
+          russianKeywords = dict.russianKeywords;
+          console.log('[兜底补充] 俄语关键词:', russianKeywords);
+        }
+        if (bilingualMapping.length === 0 && dict.bilingualMapping) {
+          bilingualMapping = dict.bilingualMapping;
+          console.log('[兜底补充] 双语映射:', bilingualMapping.length + '条');
+        }
+        if (chineseKeywords.length === 0 && dict.chineseKeywords) {
+          chineseKeywords = dict.chineseKeywords;
+        }
+        if (excludedKeywords.length === 0 && dict.excludedKeywords) {
+          excludedKeywords = dict.excludedKeywords;
+          console.log('[兜底补充] 排除词:', excludedKeywords);
+        }
+        if (requiredKeywords.length === 0 && dict.requiredKeywords) {
+          requiredKeywords = dict.requiredKeywords;
+          console.log('[兜底补充] 必需词:', requiredKeywords);
+        }
+        break;
+      }
+    }
+  }
   
   // 主搜索词：优先用俄语第一个关键词，没有则用英文
   const mainSearchKeyword = (russianKeywords.length > 0) ? russianKeywords[0] : englishKeyword;
