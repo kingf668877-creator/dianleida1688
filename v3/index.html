@@ -1568,13 +1568,12 @@ function deriveCategoryFilterFromTree(categoryTree) {
 }
 
 // ===== 处理API返回的商品 =====
-function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter, matchTokens) {
+function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter) {
   const result = [];
   const excluded = (excludedKeywords || []).map(k => k.toLowerCase());
   const required = (requiredKeywords || []).map(k => k.toLowerCase());
   const core = coreProduct ? coreProduct.toLowerCase() : '';
   const levelNames = categoryLevelNames || [];
-  const tokens = (matchTokens || []).map(k => k.toLowerCase()).filter(t => t && t.length >= 2);
   // 提取核心名词（用于宽松匹配）
   let coreNoun = '';
   const nounPatterns = [
@@ -1830,27 +1829,6 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     let relevanceScore = 0;
     // 完全匹配核心产品词 +10
     if (core && title.includes(core)) relevanceScore += 10;
-    // 拆词匹配度评分（分层匹配的核心：匹配越多分越高，不做严格过滤
-    if (tokens.length > 0) {
-      let tokenHitCount = 0;
-      const nonPlatformTokens = [];
-      const platformWords = ['跨境', '亚马逊', '外贸', '速卖通', '出口', '独立站', 'ebay', 'temu', 'shein', 'shopee', 'lazada', 'wish', '跨境电商', '外贸出口'];
-      for (const t of tokens) {
-        if (!platformWords.some(pw => pw.toLowerCase() === t)) {
-          nonPlatformTokens.push(t);
-        }
-      }
-      // 非平台词参与匹配度计算（平台词1688标题很少有，不算入严格匹配）
-      const effectiveTokens = nonPlatformTokens.length > 0 ? nonPlatformTokens : tokens;
-      for (const t of effectiveTokens) {
-        if (title.includes(t)) {
-          tokenHitCount++;
-        }
-      }
-      // 匹配度加分：每个命中+4分，最高+12
-      const tokenScore = Math.min(12, tokenHitCount * 4);
-      relevanceScore += tokenScore;
-    }
     // 包含明确的"XX包"结构（前面不是量词）+5
     if (coreNoun && coreNoun.length === 1) {
       const idx = title.indexOf(coreNoun);
@@ -1976,46 +1954,15 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const requiredKeywords = (aiResult && aiResult.requiredKeywords) ? aiResult.requiredKeywords : [];
   const coreProduct = (aiResult && aiResult.coreProduct) ? aiResult.coreProduct : keyword;
   
-  // 拆词数据：用于匹配度评分（不是严格过滤，匹配越多分越高）
-  let keywordTokens = (aiResult && aiResult.keywordTokens) ? aiResult.keywordTokens : [];
-  let expandedTokenGroups = (aiResult && aiResult.expandedTokenGroups) ? aiResult.expandedTokenGroups : [];
-  
-  // 降级：智能体没返回拆词时本地简单计算（只用核心词+修饰词，不做复杂拆词
-  if (keywordTokens.length === 0) {
-    keywordTokens = [coreProduct];
-    if (aiResult && aiResult.modifiers) {
-      const m = aiResult.modifiers;
-      if (m.style) keywordTokens.push(...m.style);
-      if (m.crowd) keywordTokens.push(...m.crowd);
-      if (m.brand) keywordTokens.push(...m.brand);
-      if (aiResult.brand && !keywordTokens.includes(aiResult.brand)) {
-        keywordTokens.push(aiResult.brand);
-      }
-    }
-  }
-  // 扩展词拆词降级：没有就用空数组（不影响）
-  if (expandedTokenGroups.length === 0 && filteredExpanded.length > 0) {
-    expandedTokenGroups = filteredExpanded.map(w => ({ word: w, tokens: [coreProduct] }));
-  }
-  
   // ====== 调试信息 ======
   console.log('[搜索调试] 搜索词:', keyword);
   console.log('[搜索调试] 核心商品词:', coreProduct);
   console.log('[搜索调试] 类目ID列表:', categoryIdList);
   console.log('[搜索调试] 类目过滤模式:', categoryTreeFilter ? 'categoryTree严格' : '宽松');
-  console.log('[搜索调试] 原词拆词:', keywordTokens);
   console.log('[搜索调试] 扩展词:', filteredExpanded);
-  console.log('[搜索调试] 扩展词拆词组:', expandedTokenGroups);
   // ======================
   
-  // 辅助函数：根据扩展词找对应的拆词组
-  function getTokensForWord(word) {
-    if (!word) return [];
-    const group = expandedTokenGroups.find(g => g.word === word);
-    return group ? group.tokens : [];
-  }
-  
-  // ===== 搜索策略：类目过滤 + 扩展词搜索 + 分层匹配评分 =====
+  // ===== 搜索策略：类目过滤 + 扩展词整词搜索 =====
   
   // 第一轮：类目ID + 主关键词（宽松匹配）
   try {
@@ -2045,8 +1992,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         coreProduct,
         categoryLevelNames,
         null,
-        categoryTreeFilter,
-        keywordTokens  // 原词拆词用于匹配度评分
+        categoryTreeFilter
       );
       console.log('[搜索调试] 第一轮主搜索: API返回', apiCount, '条 → 过滤后', products.length, '条');
       for (const p of products) {
@@ -2077,8 +2023,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter,
-          keywordTokens
+          looseCategoryFilter
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -2094,12 +2039,12 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   
   // 第二轮：类目范围内，用扩展词搜索（核心搜索方式）
   // 注意：API搜索词去掉平台词（跨境/亚马逊/外贸等），因为1688标题很少有这些词
-  // 相关性由类目筛选 + 拆词匹配度评分保证，平台词仅用于排序加分
+  // 相关性由类目筛选 + 核心商品词匹配保证，平台词仅用于排序加分
   if (filteredExpanded.length > 0) {
     // 平台词列表（搜索时去掉这些词）
     const platformWords = ['跨境', '亚马逊', '外贸', '速卖通', '出口', '独立站', 'ebay', 'temu', 'shein', 'shopee', 'lazada', 'wish', '跨境电商', '外贸出口'];
     
-    // 用前4个扩展词，每个单独搜（带类目过滤 + 拆词匹配度评分）
+    // 用前4个扩展词，每个单独搜（带类目过滤 + 核心词匹配）
     const expandWords = filteredExpanded.slice(0, 4);
     for (const expWord of expandWords) {
       if (allProducts.length >= 60) break;
@@ -2130,7 +2075,6 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         
         const result = await callDianLeiDaAPI('search', params);
         if (result.code === 200 && result.result && result.result.list) {
-          const expTokens = getTokensForWord(expWord);
           const apiCount = result.result.list.length;
           const products = processAPIProducts(
             result.result.list,
@@ -2139,10 +2083,9 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            categoryTreeFilter,
-            expTokens.length > 0 ? expTokens : keywordTokens  // 优先用扩展词自己的拆词，没有则用原词拆词
+            categoryTreeFilter
           );
-          console.log('[搜索调试] 扩展词搜索["' + expWord + '"] → API搜"' + apiSearchWord + '": 返回' + apiCount + '条 → 过滤后' + products.length + '条 (拆词:' + JSON.stringify(expTokens) + ')');
+          console.log('[搜索调试] 扩展词搜索["' + expWord + '"] → API搜"' + apiSearchWord + '": 返回' + apiCount + '条 → 过滤后' + products.length + '条');
           for (const p of products) {
             if (!seenIds.has(p.id)) {
               seenIds.add(p.id);
@@ -2196,8 +2139,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            looseCategoryFilter,
-            keywordTokens  // 兜底也用原词拆词评分
+            looseCategoryFilter
           );
           console.log('[搜索调试] 第一次兜底["' + combinedFallback + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
           for (const p of products) {
@@ -2235,8 +2177,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter,
-          keywordTokens  // 二次兜底也用原词拆词评分
+          looseCategoryFilter
         );
         console.log('[搜索调试] 二次兜底["' + keyword + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
         for (const p of products) {
