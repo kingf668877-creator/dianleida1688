@@ -1602,10 +1602,15 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     const title = (item.title || '').toLowerCase();
     const levelName = item.levelName || '';
     
-    // 排除词过滤
+    // 排除词过滤（保护：如果排除词包含核心词，说明是同品类不同款式，跳过这个排除词）
     let skip = false;
     for (const ex of excluded) {
-      if (ex.length >= 2 && title.includes(ex)) { skip = true; break; }
+      if (ex.length < 2) continue;
+      // 保护机制：排除词包含核心词或核心词包含排除词，说明是同品类，不排除
+      if (core && (ex.includes(core) || core.includes(ex))) continue;
+      // 保护机制：排除词包含核心名词，说明是同品类，不排除
+      if (coreNoun && coreNoun.length > 1 && ex.includes(coreNoun)) continue;
+      if (title.includes(ex)) { skip = true; break; }
     }
     if (skip) continue;
     

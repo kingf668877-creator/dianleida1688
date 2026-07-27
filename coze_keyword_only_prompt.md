@@ -31,7 +31,7 @@
 - **brand**：品牌名，没有则为空字符串
 - **modifiers**：修饰词，style款式、scene场景/平台、crowd人群，空的就空数组
 - **expandedKeywords**：5个扩展词。品牌必须带品牌名；跨境必须带跨境/外贸属性
-- **excludedKeywords**：5个排除词
+- **excludedKeywords**：5个排除词。**只能排除配件、材料、包装、完全不相关品类、竞品品牌。绝对不能排除同品类不同款式的商品！** 比如搜"包包"不能排除"化妆包""背包""手提包"；搜"手机壳"不能排除"透明手机壳""硅胶手机壳"
 - **requiredKeywords**：核心商品词 + 品牌词（有品牌时）
 
 ---
@@ -52,9 +52,9 @@
 {"coreProduct":"湿巾","brand":"babycare","modifiers":{"style":["手口","加厚"],"scene":["家用"],"crowd":["婴儿"]},"expandedKeywords":["babycare湿巾","babycare婴儿湿巾","babycare手口湿巾","babycare棉柔巾","babycare云柔巾"],"excludedKeywords":["全棉时代","好奇","帮宝适","维达","清风"],"requiredKeywords":["湿巾","babycare"]}
 ```
 
-**跨境麻将包：**
+**跨境包包：**
 ```json
-{"coreProduct":"麻将包","brand":"","modifiers":{"style":["创意","图案"],"scene":["跨境","亚马逊"],"crowd":["女"]},"expandedKeywords":["跨境麻将包","亚马逊麻将包","外贸麻将包","速卖通麻将女包","出口麻将手提包"],"excludedKeywords":["麻将牌","麻将机","材料包","配件包","包装袋"],"requiredKeywords":["麻将包"]}
+{"coreProduct":"包包","brand":"","modifiers":{"style":[],"scene":["跨境","亚马逊"],"crowd":["女"]},"expandedKeywords":["跨境女包","亚马逊包包","外贸手提包","速卖通双肩包","出口单肩包"],"excludedKeywords":["包带","包配件","五金配件","包装材料","纸箱"],"requiredKeywords":["包包"]}
 ```
 
 ---
