@@ -36,14 +36,14 @@
 - style：款式/属性/功能（挖掘机、透明、加厚、蓝牙、运动）
 - material：材质（PVC、硅胶、不锈钢、棉麻）
 - crowd：人群（女、男、儿童、宝宝、成人）
-- scene：场景/平台（跨境、亚马逊、外贸、户外、厨房）
+- scene：场景/平台（跨境、亚马逊、Amazon、AliExpress、Shopee、Lazada、Temu、TikTok、Shein、OZON、Wildberries、外贸、跨境爆款、亚马逊爆款、欧美爆款、temu爆款）
 - brand：品牌修饰词数组
 
 ### 3. expandedKeywords 扩展词（6~10个）
 - 往宽了扩（换属性、换相近品类），不要往窄了缩
 - **品类只能换相近的，不能跳太远**：公仔→毛绒玩具、玩偶（可以）；公仔→抱枕、挂件（不行，品类跳太远）
 - 品牌场景：必须带品牌名
-- 跨境场景：必须带跨境属性
+- 跨境场景：必须带跨境属性，换平台词（亚马逊、外贸、速卖通、Temu、Shein、欧美爆款等）
 - 节日/主题场景：必须带同一个节日/主题，不能跳到别的节日
 - 普通场景：品类 + 不同属性
 
@@ -82,7 +82,7 @@ babycare湿巾：
 
 跨境包包：
 ```json
-{"coreProduct":"包包","brand":"","modifiers":{"style":[],"material":[],"crowd":["女"],"scene":["跨境","亚马逊"],"brand":[]},"expandedKeywords":["跨境女包","亚马逊包包","外贸手提包","速卖通双肩包","出口单肩包","跨境钱包","外贸背包"],"requiredKeywords":["包包"]}
+{"coreProduct":"包包","brand":"","modifiers":{"style":[],"material":[],"crowd":["女"],"scene":["跨境","亚马逊","Amazon","AliExpress","Temu","Shein","外贸","跨境爆款"],"brand":[]},"expandedKeywords":["跨境女包","亚马逊女包","AliExpress包包","Temu女包","Shein包包","外贸手提包","欧美爆款女包","跨境爆款包包","速卖通双肩包"],"requiredKeywords":["包包"]}
 ```
 
 teethers：
