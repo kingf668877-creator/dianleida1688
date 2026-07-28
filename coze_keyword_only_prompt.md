@@ -32,11 +32,13 @@
 - **requiredKeywords**：只有核心品类词（有品牌加品牌）。不要放属性词。例：挖掘机玩具→[玩具]
 
 英文词处理规则（非常重要！）：
-- 用户输入英文词时，coreProduct保留英文原词
-- **扩展词必须包含对应的中文词**，因为1688是中文平台，中文标题商品占绝大多数
+- 判断原则：通用产品词翻译成中文；品牌名、专有名词保留英文
+- **通用产品词**（如teethers、backpack、phone case）→ coreProduct用中文展示，扩展词以中文为主
+- **品牌名/专有名词**（如Arctic Winter Guardians、Nike、Supreme）→ coreProduct保留英文，brand字段填品牌名
+- 扩展词必须包含对应的中文词，因为1688是中文平台，中文标题商品占绝大多数
 - requiredKeywords放中文品类词（用于兜底过滤）
-- 扩展词前2~3个带英文+中文，后面以中文扩展为主
-- 示例：teethers → expandedKeywords: ["teethers牙胶", "婴儿牙胶", "宝宝磨牙棒", "咬咬乐", "硅胶牙胶", "安抚牙胶"], requiredKeywords: ["牙胶"]
+- 示例1（通用产品词）：teethers → coreProduct:"牙胶", expandedKeywords:["teethers牙胶","婴儿牙胶","宝宝磨牙棒","咬咬乐","硅胶牙胶","安抚牙胶"], requiredKeywords:["牙胶"]
+- 示例2（品牌/专有名词）：Arctic Winter Guardians → coreProduct:"Arctic Winter Guardians", brand:"Arctic Winter Guardians", 扩展词必须带品牌名
 
 品牌规则：
 - 品牌名+商品名（如babycare湿巾、Nike袜子）视为指定品牌
