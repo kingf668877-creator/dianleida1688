@@ -27,7 +27,9 @@
 
 ## 字段说明
 
-- **coreProduct**：商品本体词
+- **coreProduct**：商品本体词（品类词），抓最准确的品类词，不要抓款式/功能词。
+  - 正确：厨房玩具→厨房玩具，儿童手表→手表，运动水杯→水杯，蓝牙耳机→耳机
+  - 错误：厨房玩具→煮饭台，儿童手表→电话手表，运动水杯→保温杯
 - **brand**：品牌名，没有则为空字符串
 - **modifiers**：修饰词，style款式、scene场景/平台、crowd人群，空的就空数组
 - **expandedKeywords**：5个扩展词。品牌必须带品牌名；跨境必须带跨境/外贸属性
@@ -55,6 +57,11 @@
 **跨境包包：**
 ```json
 {"coreProduct":"包包","brand":"","modifiers":{"style":[],"scene":["跨境","亚马逊"],"crowd":["女"]},"expandedKeywords":["跨境女包","亚马逊包包","外贸手提包","速卖通双肩包","出口单肩包"],"excludedKeywords":["包带","包配件","五金配件","包装材料","纸箱"],"requiredKeywords":["包包"]}
+```
+
+**厨房玩具仿真煮饭台：**
+```json
+{"coreProduct":"厨房玩具","brand":"","modifiers":{"style":["仿真","煮饭台"],"scene":["厨房"],"crowd":["儿童"]},"expandedKeywords":["儿童厨房玩具","仿真煮饭玩具","过家家厨房玩具","儿童做饭玩具套装","益智厨房玩具"],"excludedKeywords":["玩具配件","玩具材料","包装盒","真厨房","真灶台"],"requiredKeywords":["厨房玩具"]}
 ```
 
 ---
