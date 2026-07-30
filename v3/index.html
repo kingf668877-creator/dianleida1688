@@ -1642,11 +1642,24 @@ function deriveCategoryFilterFromTree(categoryTree) {
 }
 
 // ===== 处理API返回的商品 =====
-function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter) {
+function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProduct, categoryLevelNames, productAttrs, categoryTreeFilter, expandedKeywords, expandedTokenGroups, modifiers) {
   const result = [];
   const excluded = (excludedKeywords || []).map(k => k.toLowerCase());
   const required = (requiredKeywords || []).map(k => k.toLowerCase());
   const core = coreProduct ? coreProduct.toLowerCase() : '';
+  const expanded = (expandedKeywords || []).map(k => k.toLowerCase());
+  const expandedTokens = (expandedTokenGroups || []).map(g => ({
+    word: (g.word || '').toLowerCase(),
+    tokens: (g.tokens || []).map(t => t.toLowerCase())
+  }));
+  // 收集所有修饰词
+  const allModifiers = [];
+  if (modifiers) {
+    if (modifiers.style) allModifiers.push(...modifiers.style.map(s => s.toLowerCase()));
+    if (modifiers.material) allModifiers.push(...modifiers.material.map(s => s.toLowerCase()));
+    if (modifiers.crowd) allModifiers.push(...modifiers.crowd.map(s => s.toLowerCase()));
+    if (modifiers.scene) allModifiers.push(...modifiers.scene.map(s => s.toLowerCase()));
+  }
   const levelNames = categoryLevelNames || [];
   // 提取核心名词（用于宽松匹配）
   let coreNoun = '';
@@ -1953,46 +1966,90 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       if (!hasContainerNoun) continue;
     }
     
-    // 计算相关性评分（用于排序，不影响是否通过）
+    // ===== 五层相关性评分（用于排序） =====
+    // 第一层（100分）：必含词第一个 + 全部修饰词都有
+    // 第二层（80分）：扩展词完整匹配（任意一个扩展词整词出现在标题中）
+    // 第三层（60分）：扩展词拆词全部命中 + 必含词第一个
+    // 第四层（40分）：必含词第一个 + 部分修饰词（>=1个）
+    // 第五层（20分）：只有必含词第一个（基础门槛）
     let relevanceScore = 0;
-    // 完全匹配核心产品词 +10
-    if (core && title.includes(core)) relevanceScore += 10;
-    // 包含明确的"XX包"结构（前面不是量词）+5
-    if (coreNoun && coreNoun.length === 1) {
-      const idx = title.indexOf(coreNoun);
-      if (idx > 0) {
-        const prevChar = title[idx - 1];
-        const measureWords = ['一', '两', '三', '四', '五', '六', '七', '八', '九', '十', '几', '每', '整', '半', '数'];
-        if (!measureWords.includes(prevChar) && !/\d/.test(prevChar)) {
-          relevanceScore += 5;
+    let tierLevel = 5; // 默认第五层
+    
+    const firstRequired = required.length > 0 ? required[0] : '';
+    const hasFirstRequired = firstRequired && title.includes(firstRequired);
+    
+    // 计算修饰词命中数
+    let modifierHitCount = 0;
+    for (const mod of allModifiers) {
+      if (mod && mod.length >= 2 && title.includes(mod)) {
+        modifierHitCount++;
+      }
+    }
+    const totalModifiers = allModifiers.filter(m => m && m.length >= 2).length;
+    
+    // 检查扩展词整词匹配
+    let hasExpandedExact = false;
+    for (const ew of expanded) {
+      if (ew && ew.length >= 2 && title.includes(ew)) {
+        hasExpandedExact = true;
+        break;
+      }
+    }
+    
+    // 检查扩展词拆词匹配（任意一组拆词全部命中）
+    let hasExpandedTokenMatch = false;
+    for (const group of expandedTokens) {
+      if (!group.tokens || group.tokens.length === 0) continue;
+      let allTokensHit = true;
+      for (const tok of group.tokens) {
+        if (tok && tok.length >= 1 && !title.includes(tok)) {
+          allTokensHit = false;
+          break;
         }
       }
-    } else if (coreNoun && coreNoun.length > 1 && title.includes(coreNoun)) {
-      relevanceScore += 5;
+      if (allTokensHit) {
+        hasExpandedTokenMatch = true;
+        break;
+      }
     }
-    // 类目匹配加分（精确匹配+8，宽泛匹配+5，宽松匹配+3，不匹配0分但不排除）
+    
+    // 五层判断（从高到低）
+    if (hasFirstRequired && totalModifiers > 0 && modifierHitCount === totalModifiers) {
+      // 第一层：必含词第一个 + 全部修饰词
+      relevanceScore = 100;
+      tierLevel = 1;
+    } else if (hasExpandedExact) {
+      // 第二层：扩展词整词匹配
+      relevanceScore = 80;
+      tierLevel = 2;
+    } else if (hasFirstRequired && hasExpandedTokenMatch) {
+      // 第三层：必含词第一个 + 扩展词拆词全部命中
+      relevanceScore = 60;
+      tierLevel = 3;
+    } else if (hasFirstRequired && modifierHitCount > 0) {
+      // 第四层：必含词第一个 + 部分修饰词
+      relevanceScore = 40;
+      tierLevel = 4;
+    } else if (hasFirstRequired) {
+      // 第五层：只有必含词第一个
+      relevanceScore = 20;
+      tierLevel = 5;
+    }
+    
+    // 同一层级内的微调加分（不跨层）
+    // 修饰词命中越多分越高（在层级内微调，最多+9分）
+    if (totalModifiers > 0) {
+      relevanceScore += Math.min(9, Math.floor(modifierHitCount / totalModifiers * 9));
+    }
+    // 类目匹配加分（精确+5，宽泛+3，宽松+2，不影响层级）
     if (categoryMatch === 'exact') {
-      relevanceScore += 8;
-    } else if (categoryMatch === 'broad') {
       relevanceScore += 5;
-    } else if (categoryMatch === 'loose' || categoryMatch === true) {
+    } else if (categoryMatch === 'broad') {
       relevanceScore += 3;
+    } else if (categoryMatch === 'loose' || categoryMatch === true) {
+      relevanceScore += 2;
     }
-    // 属性标签匹配：智能体返回的属性值在标题中命中则加分（每个+2，最高+6）
-    if (productAttrs && productAttrs.tags && Array.isArray(productAttrs.tags)) {
-      let attrHitCount = 0;
-      for (const tag of productAttrs.tags) {
-        if (tag.values && Array.isArray(tag.values)) {
-          for (const val of tag.values) {
-            if (val && val.length >= 2 && title.includes(val.toLowerCase())) {
-              attrHitCount++;
-            }
-          }
-        }
-      }
-      relevanceScore += Math.min(6, attrHitCount * 2);
-    }
-    // 销量分（归一化到0-2分）
+    // 销量分（归一化到0-2分，同层级内排序用）
     const salesScore = Math.min(2, Math.log10((item.saleQuantity || item.orderCount || 0) + 1) / 3);
     relevanceScore += salesScore;
     
@@ -2087,6 +2144,9 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   const excludedKeywords = (aiResult && aiResult.excludedKeywords) ? aiResult.excludedKeywords : [];
   const requiredKeywords = (aiResult && aiResult.requiredKeywords) ? aiResult.requiredKeywords : [];
   const coreProduct = (aiResult && aiResult.coreProduct) ? aiResult.coreProduct : keyword;
+  const expandedKeywords = (aiResult && aiResult.expandedKeywords) ? aiResult.expandedKeywords : [];
+  const expandedTokenGroups = (aiResult && aiResult.expandedTokenGroups) ? aiResult.expandedTokenGroups : [];
+  const modifiers = (aiResult && aiResult.modifiers) ? aiResult.modifiers : null;
   
   // ====== 调试信息 ======
   console.log('[搜索调试] 搜索词:', keyword);
@@ -2126,7 +2186,10 @@ async function fetchProductsFromAPI(keyword, aiResult) {
         coreProduct,
         categoryLevelNames,
         null,
-        categoryTreeFilter
+        categoryTreeFilter,
+        expandedKeywords,
+        expandedTokenGroups,
+        modifiers
       );
       console.log('[搜索调试] 第一轮主搜索: API返回', apiCount, '条 → 过滤后', products.length, '条');
       for (const p of products) {
@@ -2157,7 +2220,10 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter
+          looseCategoryFilter,
+          expandedKeywords,
+          expandedTokenGroups,
+          modifiers
         );
         for (const p of products) {
           if (!seenIds.has(p.id)) {
@@ -2217,7 +2283,10 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            categoryTreeFilter
+            categoryTreeFilter,
+            expandedKeywords,
+            expandedTokenGroups,
+            modifiers
           );
           console.log('[搜索调试] 扩展词搜索["' + expWord + '"] → API搜"' + apiSearchWord + '": 返回' + apiCount + '条 → 过滤后' + products.length + '条');
           for (const p of products) {
@@ -2273,7 +2342,10 @@ async function fetchProductsFromAPI(keyword, aiResult) {
             coreProduct,
             categoryLevelNames,
             null,
-            looseCategoryFilter
+            looseCategoryFilter,
+            expandedKeywords,
+            expandedTokenGroups,
+            modifiers
           );
           console.log('[搜索调试] 第一次兜底["' + combinedFallback + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
           for (const p of products) {
@@ -2311,7 +2383,10 @@ async function fetchProductsFromAPI(keyword, aiResult) {
           coreProduct,
           categoryLevelNames,
           null,
-          looseCategoryFilter
+          looseCategoryFilter,
+          expandedKeywords,
+          expandedTokenGroups,
+          modifiers
         );
         console.log('[搜索调试] 二次兜底["' + keyword + '"]: API返回', apiCount, '条 → 宽松类目+核心词过滤后', products.length, '条');
         for (const p of products) {
@@ -2608,10 +2683,10 @@ async function doSearch() {
   // 替换流式步骤为最终完成状态
   updateStep(step1Live, '🎯', 'Step 1: 核心词提取', step1Detail, tokens);
 
-  // ===== Step 2: 关键词扩展与排除 =====
+  // ===== Step 2: 关键词扩展 =====
   await new Promise(r => setTimeout(r, 300));
   const expanded = aiResult.expandedKeywords || [];
-  const excluded = aiResult.excludedKeywords || [];
+  const expandedTokens = aiResult.expandedTokenGroups || [];
   
   let step2Detail = '';
   let step2Tokens = [];
@@ -2622,23 +2697,33 @@ async function doSearch() {
   } else {
     step2Detail += '无需额外扩展';
   }
-  if (excluded.length > 0) {
-    step2Detail += ' · 排除 ' + excluded.length + ' 个不相关词';
-  }
   
-  addStep('🔗', 'Step 2: 关键词扩展与排除', step2Detail, step2Tokens);
+  addStep('🔗', 'Step 2: 关键词扩展', step2Detail, step2Tokens);
   
-  // 展示排除词（如果有的话）
-  if (excluded.length > 0) {
-    const excludedEl = document.createElement('div');
-    excludedEl.style.cssText = 'margin-top:8px;font-size:12px;color:#9CA3AF;';
-    excludedEl.innerHTML = '<span style="color:#9CA3AF;">排除词：</span>' + 
-      excluded.slice(0, 6).map(k => '<span style="display:inline-block;padding:2px 8px;margin:2px;background:#FEF2F2;color:#EF4444;border-radius:10px;font-size:11px;">' + escapeHtml(k) + '</span>').join('');
+  // 展示扩展词拆词详情
+  if (expandedTokens.length > 0) {
+    const expandDetailEl = document.createElement('div');
+    expandDetailEl.style.cssText = 'margin-top:10px;padding:12px;background:#F9FAFB;border-radius:8px;font-size:12px;';
+    let html = '<div style="font-weight:600;color:#374151;margin-bottom:8px;">📝 扩展词拆词详情</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    expandedTokens.slice(0, 8).forEach(group => {
+      const word = group.word || '';
+      const tokens = group.tokens || [];
+      html += '<div style="background:#fff;border:1px solid #E5E7EB;border-radius:6px;padding:6px 10px;">';
+      html += '<div style="color:#111827;font-weight:500;margin-bottom:4px;">' + escapeHtml(word) + '</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;">';
+      tokens.forEach(t => {
+        html += '<span style="background:#EEF2FF;color:#4F46E5;padding:1px 6px;border-radius:4px;font-size:11px;">' + escapeHtml(t) + '</span>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+    expandDetailEl.innerHTML = html;
     // 添加到最后一个步骤里
     const lastStep = document.getElementById('ai-steps').lastElementChild;
     if (lastStep) {
       const contentEl = lastStep.querySelector('.ai-step-content');
-      if (contentEl) contentEl.appendChild(excludedEl);
+      if (contentEl) contentEl.appendChild(expandDetailEl);
     }
   }
 
