@@ -2010,7 +2010,7 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
     // 第二层（80分）：扩展词完整匹配（任意一个扩展词整词出现在标题中）
     // 第三层（60分）：扩展词拆词全部命中 + 必含词第一个
     // 第四层（40分）：必含词第一个 + 部分修饰词（>=1个）
-    // 第五层（20分）：只有必含词第一个（基础门槛）
+    // 第五层（20分）：只有必含词第一个 → 排除！不参与排序和查找
     let relevanceScore = 0;
     let tierLevel = 5; // 默认第五层
     
@@ -2070,9 +2070,17 @@ function processAPIProducts(items, excludedKeywords, requiredKeywords, coreProdu
       relevanceScore = 40;
       tierLevel = 4;
     } else if (hasFirstRequired) {
-      // 第五层：只有必含词第一个
-      relevanceScore = 20;
-      tierLevel = 5;
+      // 第五层：只有必含词第一个 → 排除！
+      // 注意：如果没有修饰词也没有扩展词（纯品类搜索），则允许第五层
+      const hasAnyFilter = totalModifiers > 0 || expanded.length > 0;
+      if (!hasAnyFilter) {
+        // 纯品类搜索，第五层允许
+        relevanceScore = 20;
+        tierLevel = 5;
+      } else {
+        // 有修饰词/扩展词的情况下，第五层直接排除
+        continue;
+      }
     }
     
     // 同一层级内的微调加分（不跨层）
