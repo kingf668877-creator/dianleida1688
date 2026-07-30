@@ -828,8 +828,8 @@ body {
 <script>
 // ===== 店雷达API配置 =====
 const API_DIRECT_URL = 'https://open.dianleida.net/api/v1/product/search';
-const API_APP_ID = 'f973685c8aae4bde';
-const API_APP_SECRET = '9b921e202725436ba193b4ef9812345';
+const API_APP_ID = '56a337d738712dd3';
+const API_APP_SECRET = '3d24d39a56a337d738712dd32ca4f899';
 
 function generateApiSign(params){
   const sortedKeys=Object.keys(params).filter(k=>params[k]!==null&&params[k]!==undefined&&k!=='sign').sort();
@@ -1029,6 +1029,39 @@ async function callCozeBot(botId, query, onStreamDelta) {
         reject(new Error('智能体分析超时（90秒），请重试'));
       }, 90000);
       
+      // 重复内容检测：如果输出内容在循环重复，提前中断
+      let lastCheckLength = 0;
+      let repeatCount = 0;
+      const checkRepeat = () => {
+        // 每增加500字检查一次
+        if (answerContent.length - lastCheckLength > 500) {
+          const currentLen = answerContent.length;
+          // 检查最后200字是否出现在之前的内容中（重复输出）
+          if (currentLen > 400) {
+            const tail = answerContent.substring(currentLen - 200);
+            const beforeTail = answerContent.substring(0, currentLen - 200);
+            if (beforeTail.includes(tail)) {
+              repeatCount++;
+              if (repeatCount >= 2) {
+                addDebugLog('检测到重复输出，提前中断，尝试提取JSON');
+                try {
+                  const json = extractJSON(answerContent);
+                  if (json) {
+                    clearTimeout(sseTimeoutId);
+                    resolve(json);
+                    return true;
+                  }
+                } catch(e) {}
+              }
+            } else {
+              repeatCount = 0;
+            }
+          }
+          lastCheckLength = currentLen;
+        }
+        return false;
+      };
+      
       parseSSE(
         response,
         // onMessage
@@ -1043,6 +1076,8 @@ async function callCozeBot(botId, query, onStreamDelta) {
             if (msgType === 'answer') {
               answerStarted = true;
               answerContent += content;
+              // 重复检测：检测到重复提前中断
+              if (checkRepeat && checkRepeat()) return;
               if (onStreamDelta) {
                 onStreamDelta(content, answerContent);
               }
@@ -1288,6 +1323,34 @@ async function callZhipuSearchAnalysis(query) {
 }
 
 // ===== 简单规则引擎（最后兜底）=====
+// 常见纯修饰词/场景词列表（没有品类含义，单独搜会导致智能体卡住）
+const PURE_MODIFIER_WORDS = [
+  '欧美', '跨境', '外贸', '出口', '亚马逊', '速卖通', 'temu', 'shein', 'shopee', 'lazada', 'ozon', 'wildberries',
+  '户外', '室内', '家用', '办公', '商用', '厨房', '卧室', '客厅', '浴室',
+  '新款', '爆款', '热销', '批发', '厂家', '现货', '定制', '高档', '轻奢',
+  '女', '男', '儿童', '宝宝', '婴儿', '成人', '老人', '学生',
+  '透明', '磨砂', '加厚', '防水', '折叠', '便携', '迷你', '大号', '小号',
+  'pvc', '硅胶', '不锈钢', '棉麻', '真皮', '帆布', '尼龙',
+];
+
+// 判断搜索词是否只有修饰词没有品类词
+function isPureModifierQuery(query) {
+  if (!query || query.length < 2) return false;
+  const q = query.toLowerCase();
+  // 太短的直接算模糊
+  if (q.length <= 2) {
+    // 检查是否是纯修饰词
+    return PURE_MODIFIER_WORDS.some(w => q === w || q.includes(w) && q.length <= w.length + 2);
+  }
+  // 常见品类词列表（用于判断是否包含品类）
+  const categoryWords = ['包', '袋', '箱', '玩具', '耳机', '水杯', '手表', '手机壳', '服装', '鞋', '袜', '帽', '巾', '本', '笔', '尺', '灯', '具', '品', '器', '机', '架', '盒', '桶', '盆', '碗', '杯', '瓶', '罐', '垫', '套', '带', '线', '管', '板', '片', '条', '球', '车', '船', '模', '型'];
+  const hasCategory = categoryWords.some(w => q.includes(w));
+  if (hasCategory) return false;
+  // 没有品类词，检查是否主要是修饰词
+  const hasModifier = PURE_MODIFIER_WORDS.some(w => q.includes(w));
+  return hasModifier;
+}
+
 function ruleBasedAnalysis(query) {
   const bagPatterns = ['包', '袋', '箱'];
   const isBag = bagPatterns.some(p => query.includes(p));
@@ -1295,18 +1358,29 @@ function ruleBasedAnalysis(query) {
   let expanded = [query];
   let excluded = [];
   let categoryId = '';
+  let coreProduct = query;
   
   if (isBag) {
     mainCategory = '箱包皮具';
     subCategory = '女士包袋';
     categoryId = '1001';
+    coreProduct = '包包';
     expanded = [query + ' 女包', query + ' 箱包', '新款' + query, '时尚' + query];
     excluded = ['材料包', '包装袋', '礼品袋', '工具包', '配件包', '压缩包'];
   }
   
+  // 纯修饰词/场景词兜底：猜一个常见大品类
+  if (isPureModifierQuery(query)) {
+    mainCategory = '家居百货';
+    subCategory = '家居用品';
+    coreProduct = '家居用品';
+    expanded = [query + ' 家居用品', query + ' 日用品', query + ' 百货', query + ' 小商品'];
+    excluded = [];
+  }
+  
   return {
     category: { mainCategory, subCategory, categoryId, categoryKeywords: [] },
-    coreProduct: query,
+    coreProduct: coreProduct,
     modifiers: { style: [], material: [], crowd: [], scene: [], priceRange: {min:null,max:null}, other: [] },
     expandedKeywords: expanded,
     excludedKeywords: excluded,
@@ -2419,13 +2493,27 @@ async function doSearch() {
   let aiResult = null;
   let aiSource = 'none';
   
+  // 快速兜底：纯修饰词/模糊查询（如"欧美"）直接走规则引擎，避免智能体卡住重复
+  const isVagueQuery = isPureModifierQuery(query);
+  
   // Step 1: 先添加搜索词分析的流式步骤（直接展示智能体输出的分析过程原文）
   const step1Live = addLoadingStep('🎯', 'Step 1: 搜索词分析中...', '正在分析...');
   const step1LiveDetail = step1Live.querySelector('.ai-step-detail');
   const analysisSubEl = document.getElementById('analysis-sub');
   let analysisProcessText = '';  // 保存分析过程的纯文本（JSON之前的部分）
   
-  const cozeData = await callCozeSearchAnalysis(query, (delta, fullText) => {
+  let cozeData = null;
+  if (isVagueQuery) {
+    // 模糊查询直接走规则引擎，不调用智能体
+    addDebugLog('检测到纯修饰词查询，直接走规则引擎兜底');
+    aiSource = 'rule_based';
+    const ruleResult = ruleBasedAnalysis(query);
+    cozeData = { result: ruleResult, categoryTime: 0, keywordTime: 0 };
+    // 更新UI状态
+    updateStepStatus(step1Live, 'done', 'Step 1: 搜索词分析完成', '快速模式（规则引擎）');
+    analysisSubEl.textContent = '分析完成（快速模式）';
+  } else {
+    cozeData = await callCozeSearchAnalysis(query, (delta, fullText) => {
     // 实时提取 JSON 之前的分析过程文字，直接展示
     const jsonStartIndex = fullText.indexOf('{');
     let processText = fullText;
@@ -2469,6 +2557,7 @@ async function doSearch() {
       total: performance.now() - totalStartTime 
     });
   });
+  }
   
   if (cozeData && cozeData.result) {
     aiResult = cozeData.result;
