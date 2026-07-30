@@ -1398,6 +1398,7 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, ori
   
   // 从原始搜索词中提取核心限定词（去掉核心商品词后剩下的）
   let modifierWords = [];
+  let coreModifierWords = []; // 核心限定词：原词中去掉品类词后剩下的实词，扩展词必须包含
   if (query && core) {
     // 去掉核心商品词，剩余部分按常见分隔符切分
     let remaining = query.replace(core, '').trim();
@@ -1419,6 +1420,26 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, ori
     for (const p of modifierPatterns) {
       const m = query.match(p);
       if (m && !modifierWords.includes(m[0])) modifierWords.push(m[0]);
+    }
+    // 核心限定词：去掉核心品类词后，剩余的实词（2字以上）
+    // 比如"挖掘机玩具"去掉"玩具"后剩"挖掘机"→核心限定词
+    // 作用：扩展词必须包含至少一个核心限定词，防止跑偏
+    if (remaining && remaining.length >= 2) {
+      // 去掉常见修饰词后剩下的就是核心限定词
+      let coreMod = remaining;
+      for (const p of modifierPatterns) {
+        coreMod = coreMod.replace(p, '');
+      }
+      coreMod = coreMod.replace(/[的地得与和及\s]/g, '').trim();
+      if (coreMod.length >= 2) {
+        // 按2字词组切分（简单中文分词）
+        for (let i = 0; i <= coreMod.length - 2; i++) {
+          const word = coreMod.substring(i, i + 2);
+          if (!coreModifierWords.includes(word)) coreModifierWords.push(word);
+        }
+        // 也加入完整剩余词
+        if (!coreModifierWords.includes(coreMod)) coreModifierWords.unshift(coreMod);
+      }
     }
   }
   
@@ -1469,6 +1490,15 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, ori
     }
     
     if (!hasCoreWord) return false;
+    
+    // 核心限定词校验：如果原词有核心限定词（如"挖掘机玩具"的"挖掘机"），扩展词必须包含至少一个
+    // 防止"挖掘机玩具"扩展出"儿童玩具车""益智工程玩具"这种跑偏的
+    if (coreModifierWords.length > 0) {
+      const hasCoreModifier = coreModifierWords.some(cm => 
+        lowerKw.includes(cm.toLowerCase())
+      );
+      if (!hasCoreModifier) return false;
+    }
     
     // 关键校验：如果原始搜索词有限定词，扩展词也必须至少包含一个限定词
     // 防止“跨境女装”扩展出“休闲女装”“大码女装”这种跑偏的

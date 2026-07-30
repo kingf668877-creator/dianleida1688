@@ -24,12 +24,18 @@
 - scene：场景/平台（跨境、亚马逊、Temu、Shein、外贸、欧美爆款）
 - brand：品牌数组
 
-### expandedKeywords 扩展词（4~6个，别多！）
+### expandedKeywords 扩展词（2~4个，宁缺毋滥！）
+- **第一个必须是原词本身**（原样保留）
+- **【红线】所有扩展词必须包含 coreProduct 核心品类词**，一个都不能少
+  - 核心词是"玩具"→每个扩展词都必须带"玩具"二字
+  - 核心词是"耳机"→每个扩展词都必须带"耳机"二字
+  - 核心词是"包包"→每个扩展词都必须带"包"字
+- 只换最相关的修饰词/属性，**不换品类**，不确定的词不要加
 - 品牌场景：都带品牌名
 - 跨境场景：都带跨境/外贸属性（换平台词）
-- 节日场景：都带同一个节日
-- 系列/IP场景：都带系列名
-- 品类只能换相近的，别跳太远
+- 节日/系列场景：都带节日/系列名
+- 【禁止】儿童玩具车、益智工程玩具、惯性车玩具——这些不带"挖掘机/工程车"核心属性，禁止输出
+- 宁缺毋滥：想不出精准的就少扩展，2个也行，别硬凑
 
 ### expandedTokenGroups 扩展词拆词组
 - 每个扩展词拆成2~3个词，品牌/系列/平台/品类作为独立词
@@ -52,17 +58,17 @@
 
 挖掘机玩具：
 ```json
-{"coreProduct":"玩具","brand":"","modifiers":{"style":["挖掘机","工程车"],"material":[],"crowd":["儿童"],"scene":[],"brand":[]},"expandedKeywords":["挖掘机玩具","工程车玩具","挖土机玩具","儿童玩具车"],"expandedTokenGroups":[{"word":"挖掘机玩具","tokens":["挖掘机","玩具"]},{"word":"工程车玩具","tokens":["工程车","玩具"]},{"word":"挖土机玩具","tokens":["挖土机","玩具"]},{"word":"儿童玩具车","tokens":["儿童","玩具车"]}],"requiredKeywords":["玩具"]}
-```
-
-babycare湿巾（品牌）：
-```json
-{"coreProduct":"湿巾","brand":"babycare","modifiers":{"style":["手口","加厚"],"material":["无纺布"],"crowd":["婴儿","宝宝"],"scene":["家用"],"brand":["babycare"]},"expandedKeywords":["babycare湿巾","babycare婴儿湿巾","babycare手口湿巾","babycare棉柔巾"],"expandedTokenGroups":[{"word":"babycare湿巾","tokens":["babycare","湿巾"]},{"word":"babycare婴儿湿巾","tokens":["babycare","婴儿","湿巾"]},{"word":"babycare手口湿巾","tokens":["babycare","手口","湿巾"]},{"word":"babycare棉柔巾","tokens":["babycare","棉柔巾"]}],"requiredKeywords":["湿巾","babycare"]}
+{"coreProduct":"玩具","brand":"","modifiers":{"style":["挖掘机","工程车"],"material":[],"crowd":["儿童"],"scene":[],"brand":[]},"expandedKeywords":["挖掘机玩具","工程车玩具","挖土机玩具"],"expandedTokenGroups":[{"word":"挖掘机玩具","tokens":["挖掘机","玩具"]},{"word":"工程车玩具","tokens":["工程车","玩具"]},{"word":"挖土机玩具","tokens":["挖土机","玩具"]}],"requiredKeywords":["玩具"]}
 ```
 
 跨境包包（跨境）：
 ```json
 {"coreProduct":"包包","brand":"","modifiers":{"style":[],"material":[],"crowd":["女"],"scene":["跨境","亚马逊","Temu","Shein","外贸"],"brand":[]},"expandedKeywords":["跨境女包","亚马逊女包","Temu女包","外贸手提包"],"expandedTokenGroups":[{"word":"跨境女包","tokens":["跨境","女包"]},{"word":"亚马逊女包","tokens":["亚马逊","女包"]},{"word":"Temu女包","tokens":["Temu","女包"]},{"word":"外贸手提包","tokens":["外贸","手提包"]}],"requiredKeywords":["包包"]}
+```
+
+字里行间系列（系列名）：
+```json
+{"coreProduct":"笔记本","brand":"","modifiers":{"style":["字里行间","系列"],"material":[],"crowd":["学生","办公"],"scene":[],"brand":[]},"expandedKeywords":["字里行间笔记本","字里行间手账本","字里行间胶套本","字里行间文具套装"],"expandedTokenGroups":[{"word":"字里行间笔记本","tokens":["字里行间","笔记本"]},{"word":"字里行间手账本","tokens":["字里行间","手账本"]},{"word":"字里行间胶套本","tokens":["字里行间","胶套本"]},{"word":"字里行间文具套装","tokens":["字里行间","文具","套装"]}],"requiredKeywords":["字里行间","笔记本"]}
 ```
 
 ---
