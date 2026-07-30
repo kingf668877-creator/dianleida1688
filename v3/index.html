@@ -1389,7 +1389,7 @@ function ruleBasedAnalysis(query) {
 }
 
 // ===== 扩展词相关性过滤 =====
-function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, originalQuery) {
+function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, originalQuery, modifiers) {
   if (!expandedKeywords || expandedKeywords.length === 0) return [];
   
   const core = coreProduct || '';
@@ -1439,6 +1439,15 @@ function filterRelevantKeywords(expandedKeywords, coreProduct, categoryName, ori
         }
         // 也加入完整剩余词
         if (!coreModifierWords.includes(coreMod)) coreModifierWords.unshift(coreMod);
+      }
+    }
+  }
+  
+  // 把 modifiers.style 也加入核心限定词（智能体识别的款式词）
+  if (modifiers && modifiers.style && modifiers.style.length > 0) {
+    for (const s of modifiers.style) {
+      if (s && s.length >= 2 && !coreModifierWords.includes(s)) {
+        coreModifierWords.push(s);
       }
     }
   }
@@ -2163,7 +2172,7 @@ async function fetchProductsFromAPI(keyword, aiResult) {
   let filteredExpanded = [];
   if (aiResult && aiResult.expandedKeywords && aiResult.expandedKeywords.length > 0) {
     const catName = aiResult.category?.mainCategory || '';
-    filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName, keyword);
+    filteredExpanded = filterRelevantKeywords(aiResult.expandedKeywords, aiResult.coreProduct || keyword, catName, keyword, aiResult.modifiers);
     if (filteredExpanded.length < 2 && aiResult.expandedKeywords.length > filteredExpanded.length) {
       filteredExpanded = aiResult.expandedKeywords.slice(0, 3);
     }
