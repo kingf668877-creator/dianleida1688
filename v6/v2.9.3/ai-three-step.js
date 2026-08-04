@@ -78,46 +78,30 @@ function showToast(msg) {
   showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
-// ===== 侧边栏页面切换 =====
-const navItems = document.querySelectorAll('.nav-item[data-page]');
+// ===== 页面面板切换 =====
 const pagePanels = document.querySelectorAll('.page-panel');
 
 function switchPage(pageName) {
-  navItems.forEach(item => {
-    item.classList.toggle('active', item.dataset.page === pageName);
-  });
   pagePanels.forEach(panel => {
     panel.classList.toggle('active', panel.id === 'page-' + pageName);
   });
 }
 
-navItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const page = item.dataset.page;
-    if (page) switchPage(page);
-  });
-});
+// ===== URL 参数读取 =====
+function getUrlParam(name) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
 
-// ===== 侧边栏分组折叠 =====
-document.querySelectorAll('.nav-group-header').forEach(header => {
-  header.addEventListener('click', () => {
-    const group = header.parentElement;
-    const items = group.querySelector('.nav-group-items');
-    const isCollapsed = group.classList.toggle('collapsed');
-    if (items) {
-      items.style.display = isCollapsed ? 'none' : 'block';
-    }
-  });
-});
-
-// ===== 顶部工具栏按钮 =====
-document.getElementById('resetBtnTop')?.addEventListener('click', () => {
-  document.getElementById('resetBtn')?.click();
-});
-
-document.getElementById('submitBtnTop')?.addEventListener('click', () => {
-  document.getElementById('submitBtn')?.click();
-});
+// 页面加载时根据 URL 参数切换面板
+(function initPage() {
+  const page = getUrlParam('page');
+  if (page === 'list') {
+    switchPage('list');
+  } else {
+    switchPage('create');
+  }
+})();
 
 // ===== 图搜方式 Tab 切换 =====
 const tabBtns = document.querySelectorAll('.search-tabs .tab-btn');
@@ -410,11 +394,6 @@ resetBtn.addEventListener('click', () => {
   showToast('已重置');
 });
 
-// 顶部创建任务按钮（兼容旧ID）
-document.getElementById('createTaskBtn')?.addEventListener('click', () => {
-  switchPage('create');
-});
-
 // ===== 任务列表 =====
 const taskTableBody = document.getElementById('taskTableBody');
 
@@ -523,7 +502,6 @@ const detailModal = document.getElementById('detailModal');
 function showDetail(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
-  // 如果有弹窗就显示弹窗，没有就 toast
   if (detailModal) {
     document.getElementById('detailName').textContent = task.name;
     document.getElementById('detailType').textContent = task.typeText;

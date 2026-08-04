@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,6 @@
   html, body { width:100%; height:100%; overflow:hidden; }
   body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; color:var(--text); background:#f5f6f8; }
   .app { display:flex; width:100%; height:100vh; }
-
   /* 侧边栏 */
   .layers {
     width:224px; flex:0 0 224px;
@@ -24,7 +23,6 @@
     width:0; flex-basis:0;
     border-right:0;
   }
-
   .layers-title {
     height:52px; display:flex; align-items:center; justify-content:space-between;
     gap:10px; padding:0 16px; border-bottom:1px solid var(--border);
@@ -33,7 +31,6 @@
   .layers-title-left { display:flex; align-items:center; gap:10px; min-width:0; }
   .layers-title img { width:28px; height:28px; border-radius:6px; flex:0 0 28px; }
   .layers-title span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
   .toggle-btn {
     width:28px; height:28px; flex-shrink:0;
     border:0; border-radius:6px;
@@ -43,7 +40,6 @@
     transition:.15s;
   }
   .toggle-btn:hover { background:var(--hover); color:var(--text); }
-
   .search-wrap { padding:10px 12px 0; flex-shrink:0; }
   .search-input {
     width:100%; height:34px; padding:0 12px;
@@ -53,7 +49,6 @@
   }
   .search-input:focus { border-color:var(--blue); box-shadow:0 0 0 2px rgba(51,112,255,.10); }
   .search-input::placeholder { color:#a8abb2; }
-
   .layer-list { padding:10px 8px; flex:1; overflow-y:auto; }
   .version-folder {
     width:100%; height:34px; padding:0 10px;
@@ -75,13 +70,11 @@
     padding:2px 6px; border-radius:4px;
     background:#e8f0ff; color:var(--blue);
   }
-
   .version-pages {
     padding:4px 0 0 22px;
     display:none;
   }
   .version-pages.open { display:block; }
-
   .layer-empty { display:none; padding:18px 12px; color:#a8abb2; font-size:12px; text-align:center; }
   .layer-item {
     width:100%; height:42px; padding:0 12px;
@@ -98,12 +91,10 @@
     color:#fff; font-size:11px; font-weight:700;
   }
   .icon-p { background:#ff6b6b; }
-
   /* 主内容区 */
   .stage { min-width:0; flex:1; height:100%; background:#eef0f3; padding:20px; position:relative; }
   .frame-shell { width:100%; height:100%; overflow:hidden; background:#fff; border:1px solid #dfe1e5; border-radius:8px; box-shadow:0 8px 24px rgba(29,33,41,.08); }
   iframe { width:100%; height:100%; border:0; display:block; background:#fff; }
-
   /* 侧边栏收起时的展开按钮 */
   .expand-btn {
     position:fixed; top:12px; left:12px; z-index:100;
@@ -117,7 +108,6 @@
   }
   .expand-btn:hover { background:var(--hover); color:var(--text); }
   .expand-btn.show { display:flex; }
-
   @media (max-width:720px) {
     .layers { width:176px; flex-basis:176px; }
     .stage { padding:10px; }
@@ -128,7 +118,6 @@
 <div class="app">
   <!-- 收起时的展开按钮 -->
   <button class="expand-btn" id="expandBtn" title="展开导航栏">☰</button>
-
   <aside class="layers collapsed" id="layers" aria-label="店雷达选品导航">
     <div class="layers-title">
       <div class="layers-title-left">
@@ -141,7 +130,6 @@
       <input class="search-input" id="layerSearch" type="search" placeholder="搜索版本或页面">
     </div>
     <nav class="layer-list">
-
       <!-- V2.9.3 版本（最新） -->
       <div class="version-folder open" data-version="v2.9.3">
         <span class="folder-arrow">▶</span>
@@ -150,8 +138,8 @@
       </div>
       <div class="version-pages open" data-version="v2.9.3">
         <button class="layer-item active" data-page="v2.9.3/search-agent.html" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">P</span>创建图搜寻源</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent.html?page=list" data-search="V2.9.3 任务列表 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#ffa502;">L</span>任务列表</button>
       </div>
-
       <!-- V2.8.9 版本 -->
       <div class="version-folder" data-version="v2.8.9">
         <span class="folder-arrow">▶</span>
@@ -163,7 +151,6 @@
         <button class="layer-item" data-page="prototype-spec.html" data-search="V2.8.9 原型说明 版本规划 功能列表"><span class="layer-icon icon-p" style="background:#f59e0b;">P</span>原型说明</button>
         <button class="layer-item" data-page="backend-json-mapping-viewer.html" data-search="V2.8.9 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
       </div>
-
       <div class="layer-empty" id="layerEmpty">暂无匹配内容</div>
     </nav>
   </aside>
@@ -181,7 +168,6 @@
   const expandBtn = document.getElementById('expandBtn');
   const versionFolders = Array.from(document.querySelectorAll('.version-folder'));
   const versionPages = Array.from(document.querySelectorAll('.version-pages'));
-
   // ===== 侧边栏展开/收起 =====
   function toggleSidebar(show) {
     if (show) {
@@ -196,13 +182,11 @@
   }
   toggleBtn.addEventListener('click', () => toggleSidebar(false));
   expandBtn.addEventListener('click', () => toggleSidebar(true));
-
   // ===== 版本文件夹展开/收起 =====
   function toggleVersion(version, open) {
     const folder = document.querySelector('.version-folder[data-version="' + version + '"]');
     const pages = document.querySelector('.version-pages[data-version="' + version + '"]');
     if (!folder || !pages) return;
-
     if (open) {
       folder.classList.add('open');
       pages.classList.add('open');
@@ -211,7 +195,6 @@
       pages.classList.remove('open');
     }
   }
-
   versionFolders.forEach(folder => {
     folder.addEventListener('click', () => {
       const version = folder.dataset.version;
@@ -219,26 +202,22 @@
       toggleVersion(version, !isOpen);
     });
   });
-
   // ===== 页面切换 =====
   items.forEach(item => item.addEventListener('click', () => {
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
     frame.src = item.dataset.page;
   }));
-
   // ===== 搜索 =====
   layerSearch.addEventListener('input', () => {
     const keyword = layerSearch.value.trim().toLowerCase();
     let visibleCount = 0;
-
     // 搜索时展开所有版本
     const isSearching = !!keyword;
     versionFolders.forEach(folder => {
       const version = folder.dataset.version;
       const pages = document.querySelector('.version-pages[data-version="' + version + '"]');
       const versionMatched = version.includes(keyword);
-
       if (isSearching) {
         folder.classList.add('open');
         pages.classList.add('open');
@@ -253,17 +232,14 @@
         }
       }
     });
-
     items.forEach(item => {
       const text = (item.dataset.search || item.textContent).toLowerCase();
       const matched = !keyword || text.includes(keyword);
       item.style.display = matched ? 'flex' : 'none';
       if (matched) visibleCount += 1;
     });
-
     layerEmpty.style.display = visibleCount > 0 ? 'none' : 'block';
   });
-
   // ===== 初始化 =====
   const savedState = localStorage.getItem('sidebar-collapsed');
   if (savedState === 'false') {
