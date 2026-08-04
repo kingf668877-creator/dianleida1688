@@ -677,9 +677,33 @@ function deleteTask(id) {
   showToast('任务已删除');
 }
 
-// 查看结果
+// 查看结果 - 跳转到寻源结果页
 function viewResult(id) {
-  showToast('跳转到寻源结果页...');
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  currentResultTask = task;
+
+  // 填充图源信息
+  document.getElementById('resultTaskName').textContent = task.name;
+  document.getElementById('resultTaskType').textContent = task.typeText;
+  document.getElementById('resultTotalCount').textContent = task.finished || task.count;
+  document.getElementById('resultTaskTime').textContent = task.createTime;
+
+  // 模拟图源图片
+  const sourceImg = document.getElementById('resultSourceImg');
+  sourceImg.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect fill="%23f5f6fa" width="56" height="56"/><text x="28" y="34" text-anchor="middle" font-size="20" fill="%23ff6a00">IMG</text></svg>');
+
+  // 生成寻源结果数据
+  generateSourcingResults(task.count || 20);
+
+  // 切换到结果页
+  switchPage('result');
+  renderResultCards();
+}
+
+// 返回任务列表
+function goListPage() {
+  switchPage('list');
 }
 
 // ===== 详情弹窗 =====
@@ -951,3 +975,377 @@ resetEditBtn?.addEventListener('click', () => {
 renderTaskTable();
 // 让已有的执行中任务继续跑
 tasks.filter(t => t.status === 'running').forEach(t => simulateTaskProgress(t.id));
+
+// ===== 寻源结果数据 =====
+let currentResultTask = null;
+let sourcingResults = [];
+let resultSelectedIds = new Set();
+let resultPaginationState = { currentPage: 1, pageSize: 20, totalItems: 0, totalPages: 1 };
+
+// 商品名模板
+const productNames = [
+  '网红创意榴莲玩偶可拆换 plush toy 毛绒玩具',
+  '夏季冰丝空调毯 冷感毯 夏凉被',
+  '北欧ins风收纳盒 大容量桌面整理盒',
+  '硅胶厨房收纳架 可伸缩沥水置物架',
+  '加厚不锈钢洗衣液收纳架 承重壁挂架',
+  '创意玻璃花瓶 客厅桌面插花装饰',
+  '多功能USB充电床头小夜灯 触控调光',
+  '可折叠宠物猫窝 四季通用猫床',
+  '智能体脂秤蓝牙电子秤 精准称重',
+  '304不锈钢保温杯 大容量男女便携',
+  '竹纤维毛巾速干浴巾 超吸水家用',
+  '北欧风棉麻抱枕套 沙发靠垫套',
+  '食品级硅胶保鲜盖 多尺寸弹力盖',
+  '免打孔壁挂置物架 浴室厨房收纳',
+  '防水牛津布收纳袋 大容量衣物袋',
+  '可旋转调料收纳盒 厨房置物架',
+  'ins风陶瓷马克杯 创意咖啡杯',
+  '便携折叠洗衣盆 硅胶旅行洗脸盆',
+  '加厚珍珠棉气泡膜 快递包装缓冲材',
+  '实木小夜灯创意卧室床头氛围灯'
+];
+
+const factoryNames = [
+  '容城县绒毛玩具加工厂', '义乌市百汇日用品厂', '深圳市创新家居厂',
+  '广州白云区五金制品厂', '河北省保定市纺织品厂', '杭州余杭塑料厂',
+  '义乌市创意百货商行', '温州瓯海洁具厂', '东莞市长安电子厂',
+  '临沂市兰山区收纳厂', '潮州市枫溪区陶瓷厂', '佛山市顺德区家电厂'
+];
+
+const storeNames = [
+  '百汇日用品专营店', '创新家居官方旗舰店', '五金批发大世界',
+  '纺织品源头工厂店', '创意百货超市', '洁具批发中心',
+  '电子产品专营店', '收纳专家', '陶瓷艺术坊', '家电直供'
+];
+
+const cities = ['河北容城县', '浙江义乌市', '广东深圳市', '广东广州市', '河北保定市', '浙江杭州市', '浙江温州市', '广东东莞市', '山东临沂市', '广东潮州市', '广东佛山市', '江苏南通市'];
+
+// 生成寻源结果数据
+function generateSourcingResults(count) {
+  sourcingResults = [];
+  resultSelectedIds.clear();
+  const num = Math.min(count, 20); // 最多展示20条
+
+  for (let i = 0; i < num; i++) {
+    const price = (Math.random() * 200 + 5).toFixed(2);
+    const moq = Math.random() > 0.3 ? 1 : Math.floor(Math.random() * 10 + 2);
+    const weightMin = Math.floor(Math.random() * 400 + 20);
+    const weightMax = weightMin + Math.floor(Math.random() * 300 + 50);
+    const monthlyOrders = Math.floor(Math.random() * 500);
+    const monthlyPieces = Math.floor(Math.random() * 2000 + 10);
+    const monthlySales = (parseFloat(price) * monthlyPieces).toFixed(2);
+    const collect24h = Math.floor(Math.random() * 40 + 60);
+    const collect48h = Math.min(100, collect24h + Math.floor(Math.random() * 30 + 5));
+    const responseRate = (Math.random() * 60 + 30).toFixed(1);
+    const isFactory = Math.random() > 0.5;
+    const listingDays = Math.floor(Math.random() * 90 + 1);
+    const listingDate = new Date(Date.now() - listingDays * 86400000);
+    const listingDateStr = `${listingDate.getFullYear()}-${String(listingDate.getMonth()+1).padStart(2,'0')}-${String(listingDate.getDate()).padStart(2,'0')}`;
+    const similarity = Math.random();
+    const isNew = listingDays < 30;
+    const skuCount = Math.floor(Math.random() * 30 + 1);
+    const shippingFee = Math.random() > 0.2 ? (Math.random() * 15 + 3).toFixed(1) : '0';
+    const shipText = shippingFee === '0' ? '包邮' : `国内 ¥${shippingFee}`;
+    const memberTypes = [];
+    if (Math.random() > 0.5) memberTypes.push('实力商家');
+    if (Math.random() > 0.7) memberTypes.push('超级工厂');
+    if (Math.random() > 0.3) memberTypes.push('诚信通');
+
+    sourcingResults.push({
+      id: i + 1,
+      img1: `https://picsum.photos/seed/p${i}a/160/160`,
+      img2: `https://picsum.photos/seed/p${i}b/160/160`,
+      title: productNames[i % productNames.length],
+      category: ['毛绒公仔', '家居日用', '收纳整理', '厨房用品', '纺织品', '电子产品', '陶瓷工艺'][i % 7],
+      skuCount,
+      isNew,
+      listingDate: listingDateStr,
+      listingDays,
+      price: parseFloat(price),
+      moq,
+      shippingFee: shipText,
+      city: cities[i % cities.length],
+      weightMin,
+      weightMax,
+      monthlyOrders,
+      monthlyPieces,
+      monthlySales: parseFloat(monthlySales),
+      collect24h,
+      collect48h,
+      responseRate: parseFloat(responseRate),
+      isFactory,
+      storeName: isFactory ? factoryNames[i % factoryNames.length] : storeNames[i % storeNames.length],
+      memberTypes,
+      similarity
+    });
+  }
+
+  resultPaginationState.totalItems = sourcingResults.length;
+  resultPaginationState.currentPage = 1;
+}
+
+// 获取相似度等级
+function getSimLevel(sim) {
+  if (sim >= 0.7) return 'high';
+  if (sim >= 0.3) return 'mid';
+  return 'low';
+}
+
+// 渲染寻源结果卡片
+function renderResultCards() {
+  const grid = document.getElementById('resultCardGrid');
+  const empty = document.getElementById('resultEmpty');
+  const paged = getResultPagedItems();
+
+  document.getElementById('resultCount').textContent = sourcingResults.length;
+  document.getElementById('resultPaginationTotal').textContent = `共 ${sourcingResults.length} 条`;
+
+  if (sourcingResults.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = paged.map(p => {
+      const simLevel = getSimLevel(p.similarity);
+      const simPercent = (p.similarity * 100).toFixed(0);
+      const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
+      const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
+      return `
+        <div class="result-product-card ${selected}" data-id="${p.id}">
+          <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
+          <div class="result-card-top">
+            <div class="result-product-imgs">
+              <img src="${p.img1}" alt="商品图1" onerror="this.style.display='none'">
+              <img src="${p.img2}" alt="商品图2" onerror="this.style.display='none'">
+            </div>
+            <div class="result-product-info">
+              <div class="result-product-title">${p.title}</div>
+              <div class="result-product-tags">
+                <span class="result-tag category">${p.category}</span>
+                <span class="result-tag sku">SKU: ${p.skuCount}</span>
+                ${p.isNew ? '<span class="result-tag new">新品</span>' : ''}
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);">上架: ${p.listingDate} (${p.listingDays}天)</div>
+            </div>
+            <div class="result-similarity ${simLevel}" title="相似度">${simPercent}%</div>
+          </div>
+          <div class="result-card-body">
+            <div class="result-data-row">
+              <div class="result-data-item">
+                <span class="result-data-label">批发价</span>
+                <span class="result-data-value price">¥${p.price.toFixed(2)}</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">起批量</span>
+                <span class="result-data-value">${p.moq} 件</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">发货信息</span>
+                <span class="result-data-value muted">${p.shippingFee} · ${p.city}</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">重量</span>
+                <span class="result-data-value muted">${p.weightMin}-${p.weightMax}g</span>
+              </div>
+            </div>
+            <div class="result-data-row">
+              <div class="result-data-item">
+                <span class="result-data-label">月订单</span>
+                <span class="result-data-value">${p.monthlyOrders}</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">月件数</span>
+                <span class="result-data-value">${p.monthlyPieces}</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">月销售额</span>
+                <span class="result-data-value">¥${p.monthlySales.toFixed(2)}</span>
+              </div>
+            </div>
+            <div class="result-data-row">
+              <div class="result-data-item">
+                <span class="result-data-label">24H揽收率</span>
+                <span class="result-data-value ${p.collect24h >= 90 ? 'green' : ''}">${p.collect24h}%</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">48H揽收率</span>
+                <span class="result-data-value ${p.collect48h >= 90 ? 'green' : ''}">${p.collect48h}%</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">3分钟响应率</span>
+                <span class="result-data-value muted">${p.responseRate}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="result-card-store">
+            <span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span>
+            <span class="result-store-name" title="${p.storeName}">${p.storeName}</span>
+            ${p.memberTypes.map(m => `<span class="result-tag" style="background:var(--primary-bg);color:var(--primary);">${m}</span>`).join('')}
+          </div>
+          <div class="result-card-actions">
+            <span class="result-action-link" onclick="showToast('全网图搜中...')">全网图搜</span>
+            <span class="result-action-link" onclick="showToast('铺货Temu中...')">铺货Temu</span>
+            <span class="result-action-link" onclick="showToast('已关注商品')">关注商品</span>
+            <span class="result-action-link" onclick="showToast('下载中...')">信息下载</span>
+            <button class="result-action-btn" onclick="showToast('打开咨询窗口')">💬 咨询</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  updateResultSelectedCount();
+  renderResultPagination();
+}
+
+// 切换选中
+function toggleResultSelect(id) {
+  if (resultSelectedIds.has(id)) {
+    resultSelectedIds.delete(id);
+  } else {
+    resultSelectedIds.add(id);
+  }
+  // 更新卡片样式
+  const card = document.querySelector(`.result-product-card[data-id="${id}"]`);
+  if (card) card.classList.toggle('selected', resultSelectedIds.has(id));
+  updateResultSelectedCount();
+}
+
+function updateResultSelectedCount() {
+  document.getElementById('resultSelectedCount').textContent = resultSelectedIds.size;
+  const selectAll = document.getElementById('resultSelectAll');
+  const paged = getResultPagedItems();
+  const allSelected = paged.length > 0 && paged.every(p => resultSelectedIds.has(p.id));
+  if (selectAll) selectAll.checked = allSelected;
+}
+
+// 全选
+document.getElementById('resultSelectAll')?.addEventListener('change', (e) => {
+  const paged = getResultPagedItems();
+  if (e.target.checked) {
+    paged.forEach(p => resultSelectedIds.add(p.id));
+  } else {
+    paged.forEach(p => resultSelectedIds.delete(p.id));
+  }
+  renderResultCards();
+});
+
+// 分页
+function getResultPagedItems() {
+  const { currentPage, pageSize } = resultPaginationState;
+  const start = (currentPage - 1) * pageSize;
+  return sourcingResults.slice(start, start + pageSize);
+}
+
+function updateResultPaginationState() {
+  resultPaginationState.totalItems = sourcingResults.length;
+  resultPaginationState.totalPages = Math.max(1, Math.ceil(sourcingResults.length / resultPaginationState.pageSize));
+  if (resultPaginationState.currentPage > resultPaginationState.totalPages) {
+    resultPaginationState.currentPage = resultPaginationState.totalPages;
+  }
+}
+
+function renderResultPagination() {
+  updateResultPaginationState();
+  const { currentPage, totalItems, totalPages } = resultPaginationState;
+  const nav = document.getElementById('resultPaginationNav');
+  if (!nav) return;
+
+  let html = '';
+  html += `<button class="page-nav-btn prev" ${currentPage === 1 ? 'disabled' : ''} onclick="goResultPage(${currentPage - 1})">&lt;</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="page-nav-btn ${i === currentPage ? 'active' : ''}" onclick="goResultPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-nav-btn next" ${currentPage === totalPages ? 'disabled' : ''} onclick="goResultPage(${currentPage + 1})">&gt;</button>`;
+  nav.innerHTML = html;
+}
+
+function goResultPage(page) {
+  if (page < 1 || page > resultPaginationState.totalPages) return;
+  resultPaginationState.currentPage = page;
+  renderResultCards();
+}
+
+document.getElementById('resultPageSize')?.addEventListener('change', (e) => {
+  resultPaginationState.pageSize = parseInt(e.target.value);
+  resultPaginationState.currentPage = 1;
+  renderResultCards();
+});
+
+document.getElementById('resultGotoPageBtn')?.addEventListener('click', () => {
+  const input = document.getElementById('resultGotoPageInput');
+  const page = parseInt(input.value);
+  if (page && page >= 1 && page <= resultPaginationState.totalPages) {
+    goResultPage(page);
+  } else {
+    showToast('请输入有效的页码');
+  }
+});
+
+document.getElementById('resultGotoPageInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('resultGotoPageBtn')?.click();
+});
+
+// 筛选面板折叠
+document.getElementById('filterToggleBtn')?.addEventListener('click', () => {
+  const body = document.getElementById('resultFilterBody');
+  const btn = document.getElementById('filterToggleBtn');
+  body.classList.toggle('collapsed');
+  btn.textContent = body.classList.contains('collapsed') ? '展开筛选条件' : '收起筛选条件';
+});
+
+// 筛选查询
+document.getElementById('resultSearchBtn')?.addEventListener('click', () => {
+  const keyword = document.getElementById('resultKeyword').value.trim().toLowerCase();
+  const priceMin = parseFloat(document.getElementById('priceMin').value) || 0;
+  const priceMax = parseFloat(document.getElementById('priceMax').value) || Infinity;
+  const salesMin = parseInt(document.getElementById('salesMin').value) || 0;
+  const salesMax = parseInt(document.getElementById('salesMax').value) || Infinity;
+  const weightMin = parseInt(document.getElementById('weightMin').value) || 0;
+  const weightMax = parseInt(document.getElementById('weightMax').value) || Infinity;
+
+  const filtered = sourcingResults.filter(p => {
+    if (keyword && !p.title.toLowerCase().includes(keyword)) return false;
+    if (p.price < priceMin || p.price > priceMax) return false;
+    if (p.monthlyPieces < salesMin || p.monthlyPieces > salesMax) return false;
+    if (p.weightMax < weightMin || p.weightMin > weightMax) return false;
+    return true;
+  });
+
+  // 临时替换显示
+  const originalResults = sourcingResults;
+  sourcingResults = filtered;
+  resultPaginationState.currentPage = 1;
+  renderResultCards();
+  showToast(`查询到 ${filtered.length} 条结果`);
+  // 恢复原始数据供后续筛选
+  sourcingResults = originalResults;
+});
+
+// 重置筛选
+document.getElementById('resultResetBtn')?.addEventListener('click', () => {
+  document.getElementById('resultKeyword').value = '';
+  document.getElementById('priceMin').value = '';
+  document.getElementById('priceMax').value = '';
+  document.getElementById('salesMin').value = '';
+  document.getElementById('salesMax').value = '';
+  document.getElementById('weightMin').value = '';
+  document.getElementById('weightMax').value = '';
+  document.querySelectorAll('input[name="collect24h"]').forEach(r => { if (r.value === '') r.checked = true; });
+  document.querySelectorAll('input[name="collect48h"]').forEach(r => { if (r.value === '') r.checked = true; });
+  document.querySelectorAll('input[name="companyType"]').forEach(r => { if (r.value === '') r.checked = true; });
+  document.getElementById('condMoq1').checked = false;
+  document.getElementById('condFreeShip').checked = false;
+  document.getElementById('memberVerified').checked = false;
+  document.getElementById('memberSuperFactory').checked = false;
+  document.getElementById('memberTrustPass').checked = false;
+  resultPaginationState.currentPage = 1;
+  renderResultCards();
+  showToast('已重置筛选');
+});
+
+// 保存筛选
+document.getElementById('resultSaveBtn')?.addEventListener('click', () => {
+  showToast('筛选条件已保存');
+});

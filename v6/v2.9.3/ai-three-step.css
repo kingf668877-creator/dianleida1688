@@ -1205,26 +1205,579 @@ button {
   padding: 0 24px;
 }
 
-/* ===== 寻源结果占位 ===== */
-.result-placeholder {
-  padding: 80px 20px;
+/* ===== 寻源结果 - 搜索图源信息条 ===== */
+.result-source-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  margin-bottom: 16px;
+}
+
+.result-source-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.result-source-img {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 2px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.result-source-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-source-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-source-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-source-meta .sep {
+  color: var(--text-muted);
+}
+
+.result-source-meta b {
+  color: var(--primary);
+}
+
+/* ===== 寻源结果 - 筛选面板 ===== */
+.result-filter-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.result-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.result-filter-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-filter-toggle {
+  font-size: 13px;
+  color: var(--primary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+
+.result-filter-toggle:hover {
+  text-decoration: underline;
+}
+
+.result-filter-body {
+  padding: 20px;
+}
+
+.result-filter-body.collapsed {
+  display: none;
+}
+
+.result-filter-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.result-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-filter-item-grow {
+  flex: 1;
+  min-width: 300px;
+}
+
+.result-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-keyword-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.result-match-select {
+  height: 38px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.result-keyword-input {
+  flex: 1;
+  height: 38px;
+}
+
+.result-template-select {
+  height: 38px;
+  width: 140px;
+}
+
+.result-range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-range-input {
+  width: 90px;
+  height: 38px;
+}
+
+.result-range-sep {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.result-radio-group,
+.result-checkbox-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.result-radio,
+.result-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.result-radio input,
+.result-checkbox input {
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.result-filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ===== 寻源结果 - 工具栏 ===== */
+.result-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.result-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.result-select-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.result-select-all input {
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.result-selected-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.result-selected-count b {
+  color: var(--primary);
+}
+
+.result-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.result-toolbar-right {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.result-count b {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.new-badge {
+  background: var(--secondary);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+/* ===== 寻源结果 - 卡片网格 ===== */
+.result-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+}
+
+/* ===== 寻源结果 - 单个商品卡片 ===== */
+.result-product-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  transition: var(--transition);
+  position: relative;
+}
+
+.result-product-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.result-product-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.15);
+}
+
+/* 卡片头部：图 + 相似度 */
+.result-card-top {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.result-card-checkbox {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+
+.result-card-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.result-product-imgs {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.result-product-imgs img {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border-light);
+  background: var(--bg-tertiary);
+}
+
+.result-product-info {
+  flex: 1;
+  min-width: 0;
+  padding-right: 24px;
+}
+
+.result-product-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.result-product-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.result-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.result-tag.category {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.result-tag.sku {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.result-tag.new {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+/* 相似度徽章 */
+.result-similarity {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+}
+
+.result-similarity.high { background: var(--success); }
+.result-similarity.mid { background: var(--primary); }
+.result-similarity.low { background: var(--text-muted); }
+
+/* 卡片数据区 */
+.result-card-body {
+  padding: 0 16px 16px;
+}
+
+.result-data-row {
+  display: flex;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-light);
+}
+
+.result-data-row:last-child {
+  border-bottom: none;
+}
+
+.result-data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-data-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.result-data-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.result-data-value.price {
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.result-data-value.green {
+  color: var(--success);
+}
+
+.result-data-value.muted {
+  color: var(--text-secondary);
+}
+
+/* 卡片店铺信息 */
+.result-card-store {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-light);
+}
+
+.result-store-type {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.result-store-type.factory {
+  background: #fff4e6;
+  color: #e55d00;
+}
+
+.result-store-type.store {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.result-store-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-store-location {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 卡片操作区 */
+.result-card-actions {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.result-action-link {
+  font-size: 12px;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background .15s ease;
+  white-space: nowrap;
+}
+
+.result-action-link:hover {
+  background: var(--primary-bg);
+}
+
+.result-action-link.danger {
+  color: var(--danger);
+}
+
+.result-action-link.danger:hover {
+  background: var(--danger-bg);
+}
+
+.result-action-btn {
+  margin-left: auto;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background: var(--success);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.result-action-btn:hover {
+  opacity: .9;
+  transform: translateY(-1px);
+}
+
+/* ===== 寻源结果 - 空状态 ===== */
+.result-empty {
+  padding: 60px 20px;
   text-align: center;
 }
 
-.result-placeholder-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+.result-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
   opacity: .4;
 }
 
-.result-placeholder-text {
-  font-size: 18px;
+.result-empty-text {
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
-.result-placeholder-desc {
+.result-empty-desc {
   font-size: 13px;
   color: var(--text-muted);
 }

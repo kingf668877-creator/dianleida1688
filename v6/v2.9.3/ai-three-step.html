@@ -290,11 +290,195 @@
 
   <!-- ===== 寻源结果 ===== -->
   <section class="page-panel" id="page-result">
-    <!-- 寻源结果内容待补充 -->
-    <div class="result-placeholder">
-      <div class="result-placeholder-icon">🔍</div>
-      <div class="result-placeholder-text">寻源结果</div>
-      <div class="result-placeholder-desc">内容待补充</div>
+    <!-- 搜索图源信息条 -->
+    <div class="result-source-bar">
+      <div class="result-source-left">
+        <img class="result-source-img" id="resultSourceImg" src="" alt="搜索图源">
+        <div class="result-source-info">
+          <span class="result-source-name" id="resultTaskName">--</span>
+          <span class="result-source-meta">
+            <span id="resultTaskType">--</span>
+            <span class="sep">|</span>
+            <span>共 <b id="resultTotalCount">0</b> 条结果</span>
+            <span class="sep">|</span>
+            <span id="resultTaskTime">--</span>
+          </span>
+        </div>
+      </div>
+      <button class="btn btn-default" onclick="goListPage()">返回任务列表</button>
+    </div>
+
+    <!-- 筛选条件 -->
+    <div class="result-filter-card">
+      <div class="result-filter-header">
+        <span class="result-filter-title">筛选条件</span>
+        <button class="result-filter-toggle" id="filterToggleBtn">收起筛选条件</button>
+      </div>
+      <div class="result-filter-body" id="resultFilterBody">
+        <!-- 关键词搜索 -->
+        <div class="result-filter-row">
+          <div class="result-filter-item result-filter-item-grow">
+            <label class="result-filter-label">商品关键词</label>
+            <div class="result-keyword-wrap">
+              <select class="result-match-select" id="resultMatchMode">
+                <option value="fuzzy">模糊匹配</option>
+                <option value="exact">精确匹配</option>
+              </select>
+              <input class="form-input result-keyword-input" type="text" id="resultKeyword" placeholder="输入商品关键词，多个关键词用空格分隔">
+            </div>
+          </div>
+          <div class="result-filter-item">
+            <label class="result-filter-label">模板</label>
+            <select class="form-input result-template-select" id="resultTemplate">
+              <option value="">我的模板</option>
+              <option value="t1">默认模板</option>
+              <option value="t2">Temu铺货模板</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 价格 & 销量 -->
+        <div class="result-filter-row">
+          <div class="result-filter-item">
+            <label class="result-filter-label">价格 ¥</label>
+            <div class="result-range-wrap">
+              <input class="form-input result-range-input" type="number" id="priceMin" placeholder="最低价">
+              <span class="result-range-sep">~</span>
+              <input class="form-input result-range-input" type="number" id="priceMax" placeholder="最高价">
+            </div>
+          </div>
+          <div class="result-filter-item">
+            <label class="result-filter-label">月件数</label>
+            <div class="result-range-wrap">
+              <input class="form-input result-range-input" type="number" id="salesMin" placeholder="最小">
+              <span class="result-range-sep">~</span>
+              <input class="form-input result-range-input" type="number" id="salesMax" placeholder="最大">
+            </div>
+          </div>
+          <div class="result-filter-item">
+            <label class="result-filter-label">重量(g)</label>
+            <div class="result-range-wrap">
+              <input class="form-input result-range-input" type="number" id="weightMin" placeholder="最小">
+              <span class="result-range-sep">~</span>
+              <input class="form-input result-range-input" type="number" id="weightMax" placeholder="最大">
+            </div>
+          </div>
+        </div>
+
+        <!-- 揽收率 -->
+        <div class="result-filter-row">
+          <div class="result-filter-item">
+            <label class="result-filter-label">24H揽收率</label>
+            <div class="result-radio-group" id="collect24h">
+              <label class="result-radio"><input type="radio" name="collect24h" value="" checked><span>不限</span></label>
+              <label class="result-radio"><input type="radio" name="collect24h" value="lt70"><span>&lt;70%</span></label>
+              <label class="result-radio"><input type="radio" name="collect24h" value="70-90"><span>70%-90%</span></label>
+              <label class="result-radio"><input type="radio" name="collect24h" value="gt90"><span>&ge;90%</span></label>
+            </div>
+          </div>
+          <div class="result-filter-item">
+            <label class="result-filter-label">48H揽收率</label>
+            <div class="result-radio-group" id="collect48h">
+              <label class="result-radio"><input type="radio" name="collect48h" value="" checked><span>不限</span></label>
+              <label class="result-radio"><input type="radio" name="collect48h" value="lt70"><span>&lt;70%</span></label>
+              <label class="result-radio"><input type="radio" name="collect48h" value="70-90"><span>70%-90%</span></label>
+              <label class="result-radio"><input type="radio" name="collect48h" value="gt90"><span>&ge;90%</span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 交易条件 & 公司类型 -->
+        <div class="result-filter-row">
+          <div class="result-filter-item">
+            <label class="result-filter-label">交易条件</label>
+            <div class="result-checkbox-group">
+              <label class="result-checkbox"><input type="checkbox" id="condMoq1"><span>一件起订</span></label>
+              <label class="result-checkbox"><input type="checkbox" id="condFreeShip"><span>批发包邮</span></label>
+            </div>
+          </div>
+          <div class="result-filter-item">
+            <label class="result-filter-label">公司类型</label>
+            <div class="result-radio-group" id="companyType">
+              <label class="result-radio"><input type="radio" name="companyType" value="" checked><span>不限</span></label>
+              <label class="result-radio"><input type="radio" name="companyType" value="store"><span>店铺</span></label>
+              <label class="result-radio"><input type="radio" name="companyType" value="factory"><span>工厂</span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卖家会员类型 -->
+        <div class="result-filter-row">
+          <div class="result-filter-item">
+            <label class="result-filter-label">卖家会员类型</label>
+            <div class="result-checkbox-group">
+              <label class="result-checkbox"><input type="checkbox" id="memberVerified"><span>实力商家</span></label>
+              <label class="result-checkbox"><input type="checkbox" id="memberSuperFactory"><span>超级工厂</span></label>
+              <label class="result-checkbox"><input type="checkbox" id="memberTrustPass"><span>诚信通</span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="result-filter-actions">
+          <button class="btn btn-primary" id="resultSearchBtn">开始查询</button>
+          <button class="btn btn-default" id="resultResetBtn">重置筛选</button>
+          <button class="btn btn-outline" id="resultSaveBtn">保存筛选</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 结果工具栏 -->
+    <div class="result-toolbar">
+      <div class="result-toolbar-left">
+        <label class="result-select-all">
+          <input type="checkbox" id="resultSelectAll">
+          <span>全选</span>
+        </label>
+        <span class="result-selected-count">已选: <b id="resultSelectedCount">0</b></span>
+      </div>
+      <div class="result-toolbar-actions">
+        <button class="btn btn-default btn-sm" onclick="showToast('批量监控已触发')">监控</button>
+        <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
+        <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
+        <button class="btn btn-primary btn-sm" onclick="showToast('铺货Temu功能开发中')">
+          铺货Temu
+          <span class="new-badge">NEW</span>
+        </button>
+      </div>
+      <div class="result-toolbar-right">
+        <span class="result-count">搜索结果: <b id="resultCount">0</b></span>
+      </div>
+    </div>
+
+    <!-- 结果卡片网格 -->
+    <div class="result-card-grid" id="resultCardGrid">
+      <!-- JS 渲染 -->
+    </div>
+
+    <!-- 空状态 -->
+    <div class="result-empty" id="resultEmpty" style="display:none;">
+      <div class="result-empty-icon">🔍</div>
+      <div class="result-empty-text">暂无寻源结果</div>
+      <div class="result-empty-desc">请调整筛选条件后重新查询</div>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination-wrap" id="resultPaginationWrap">
+      <span class="pagination-total" id="resultPaginationTotal">共 0 条</span>
+      <div class="pagination-center">
+        <select class="form-input page-size-select" id="resultPageSize">
+          <option value="10">10条/页</option>
+          <option value="20" selected>20条/页</option>
+          <option value="50">50条/页</option>
+        </select>
+        <div class="pagination-nav" id="resultPaginationNav"></div>
+      </div>
+      <div class="pagination-goto">
+        <span>前往</span>
+        <input type="number" class="goto-input" id="resultGotoPageInput" min="1" value="1">
+        <span>页</span>
+        <button class="goto-btn" id="resultGotoPageBtn">GO</button>
+      </div>
     </div>
   </section>
 
