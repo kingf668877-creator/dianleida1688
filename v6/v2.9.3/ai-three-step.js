@@ -32,10 +32,10 @@ const mockTasks = [
     type: 'image',
     typeText: '上传图片',
     count: 45,
-    status: 'running',
-    statusText: '执行中',
-    progress: 33,
-    finished: 15,
+    status: 'waiting',
+    statusText: '待执行',
+    progress: 0,
+    finished: 0,
     createTime: '2026-08-04 08:45:30',
     finishTime: '-'
   },
@@ -388,17 +388,28 @@ submitBtn.addEventListener('click', () => {
     createTime: timeStr,
     finishTime: '-'
   };
+
+  // 检查是否已有任务在执行中，如果有则当前任务变为待执行
+  const hasRunning = tasks.some(t => t.status === 'running');
+  if (hasRunning) {
+    newTask.status = 'waiting';
+    newTask.statusText = '待执行';
+    showToast('任务已创建，排队等待执行...');
+  } else {
+    showToast('任务创建成功，正在执行...');
+  }
+
   tasks.unshift(newTask);
   renderTaskTable();
   updateTotalBadge();
 
-  showToast('任务创建成功，正在执行...');
-
   // 切换到任务列表页面
   switchPage('list');
 
-  // 模拟进度
-  simulateTaskProgress(newTask.id);
+  // 如果没有正在执行的任务，则开始执行
+  if (!hasRunning) {
+    simulateTaskProgress(newTask.id);
+  }
 });
 
 resetBtn.addEventListener('click', () => {
@@ -511,9 +522,23 @@ function simulateTaskProgress(taskId) {
       const now = new Date();
       task.finishTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       clearInterval(timer);
+      // 自动开始下一个待执行的任务
+      startNextWaitingTask();
     }
     renderTaskTable();
   }, 1500);
+}
+
+// 自动开始下一个待执行的任务
+function startNextWaitingTask() {
+  const nextTask = tasks.find(t => t.status === 'waiting');
+  if (nextTask) {
+    nextTask.status = 'running';
+    nextTask.statusText = '执行中';
+    renderTaskTable();
+    showToast(`任务"${nextTask.name}"开始执行...`);
+    simulateTaskProgress(nextTask.id);
+  }
 }
 
 // 终止任务
@@ -526,6 +551,8 @@ function stopTask(id) {
     task.finishTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
     renderTaskTable();
     showToast('任务已终止');
+    // 自动开始下一个待执行的任务
+    startNextWaitingTask();
   }
 }
 
@@ -533,14 +560,24 @@ function stopTask(id) {
 function retryTask(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
-  task.status = 'running';
-  task.statusText = '执行中';
   task.progress = 0;
   task.finished = 0;
   task.finishTime = '-';
-  renderTaskTable();
-  showToast('任务开始执行...');
-  simulateTaskProgress(task.id);
+
+  // 检查是否已有任务在执行中
+  const hasRunning = tasks.some(t => t.id !== id && t.status === 'running');
+  if (hasRunning) {
+    task.status = 'waiting';
+    task.statusText = '待执行';
+    renderTaskTable();
+    showToast('任务已加入排队，等待执行...');
+  } else {
+    task.status = 'running';
+    task.statusText = '执行中';
+    renderTaskTable();
+    showToast('任务开始执行...');
+    simulateTaskProgress(task.id);
+  }
 }
 
 // 编辑任务（跳转到创建表单，填充当前任务信息）
@@ -873,10 +910,19 @@ resetEditBtn?.addEventListener('click', () => {
   const typeTexts = { link: '图片链接', file: '文件上传', image: '上传图片' };
   const statuses = ['done', 'running', 'stopped', 'pending', 'waiting'];
   const statusTexts = { done: '已完成', running: '执行中', stopped: '已终止', pending: '未执行', waiting: '待执行' };
+  let runningAssigned = false; // 确保只有一个running任务
 
   for (let i = 0; i < 35; i++) {
     const type = types[i % 3];
-    const status = statuses[i % 5];
+    let status = statuses[i % 5];
+    // 确保只有一个任务处于执行中状态，其余的running改为waiting
+    if (status === 'running') {
+      if (runningAssigned) {
+        status = 'waiting';
+      } else {
+        runningAssigned = true;
+      }
+    }
     const count = Math.floor(Math.random() * 800 + 50);
     const progress = status === 'done' ? 100 : (status === 'pending' || status === 'waiting') ? 0 : Math.floor(Math.random() * 90 + 5);
     const finished = (status === 'pending' || status === 'waiting') ? 0 : Math.floor(count * progress / 100);
