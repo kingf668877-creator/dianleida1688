@@ -78,6 +78,47 @@ function showToast(msg) {
   showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
+// ===== 侧边栏页面切换 =====
+const navItems = document.querySelectorAll('.nav-item[data-page]');
+const pagePanels = document.querySelectorAll('.page-panel');
+
+function switchPage(pageName) {
+  navItems.forEach(item => {
+    item.classList.toggle('active', item.dataset.page === pageName);
+  });
+  pagePanels.forEach(panel => {
+    panel.classList.toggle('active', panel.id === 'page-' + pageName);
+  });
+}
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const page = item.dataset.page;
+    if (page) switchPage(page);
+  });
+});
+
+// ===== 侧边栏分组折叠 =====
+document.querySelectorAll('.nav-group-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const group = header.parentElement;
+    const items = group.querySelector('.nav-group-items');
+    const isCollapsed = group.classList.toggle('collapsed');
+    if (items) {
+      items.style.display = isCollapsed ? 'none' : 'block';
+    }
+  });
+});
+
+// ===== 顶部工具栏按钮 =====
+document.getElementById('resetBtnTop')?.addEventListener('click', () => {
+  document.getElementById('resetBtn')?.click();
+});
+
+document.getElementById('submitBtnTop')?.addEventListener('click', () => {
+  document.getElementById('submitBtn')?.click();
+});
+
 // ===== 图搜方式 Tab 切换 =====
 const tabBtns = document.querySelectorAll('.search-tabs .tab-btn');
 const linkPanel = document.getElementById('panel-link');
@@ -351,8 +392,8 @@ submitBtn.addEventListener('click', () => {
 
   showToast('任务创建成功，正在执行...');
 
-  // 滚动到任务列表
-  document.querySelector('.list-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // 切换到任务列表页面
+  switchPage('list');
 
   // 模拟进度
   simulateTaskProgress(newTask.id);
@@ -369,9 +410,9 @@ resetBtn.addEventListener('click', () => {
   showToast('已重置');
 });
 
-// 顶部创建任务按钮
+// 顶部创建任务按钮（兼容旧ID）
 document.getElementById('createTaskBtn')?.addEventListener('click', () => {
-  document.querySelector('.create-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  switchPage('create');
 });
 
 // ===== 任务列表 =====

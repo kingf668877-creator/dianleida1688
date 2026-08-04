@@ -10,27 +10,79 @@
 <body>
 
 <!-- ===== 页面主体 ===== -->
-<div class="page-container">
+<div class="page-layout">
 
-  <!-- 页面头部 -->
-  <header class="page-header">
-    <div class="header-left">
-      <h1 class="page-title" data-editable data-edit-label="页面标题">图搜批量寻源</h1>
-      <p class="page-subtitle">AI 智能批量图片寻源，快速匹配1688同款商品</p>
+  <!-- ===== 左侧侧边栏 ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="logo-icon">🔍</span>
+        <span class="logo-text">店雷达选品</span>
+      </div>
     </div>
-    <div class="header-right">
-      <button class="btn btn-primary" id="createTaskBtn">
-        <span>+</span>
-        <span>创建寻源任务</span>
-      </button>
+
+    <div class="sidebar-search">
+      <input type="text" class="sidebar-search-input" placeholder="搜索版本或页面">
     </div>
-  </header>
 
-  <!-- 内容区域 -->
-  <main class="page-main">
+    <nav class="sidebar-nav">
+      <!-- V2.9.3 版本组 -->
+      <div class="nav-group">
+        <div class="nav-group-header">
+          <span class="group-caret">▾</span>
+          <span class="group-title">V2.9.3</span>
+          <span class="group-badge">最新</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item active" data-page="create">
+            <span class="nav-icon">🅿️</span>
+            <span class="nav-text">创建图搜寻源</span>
+          </button>
+          <button class="nav-item" data-page="list">
+            <span class="nav-icon">📋</span>
+            <span class="nav-text">任务列表</span>
+          </button>
+        </div>
+      </div>
 
-    <!-- ========== 创建图搜寻源 ========== -->
-    <section class="create-section">
+      <!-- V2.9.2 版本组 -->
+      <div class="nav-group collapsed">
+        <div class="nav-group-header">
+          <span class="group-caret">▸</span>
+          <span class="group-title">V2.9.2</span>
+        </div>
+        <div class="nav-group-items" style="display:none;">
+          <button class="nav-item">
+            <span class="nav-icon">🅿️</span>
+            <span class="nav-text">创建图搜寻源</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ===== 右侧主内容区 ===== -->
+  <main class="main-content">
+
+    <!-- 顶部操作栏 -->
+    <div class="top-toolbar">
+      <div class="toolbar-tabs">
+        <span class="tab-chip active">效果图</span>
+        <span class="tab-chip">HTML</span>
+        <span class="tab-chip">CSS</span>
+        <span class="tab-chip">JS</span>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-default" id="resetBtnTop">重置</button>
+        <button class="btn btn-primary" id="submitBtnTop">
+          <span class="btn-icon">🚀</span>
+          <span>开始执行</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== 创建图搜寻源页面 ===== -->
+    <section class="page-panel active" id="page-create">
       <div class="create-card">
         <div class="card-header">
           <h2 class="card-title" data-editable data-edit-label="创建卡片标题">创建图搜寻源</h2>
@@ -192,8 +244,8 @@
       </div>
     </section>
 
-    <!-- ========== 任务列表 ========== -->
-    <section class="list-section">
+    <!-- ===== 任务列表页面 ===== -->
+    <section class="page-panel" id="page-list">
       <div class="section-header">
         <h2 class="section-title">任务列表</h2>
         <span class="section-badge" id="totalCountBadge">共 5 条任务</span>
@@ -271,7 +323,7 @@
         <div class="empty-state" id="emptyState" style="display:none;">
           <div class="empty-icon">📭</div>
           <div class="empty-text">暂无任务数据</div>
-          <div class="empty-desc">在上方创建你的第一个图搜寻源任务</div>
+          <div class="empty-desc">在左侧创建你的第一个图搜寻源任务</div>
         </div>
       </div>
 
