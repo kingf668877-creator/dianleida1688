@@ -78,23 +78,35 @@ function showToast(msg) {
   showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
-// ===== 主 Tab 切换 =====
-const mainTabs = document.querySelectorAll('.main-tab');
+// ===== 主面板切换 =====
 const mainPanels = document.querySelectorAll('.main-panel');
+let currentTaskId = null;
 
-function switchMainTab(tab) {
-  mainTabs.forEach(t => t.classList.toggle('active', t.dataset.mainTab === tab));
-  mainPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+function switchToCreate() {
+  mainPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-create'));
+  document.querySelectorAll('.nav-item[data-main-tab]').forEach(t => {
+    t.classList.toggle('active', t.dataset.mainTab === 'create');
+  });
+  document.querySelectorAll('.sidebar-task-item').forEach(i => i.classList.remove('active'));
+  currentTaskId = null;
+  const bc = document.getElementById('breadcrumbCurrent');
+  if (bc) bc.textContent = '创建图搜寻源';
 }
 
-mainTabs.forEach(tab => {
-  tab.addEventListener('click', () => switchMainTab(tab.dataset.mainTab));
+function switchToDetail(taskId) {
+  mainPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-detail'));
+  document.querySelectorAll('.nav-item[data-main-tab]').forEach(t => t.classList.remove('active'));
+  currentTaskId = taskId;
+  showTaskDetail(taskId);
+}
+
+// 点击创建导航
+document.querySelectorAll('.nav-item[data-main-tab="create"]').forEach(tab => {
+  tab.addEventListener('click', switchToCreate);
 });
 
 // 快捷跳转到创建页
-document.getElementById('createTaskBtn')?.addEventListener('click', () => switchMainTab('create'));
-document.getElementById('createTaskBtn2')?.addEventListener('click', () => switchMainTab('create'));
-document.getElementById('emptyCreateBtn')?.addEventListener('click', () => switchMainTab('create'));
+document.getElementById('createTaskBtn')?.addEventListener('click', switchToCreate);
 
 // ===== 图搜方式 Tab 切换 =====
 const tabBtns = document.querySelectorAll('.search-tabs .tab-btn');
@@ -366,12 +378,10 @@ submitBtn.addEventListener('click', () => {
     finishTime: '-'
   };
   tasks.unshift(newTask);
-  document.getElementById('totalCount').textContent = tasks.length;
-  document.getElementById('taskBadge').textContent = tasks.filter(t => t.status === 'running').length;
-  renderTaskTable();
+  renderSidebarTasks();
 
   showToast('任务创建成功，正在执行...');
-  setTimeout(() => switchMainTab('list'), 600);
+  setTimeout(() => switchToDetail(newTask.id), 600);
 
   // 模拟进度
   simulateTaskProgress(newTask.id);
@@ -388,56 +398,143 @@ resetBtn.addEventListener('click', () => {
   showToast('已重置');
 });
 
-// ===== 任务列表 =====
-const taskTableBody = document.getElementById('taskTableBody');
+// ===== 侧边栏任务列表 =====
+const sidebarTaskList = document.getElementById('sidebarTaskList');
 
-function renderTaskTable() {
+function renderSidebarTasks() {
+  const badge = document.getElementById('taskBadge');
+  if (badge) badge.textContent = tasks.length;
+
   if (tasks.length === 0) {
-    taskTableBody.innerHTML = '';
-    document.getElementById('emptyState').style.display = 'block';
+    sidebarTaskList.innerHTML = `
+      <div style="padding: 16px 12px; text-align: center; font-size: 12px; color: var(--text-muted);">
+        暂无任务
+      </div>
+    `;
     return;
   }
-  document.getElementById('emptyState').style.display = 'none';
 
-  taskTableBody.innerHTML = tasks.map(task => `
-    <tr data-id="${task.id}">
-      <td>
-        <div class="task-name-cell" onclick="showDetail(${task.id})" title="${task.name}">${task.name}</div>
-      </td>
-      <td><span class="type-tag ${task.type}">${task.typeText}</span></td>
-      <td>${task.count} 条</td>
-      <td>
-        <span class="status-tag ${task.status}">
-          <span class="status-dot"></span>
-          ${task.statusText}
-        </span>
-      </td>
-      <td>
-        <div class="progress-cell">
-          <div class="progress-text">
-            <span><b>${task.finished}</b> / ${task.count}</span>
-            <span>${task.progress}%</span>
-          </div>
-          <div class="mini-progress">
-            <div class="mini-progress-fill" style="width: ${task.progress}%"></div>
-          </div>
-        </div>
-      </td>
-      <td style="color: var(--text-secondary); font-size: 12px;">${task.createTime}</td>
-      <td>
-        <div class="action-cell">
-          <span class="action-link" onclick="showDetail(${task.id})">详情</span>
-          ${task.status === 'running' ? `<span class="action-link danger" onclick="stopTask(${task.id})">停止</span>` : ''}
-          ${task.status === 'done' ? `<span class="action-link" onclick="viewResult(${task.id})">结果</span>` : ''}
-          ${task.status !== 'running' ? `<span class="action-link danger" onclick="deleteTask(${task.id})">删除</span>` : ''}
-        </div>
-      </td>
-    </tr>
+  sidebarTaskList.innerHTML = tasks.map(task => `
+    <button class="sidebar-task-item ${currentTaskId === task.id ? 'active' : ''}" data-task-id="${task.id}">
+      <div class="sidebar-task-name" title="${task.name}">${task.name}</div>
+      <div class="sidebar-task-info">
+        <span class="sidebar-task-status ${task.status}">${task.statusText}</span>
+        <span class="sidebar-task-count">${task.count}条</span>
+      </div>
+      <div class="sidebar-task-progress">
+        <div class="sidebar-task-progress-fill" style="width: ${task.progress}%"></div>
+      </div>
+    </button>
   `).join('');
 
-  document.getElementById('totalCount').textContent = tasks.length;
-  const runningCount = tasks.filter(t => t.status === 'running').length;
-  document.getElementById('taskBadge').textContent = runningCount;
+  // 绑定点击事件
+  sidebarTaskList.querySelectorAll('.sidebar-task-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const taskId = parseInt(item.dataset.taskId);
+      switchToDetail(taskId);
+    });
+  });
+}
+
+// ===== 任务详情面板 =====
+const mockResults = [
+  { id: 1, title: '2024夏季新款女装连衣裙法式复古收腰显瘦气质长裙', price: 89.9, shop: '时尚女装旗舰店', similarity: 95, success: true, image: 'https://img.alicdn.com/imgextra/i1/O1CN01abc123_1234567890.jpg' },
+  { id: 2, title: '韩版宽松显瘦连衣裙女夏2024新款气质仙女裙', price: 128.0, shop: '韩风女装专营店', similarity: 88, success: true, image: '' },
+  { id: 3, title: '法式复古碎花连衣裙女夏季收腰显瘦中长款裙子', price: 156.5, shop: '碎花小镇', similarity: 92, success: true, image: '' },
+  { id: 4, title: '简约气质连衣裙女夏2024新款职业装一步裙', price: 199.0, shop: '白领衣橱', similarity: 76, success: true, image: '' },
+  { id: 5, title: '休闲运动连衣裙女夏季新款显瘦Polo领T恤裙', price: 79.9, shop: '运动休闲馆', similarity: 65, success: true, image: '' },
+  { id: 6, title: '性感吊带连衣裙女夏2024新款夜店风包臀裙', price: 168.0, shop: '性感衣橱', similarity: 58, success: false, image: '' },
+  { id: 7, title: '文艺范棉麻连衣裙女夏季宽松大码长款裙子', price: 138.0, shop: '棉麻文艺社', similarity: 82, success: true, image: '' },
+  { id: 8, title: '甜美可爱连衣裙女夏装新款洛丽塔公主裙', price: 258.0, shop: '甜美少女馆', similarity: 71, success: true, image: '' },
+  { id: 9, title: '高端真丝连衣裙女夏季大牌气质桑蚕丝裙子', price: 598.0, shop: '真丝世家', similarity: 90, success: true, image: '' },
+  { id: 10, title: '大码女装连衣裙夏2024新款胖mm显瘦遮肉', price: 108.0, shop: '大码女装店', similarity: 85, success: true, image: '' },
+  { id: 11, title: '新中式改良旗袍连衣裙女夏季国风复古裙子', price: 288.0, shop: '国风服饰馆', similarity: 78, success: true, image: '' },
+  { id: 12, title: '牛仔连衣裙女夏季2024新款收腰显瘦短裙子', price: 149.0, shop: '牛仔风尚', similarity: 69, success: false, image: '' },
+];
+
+function showTaskDetail(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // 更新面包屑
+  const bc = document.getElementById('breadcrumbCurrent');
+  if (bc) bc.textContent = task.name;
+
+  // 显示详情内容
+  document.getElementById('detailEmpty').style.display = 'none';
+  document.getElementById('detailContent').style.display = 'block';
+
+  // 填充任务信息
+  document.getElementById('detailTaskName').textContent = task.name;
+  document.getElementById('detailTypeTag').textContent = task.typeText;
+  document.getElementById('detailStatusTag').textContent = task.statusText;
+  document.getElementById('detailStatusTag').className = 'detail-status-tag ' + task.status;
+  document.getElementById('detailCreateTime').textContent = task.createTime;
+
+  // 填充进度数据
+  const failedCount = Math.floor(task.count * 0.08);
+  document.getElementById('progressNum').textContent = task.progress + '%';
+  document.getElementById('finishedNum').textContent = task.finished;
+  document.getElementById('totalNum').textContent = task.count;
+  document.getElementById('failedNum').textContent = failedCount;
+  document.getElementById('progressFillLarge').style.width = task.progress + '%';
+
+  // 结果统计
+  const successCount = Math.floor(task.finished * 0.92);
+  document.getElementById('resultAllCount').textContent = task.finished;
+  document.getElementById('resultSuccessCount').textContent = successCount;
+  document.getElementById('resultFailedCount').textContent = task.finished - successCount;
+
+  // 渲染结果网格
+  renderResultGrid(task);
+
+  // 更新侧边栏选中状态
+  document.querySelectorAll('.sidebar-task-item').forEach(item => {
+    item.classList.toggle('active', parseInt(item.dataset.taskId) === taskId);
+  });
+}
+
+function renderResultGrid(task) {
+  const grid = document.getElementById('resultGrid');
+  const showCount = Math.min(12, task.finished);
+  
+  if (showCount === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; padding: 60px 20px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5;">⏳</div>
+        <div style="color: var(--text-secondary); font-size: 14px;">寻源进行中，请稍候...</div>
+      </div>
+    `;
+    return;
+  }
+
+  const results = [];
+  for (let i = 0; i < showCount; i++) {
+    const base = mockResults[i % mockResults.length];
+    results.push({
+      ...base,
+      id: i + 1,
+      similarity: Math.floor(Math.random() * 30 + 70),
+      success: Math.random() > 0.1
+    });
+  }
+
+  grid.innerHTML = results.map(r => `
+    <div class="result-card">
+      <div class="result-card-image">
+        ${r.image ? `<img src="${r.image}" alt="">` : `<div style="width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(135deg, #ffecd2, #fcb69f);font-size:48px;">👗</div>`}
+        <span class="result-card-badge ${r.success ? 'success' : 'failed'}">${r.success ? '寻源成功' : '寻源失败'}</span>
+      </div>
+      <div class="result-card-body">
+        <div class="result-card-title">${r.title}</div>
+        <div class="result-card-price">¥${r.price.toFixed(2)} <span>起</span></div>
+        <div class="result-card-meta">
+          <span class="result-card-shop">${r.shop}</span>
+          <span class="result-card-similarity">${r.similarity}%匹配</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
 // 模拟任务进度
@@ -456,7 +553,11 @@ function simulateTaskProgress(taskId) {
       task.finishTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       clearInterval(timer);
     }
-    renderTaskTable();
+    renderSidebarTasks();
+    // 如果当前正在查看这个任务，也更新详情面板
+    if (currentTaskId === taskId) {
+      showTaskDetail(taskId);
+    }
   }, 1500);
 }
 
@@ -469,7 +570,8 @@ function stopTask(id) {
     task.statusText = '已停止';
     const now = new Date();
     task.finishTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-    renderTaskTable();
+    renderSidebarTasks();
+    if (currentTaskId === id) showTaskDetail(id);
     showToast('任务已停止');
   }
 }
@@ -478,78 +580,67 @@ function stopTask(id) {
 function deleteTask(id) {
   if (!confirm('确定要删除该任务吗？')) return;
   tasks = tasks.filter(t => t.id !== id);
-  renderTaskTable();
+  renderSidebarTasks();
+  if (currentTaskId === id) {
+    currentTaskId = null;
+    document.getElementById('detailEmpty').style.display = 'flex';
+    document.getElementById('detailContent').style.display = 'none';
+    const bc = document.getElementById('breadcrumbCurrent');
+    if (bc) bc.textContent = '任务详情';
+  }
   showToast('任务已删除');
 }
 
-// 查看结果
-function viewResult(id) {
-  showToast('跳转到寻源结果页...');
-}
-
-// ===== 详情弹窗 =====
-const detailModal = document.getElementById('detailModal');
-const detailCloseBtn = document.getElementById('detailCloseBtn');
-const detailCloseBtn2 = document.getElementById('detailCloseBtn2');
-
-function showDetail(id) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-  document.getElementById('detailName').textContent = task.name;
-  document.getElementById('detailType').textContent = task.typeText;
-  document.getElementById('detailStatus').innerHTML = `<span class="status-tag ${task.status}"><span class="status-dot"></span>${task.statusText}</span>`;
-  document.getElementById('detailCount').textContent = `${task.count} 条`;
-  document.getElementById('detailTime').textContent = task.createTime;
-  document.getElementById('detailFinishTime').textContent = task.finishTime;
-  document.getElementById('detailProgressText').textContent = `${task.progress}%（${task.finished} / ${task.count}）`;
-  document.getElementById('detailProgressBar').style.width = task.progress + '%';
-  detailModal.style.display = 'flex';
-}
-
-function closeDetail() {
-  detailModal.style.display = 'none';
-}
-
-detailCloseBtn.addEventListener('click', closeDetail);
-detailCloseBtn2.addEventListener('click', closeDetail);
-document.getElementById('viewResultBtn').addEventListener('click', () => {
-  closeDetail();
-  showToast('跳转到寻源结果页...');
-});
-detailModal.addEventListener('click', e => {
-  if (e.target === detailModal) closeDetail();
+// ===== 详情面板操作 =====
+document.getElementById('detailBackBtn')?.addEventListener('click', () => {
+  // 返回按钮：回到创建页或保持在详情页
+  switchToCreate();
 });
 
-// ===== 筛选 =====
-document.getElementById('searchBtn').addEventListener('click', () => {
-  const name = document.getElementById('filterTaskName').value.trim().toLowerCase();
-  const type = document.getElementById('filterType').value;
-  const status = document.getElementById('filterStatus').value;
-
-  let filtered = [...mockTasks];
-  if (name) filtered = filtered.filter(t => t.name.toLowerCase().includes(name));
-  if (type) filtered = filtered.filter(t => t.type === type);
-  if (status) filtered = filtered.filter(t => t.status === status);
-
-  tasks = filtered;
-  renderTaskTable();
-  showToast(`查询到 ${filtered.length} 条结果`);
+document.getElementById('detailRefreshBtn')?.addEventListener('click', () => {
+  if (currentTaskId) {
+    showTaskDetail(currentTaskId);
+    showToast('已刷新');
+  }
 });
 
-document.getElementById('resetFilterBtn').addEventListener('click', () => {
-  document.getElementById('filterTaskName').value = '';
-  document.getElementById('filterType').value = '';
-  document.getElementById('filterStatus').value = '';
-  document.getElementById('filterDateStart').value = '';
-  document.getElementById('filterDateEnd').value = '';
-  tasks = [...mockTasks];
-  renderTaskTable();
-  showToast('已重置筛选');
+// ===== 结果Tab切换 =====
+document.querySelectorAll('.result-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const filter = tab.dataset.result;
+    // 简单模拟筛选
+    const cards = document.querySelectorAll('.result-card');
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const badge = card.querySelector('.result-card-badge');
+      const isSuccess = badge && badge.classList.contains('success');
+      if (filter === 'all') {
+        card.style.display = '';
+        visibleCount++;
+      } else if (filter === 'success' && isSuccess) {
+        card.style.display = '';
+        visibleCount++;
+      } else if (filter === 'failed' && !isSuccess) {
+        card.style.display = '';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    showToast(`显示 ${visibleCount} 条结果`);
+  });
 });
 
-document.getElementById('refreshBtn').addEventListener('click', () => {
-  renderTaskTable();
-  showToast('已刷新');
+// ===== 结果搜索 =====
+document.getElementById('resultSearchInput')?.addEventListener('input', (e) => {
+  const keyword = e.target.value.toLowerCase();
+  const cards = document.querySelectorAll('.result-card');
+  cards.forEach(card => {
+    const title = card.querySelector('.result-card-title')?.textContent.toLowerCase() || '';
+    card.style.display = title.includes(keyword) ? '' : 'none';
+  });
 });
 
 // ===== 分页按钮（纯展示） =====
@@ -611,6 +702,6 @@ resetEditBtn.addEventListener('click', () => {
 });
 
 // ===== 初始化 =====
-renderTaskTable();
+renderSidebarTasks();
 // 让已有的执行中任务继续跑
 tasks.filter(t => t.status === 'running').forEach(t => simulateTaskProgress(t.id));
