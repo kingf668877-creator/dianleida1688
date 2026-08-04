@@ -19,43 +19,93 @@ function showToast(msg) {
 }
 
 // ===== 图片链接 Tab =====
-const linkInput = document.getElementById('linkInput');
-const addLinkBtn = document.getElementById('addLinkBtn');
-const linkList = document.getElementById('linkList');
-let links = [];
+const linkTextarea = document.getElementById('linkTextarea');
+const clearLinkBtn = document.getElementById('clearLinkBtn');
+const parseLinkBtn = document.getElementById('parseLinkBtn');
+const linkPreview = document.getElementById('linkPreview');
+const linkCount = document.getElementById('linkCount');
+const linkThumbGrid = document.getElementById('linkThumbGrid');
+const linkFileInput = document.getElementById('linkFileInput');
+let parsedLinks = [];
 
-function renderLinks() {
-  linkList.innerHTML = links.map((url, i) => `
-    <div class="link-item">
-      <span class="link-num">${i + 1}</span>
-      <span class="link-text" title="${url}">${url}</span>
-      <button class="link-remove" data-index="${i}" title="删除">✕</button>
+function parseLinksFromText(text) {
+  return text
+    .split(/[\n,;]+/)
+    .map(line => line.trim())
+    .filter(line => line && /^https?:\/\//i.test(line));
+}
+
+function renderLinkThumbs(links) {
+  if (links.length === 0) {
+    linkPreview.style.display = 'none';
+    return;
+  }
+
+  linkPreview.style.display = 'block';
+  linkCount.textContent = links.length + ' 条';
+
+  // 最多渲染前 40 张预览，避免性能问题
+  const previewLinks = links.slice(0, 40);
+  linkThumbGrid.innerHTML = previewLinks.map((url, i) => `
+    <div class="link-thumb-item" title="${url}">
+      <img src="${url}" alt="link-${i + 1}" onerror="this.style.display='none';this.parentElement.style.background='var(--bg-tertiary)';this.parentElement.innerHTML='<span style=\\'color:var(--text-muted);font-size:11px;\\'>图片${i + 1}</span>'">
+      <span class="thumb-num">${i + 1}</span>
+      <button class="thumb-del" data-index="${i}" title="删除">✕</button>
     </div>
   `).join('');
 
-  // 绑定删除事件
-  linkList.querySelectorAll('.link-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
+  if (links.length > 40) {
+    linkThumbGrid.innerHTML += `
+      <div class="link-thumb-item" style="background: var(--primary-bg); display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;">
+        <span style="font-size:20px;font-weight:700;color:var(--primary);">+${links.length - 40}</span>
+        <span style="font-size:11px;color:var(--primary);">更多</span>
+      </div>
+    `;
+  }
+
+  // 绑定删除
+  linkThumbGrid.querySelectorAll('.thumb-del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
       const idx = parseInt(btn.dataset.index);
-      links.splice(idx, 1);
-      renderLinks();
+      parsedLinks.splice(idx, 1);
+      linkTextarea.value = parsedLinks.join('\n');
+      renderLinkThumbs(parsedLinks);
+      showToast('已删除链接');
     });
   });
 }
 
-function addLink() {
-  const url = linkInput.value.trim();
-  if (!url) { showToast('请输入图片链接'); return; }
-  if (links.length >= 10) { showToast('最多添加10条示例链接'); return; }
-  links.push(url);
-  linkInput.value = '';
-  renderLinks();
-  showToast('已添加链接');
-}
+parseLinkBtn.addEventListener('click', () => {
+  parsedLinks = parseLinksFromText(linkTextarea.value);
+  if (parsedLinks.length === 0) {
+    showToast('未检测到有效的图片链接');
+    return;
+  }
+  renderLinkThumbs(parsedLinks);
+  showToast(`已解析 ${parsedLinks.length} 条链接`);
+});
 
-addLinkBtn.addEventListener('click', addLink);
-linkInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') addLink();
+clearLinkBtn.addEventListener('click', () => {
+  linkTextarea.value = '';
+  parsedLinks = [];
+  linkPreview.style.display = 'none';
+  showToast('已清空');
+});
+
+// 从文本文件导入
+linkFileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    linkTextarea.value = ev.target.result;
+    parsedLinks = parseLinksFromText(ev.target.result);
+    renderLinkThumbs(parsedLinks);
+    showToast(`已导入 ${parsedLinks.length} 条链接`);
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 });
 
 // ===== 文件上传 Tab =====
@@ -98,7 +148,7 @@ function simulateUpload(fileName) {
       clearInterval(timer);
       setTimeout(() => {
         fileUploading.style.display = 'none';
-        const success = Math.random() > 0.3 || links.length === 0;
+        const success = Math.random() > 0.3;
         if (success) {
           selectedFileName.textContent = fileName;
           const size = (Math.random() * 5 + 0.5).toFixed(1);
@@ -117,10 +167,8 @@ function simulateUpload(fileName) {
   }, 150);
 }
 
-// 点击上传区域
 fileDropZone.addEventListener('click', () => fileInput.click());
 
-// 拖拽
 fileDropZone.addEventListener('dragover', e => {
   e.preventDefault();
   fileDropZone.classList.add('dragover');
@@ -137,7 +185,6 @@ fileDropZone.addEventListener('drop', e => {
   }
 });
 
-// 文件选择
 fileInput.addEventListener('change', e => {
   if (e.target.files.length > 0) {
     simulateUpload(e.target.files[0].name);
@@ -145,7 +192,6 @@ fileInput.addEventListener('change', e => {
   }
 });
 
-// 移除文件
 removeFileBtn.addEventListener('click', () => {
   resetFileState();
   showToast('已移除文件');
@@ -160,7 +206,7 @@ const imageGrid = document.getElementById('imageGrid');
 const imageInput = document.getElementById('imageInput');
 const imageUploadBtn = document.getElementById('imageUploadBtn');
 const imageCount = document.getElementById('imageCount');
-const MAX_IMAGES = 9;
+const MAX_IMAGES = 1000;
 let images = [];
 
 function renderImages() {
@@ -197,7 +243,7 @@ function renderImages() {
 imageUploadBtn.addEventListener('click', e => {
   e.stopPropagation();
   if (images.length >= MAX_IMAGES) {
-    showToast('最多上传9张图片');
+    showToast(`最多上传${MAX_IMAGES}张图片`);
     return;
   }
   imageInput.click();

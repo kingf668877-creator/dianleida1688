@@ -230,100 +230,132 @@ button {
 }
 
 /* ===== 图片链接 Tab ===== */
-.link-input-wrap {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.link-input-wrap .form-input { flex: 1; }
-
-.add-link-btn {
-  height: 42px;
-  padding: 0 18px;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--primary);
-  border: 1.5px solid var(--primary);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: var(--transition);
-  font-family: inherit;
-}
-.add-link-btn:hover {
-  background: var(--primary-bg);
-}
-
-.link-list {
+.link-upload-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-  max-height: 140px;
-  overflow-y: auto;
+  gap: 14px;
 }
 
-.link-item {
+.panel-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.url-textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  outline: none;
+  transition: var(--transition);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--bg-secondary);
+  resize: vertical;
+}
+.url-textarea:hover { border-color: #d0d0dc; }
+.url-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.08);
+}
+.url-textarea::placeholder { color: var(--text-muted); }
+
+.link-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.link-actions .btn {
+  height: 36px;
+  padding: 0 16px;
   font-size: 13px;
+}
+
+/* 链接预览 */
+.link-preview {
+  margin-top: 6px;
+}
+
+.file-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2px 12px;
+  font-weight: 600;
   color: var(--text-secondary);
-  animation: slideInLeft .2s ease;
+  font-size: 13px;
 }
 
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.link-item .link-num {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--primary-bg);
+.file-count {
   color: var(--primary);
-  font-size: 11px;
+  font-weight: 600;
+}
+
+.link-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.link-thumb-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  position: relative;
+  animation: popIn .3s ease;
+}
+
+.link-thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.link-thumb-item .thumb-num {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 10px;
   font-weight: 600;
   display: grid;
   place-items: center;
-  flex-shrink: 0;
 }
 
-.link-item .link-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.link-item .link-remove {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  color: var(--text-muted);
-  font-size: 14px;
+.link-thumb-item .thumb-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 12px;
   display: grid;
   place-items: center;
-  flex-shrink: 0;
+  cursor: pointer;
   transition: var(--transition);
+  border: none;
 }
-.link-item .link-remove:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-
-.tip-box {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  padding: 14px 16px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
+.link-thumb-item .thumb-del:hover {
+  background: var(--danger);
+  transform: scale(1.1);
 }
 
 /* ===== 文件上传 Tab ===== */
@@ -576,8 +608,11 @@ button {
 .image-upload-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
 }
 
 .image-upload-item {
