@@ -3,106 +3,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 智能分析完成</title>
-  <link rel="icon" type="image/png" href="logo.png">
+<title>创建图搜寻源</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="stylesheet" href="ai-three-step.css">
 </head>
 <body>
-<main class="page">
-  <div class="edit-toolbar" id="editToolbar">
-    <button class="edit-btn primary" id="editModeBtn" type="button">编辑模式</button>
-    <button class="edit-btn" id="copyChangesBtn" type="button" disabled>复制修改记录</button>
-    <button class="edit-btn ghost" id="resetChangesBtn" type="button" disabled>重置修改</button>
-    <span class="edit-tip" id="editTip">开启后可直接点击文案修改</span>
+
+<!-- 背景模拟 -->
+<div class="bg-mock">
+  <div class="bg-sidebar"></div>
+  <div class="bg-header">1688图搜批量寻源任务</div>
+  <div class="bg-content">
+    <div class="bg-table">
+      <div class="bg-row">任务名称</div>
+      <div class="bg-row">速度测试8</div>
+      <div class="bg-row">速度测试7</div>
+      <div class="bg-row">速度测试6</div>
+      <div class="bg-row">速度测试5</div>
+    </div>
   </div>
+</div>
 
-  <section class="changes-panel" id="changesPanel" hidden>
-    <div class="changes-head">
-      <strong>修改记录</strong>
-      <span id="changesCount">0 条</span>
-    </div>
-    <pre id="changesPreview">暂无修改</pre>
-  </section>
-
-  <section class="analysis-card" id="analysisCard">
-    <div class="card-header">
-      <span class="ai-mark loading-mark" aria-hidden="true">
-        <span class="ai-spinner"></span>
-      </span>
-      <span class="heading-copy">
-        <strong data-editable data-edit-label="主标题">AI 智能搜索分析中</strong>
-        <small id="statusText" data-editable data-edit-label="副标题">正在生成分析结果</small>
-      </span>
+<!-- 弹窗 -->
+<div class="modal-mask">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-editable data-edit-label="弹窗标题">创建图搜寻源</span>
+      <button class="modal-close" id="modalClose">✕</button>
     </div>
 
-    <div class="card-body" id="cardBody">
-      <ol class="steps">
-        <li class="step">
-          <div class="step-rail">
-            <span class="step-dot">✓</span>
-            <span class="step-line"></span>
-          </div>
-          <div class="step-main">
-            <div class="step-top">
-              <div>
-                <span class="step-title" data-editable data-edit-label="Step 1 标题">Step 1：核心词提取</span>
-              </div>
-            </div>
-            <p class="step-summary" data-editable data-edit-label="Step 1 描述">核心产品：蓝牙耳机 · 修饰词：蓝牙 · 必含词：蓝牙耳机、耳机</p>
-            <div class="tag-row">
-              <span class="tag" data-editable data-edit-label="Step 1 标签 1">核心：蓝牙耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 1 标签 2">修饰：蓝牙、耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 1 标签 3">必含：耳机、无线</span>
-            </div>
-          </div>
-        </li>
+    <div class="modal-body">
+      <!-- 任务名称 -->
+      <div class="form-item">
+        <div class="form-label"><span class="required">*</span><span data-editable data-edit-label="任务名称标签">任务名称</span></div>
+        <input class="form-input" type="text" placeholder="请输入任务名称" value="22">
+      </div>
 
-        <li class="step">
-          <div class="step-rail">
-            <span class="step-dot">✓</span>
-            <span class="step-line"></span>
-          </div>
-          <div class="step-main">
-            <div class="step-top">
-              <div>
-                <span class="step-title" data-editable data-edit-label="Step 2 标题">Step 2：关键词扩展与排除</span>
-              </div>
-            </div>
-            <p class="step-summary" data-editable data-edit-label="Step 2 描述">智能扩展 6 个搜索变体 · 排除 4 个不相关词</p>
-            <div class="tag-row tag-row-wrap">
-              <span class="tag" data-editable data-edit-label="Step 2 标签 1">无线蓝牙耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 2 标签 2">TWS蓝牙耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 2 标签 3">爆款蓝牙耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 2 标签 4">降噪蓝牙耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 2 标签 5">运动蓝牙耳机</span>
-              <span class="tag" data-editable data-edit-label="Step 2 标签 6">便携蓝牙耳机</span>
-              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 1">有线耳机</span>
-              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 2">耳机线</span>
-              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 3">耳机套</span>
-              <span class="tag tag-danger" data-editable data-edit-label="Step 2 排除词 4">耳机支架</span>
-            </div>
-          </div>
-        </li>
+      <!-- 图搜方式 -->
+      <div class="form-item">
+        <div class="form-label" data-editable data-edit-label="图搜方式标签">图搜方式</div>
 
-        <li class="step step-current step-last">
-          <div class="step-rail">
-            <span class="step-dot step-dot-loading"><span class="step-mini-spinner"></span></span>
+        <div class="search-tabs" role="tablist">
+          <button class="tab-btn active" data-tab="link" role="tab">图片链接</button>
+          <button class="tab-btn" data-tab="file" role="tab">文件上传</button>
+          <button class="tab-btn" data-tab="image" role="tab">上传图片</button>
+        </div>
+
+        <!-- 图片链接 Tab -->
+        <div class="tab-panel active" id="panel-link">
+          <div class="link-input-wrap">
+            <input class="form-input" id="linkInput" type="text" placeholder="请输入图片链接，回车添加">
+            <button class="add-link-btn" id="addLinkBtn">+ 添加</button>
           </div>
-          <div class="step-main">
-            <div class="step-top">
-              <div>
-                <span class="step-title" data-editable data-edit-label="Step 3 标题">Step 3：实时商品搜索中</span>
+          <div class="link-list" id="linkList"></div>
+          <div class="link-tip" data-editable data-edit-label="图片链接说明">
+            支持批量导入图片链接，每行一个，最多支持 1000 条。
+          </div>
+        </div>
+
+        <!-- 文件上传 Tab -->
+        <div class="tab-panel" id="panel-file">
+          <!-- 上传前状态 -->
+          <div id="fileUploadEmpty">
+            <div class="upload-area" id="fileDropZone">
+              <div class="upload-icon">↑</div>
+              <div class="upload-title">点击或将文件拖拽到此处<em>上传</em></div>
+              <div class="upload-desc">支持 xlsx、xls 格式，单个文件不超过 30M</div>
+              <input type="file" class="hidden-input" id="fileInput" accept=".xlsx,.xls">
+            </div>
+            <div class="file-actions">
+              <span></span>
+              <button class="download-template">
+                ↓ <span data-editable data-edit-label="下载模板按钮">下载模板</span>
+              </button>
+            </div>
+            <div class="link-tip" data-editable data-edit-label="文件上传说明">
+              导入说明：<br>
+              1. 本功能支持1000条图片链接批量寻源；<br>
+              2. 请先下载模板文件，按格式要求填写内容；<br>
+              3. 导入格式为xlsx/xls（手动修改文件后缀无效），行数不超过1000张，文件大小不超过30M。
+            </div>
+          </div>
+
+          <!-- 上传中状态 -->
+          <div id="fileUploading" style="display:none;">
+            <div class="upload-progress">
+              <div class="progress-head">
+                <span id="uploadingFileName">正在上传...</span>
+                <span id="uploadingPercent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
               </div>
             </div>
-            <p class="step-summary" data-editable data-edit-label="Step 3 描述">搜索词：蓝牙耳机、无线蓝牙耳机、TWS蓝牙耳机、爆款蓝牙耳机等，正在搜索商品中...</p>
           </div>
-        </li>
-      </ol>
+
+          <!-- 上传后状态（成功） -->
+          <div id="fileUploaded" style="display:none;">
+            <div class="file-selected">
+              <div class="file-icon">XLS</div>
+              <div class="file-info">
+                <div class="file-name" id="selectedFileName">店雷达 1688选品库-近30天 2026-08-03 174118.xls</div>
+                <div class="file-meta" id="selectedFileMeta">2.4 MB · 328 条数据</div>
+              </div>
+              <div class="file-status">
+                <span class="status-dot">✓</span>
+                <span>已选择</span>
+              </div>
+              <button class="file-remove" id="removeFileBtn" title="移除">✕</button>
+            </div>
+            <div class="file-actions">
+              <span></span>
+              <button class="download-template">↓ 重新下载模板</button>
+            </div>
+          </div>
+
+          <!-- 上传后状态（失败） -->
+          <div id="fileUploadError" style="display:none;">
+            <div class="file-selected" style="background: #fff1f0; border-color: #ffccc7;">
+              <div class="file-icon" style="background: #f53f3f;">XLS</div>
+              <div class="file-info">
+                <div class="file-name" style="color: #f53f3f;">店雷达 1688选品库-近30天 2026-08-03 174118.xls</div>
+                <div class="file-meta" style="color: #f53f3f;">模板格式异常，详细原因：图片链接校验失败</div>
+              </div>
+              <button class="file-remove" id="removeErrorFileBtn" title="移除">✕</button>
+            </div>
+            <div class="file-error-tip">
+              <span class="err-icon">⚠</span>
+              <span data-editable data-edit-label="文件错误提示">模板格式异常，详细原因：图片链接校验失败，请检查模板格式后重新上传。</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 上传图片 Tab -->
+        <div class="tab-panel" id="panel-image">
+          <div class="image-upload-grid" id="imageGrid">
+            <div class="image-upload-item" id="imageUploadBtn" title="点击上传图片">
+              <span class="plus">+</span>
+              <span class="upload-text">上传图片</span>
+              <input type="file" class="hidden-input" id="imageInput" accept="image/*" multiple>
+            </div>
+          </div>
+          <div class="image-count-tip">
+            已上传 <span id="imageCount">0</span> / 9 张
+          </div>
+        </div>
+      </div>
     </div>
-  </section>
 
-  <div class="toast" id="toast" role="status" aria-live="polite">已复制</div>
-</main>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="cancelBtn">取消</button>
+      <button class="btn btn-primary" id="submitBtn">开始执行</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑工具栏 -->
+<div class="edit-toolbar">
+  <button class="edit-btn primary" id="editModeBtn">编辑模式</button>
+  <button class="edit-btn" id="resetBtn" disabled>重置修改</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script src="ai-three-step.js"></script>
 </body>
 </html>
