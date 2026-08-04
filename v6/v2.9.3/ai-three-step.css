@@ -1194,6 +1194,30 @@ button {
   padding: 0 24px;
 }
 
+/* ===== 寻源结果占位 ===== */
+.result-placeholder {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.result-placeholder-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: .4;
+}
+
+.result-placeholder-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.result-placeholder-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 /* ===== 分页 ===== */
 .pagination-wrap {
   display: flex;

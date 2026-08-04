@@ -101,6 +101,8 @@ function goCreatePage() {
   const page = getUrlParam('page');
   if (page === 'list') {
     switchPage('list');
+  } else if (page === 'result') {
+    switchPage('result');
   } else {
     switchPage('create');
   }
