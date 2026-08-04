@@ -25,7 +25,6 @@ const parseLinkBtn = document.getElementById('parseLinkBtn');
 const linkPreview = document.getElementById('linkPreview');
 const linkCount = document.getElementById('linkCount');
 const linkThumbGrid = document.getElementById('linkThumbGrid');
-const linkFileInput = document.getElementById('linkFileInput');
 let parsedLinks = [];
 
 function parseLinksFromText(text) {
@@ -91,21 +90,6 @@ clearLinkBtn.addEventListener('click', () => {
   parsedLinks = [];
   linkPreview.style.display = 'none';
   showToast('已清空');
-});
-
-// 从文本文件导入
-linkFileInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    linkTextarea.value = ev.target.result;
-    parsedLinks = parseLinksFromText(ev.target.result);
-    renderLinkThumbs(parsedLinks);
-    showToast(`已导入 ${parsedLinks.length} 条链接`);
-  };
-  reader.readAsText(file);
-  e.target.value = '';
 });
 
 // ===== 文件上传 Tab =====

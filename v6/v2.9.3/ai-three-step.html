@@ -51,10 +51,6 @@
             <p class="panel-hint">每行粘贴一个图片URL地址，支持 http/https 链接，不限数量</p>
             <textarea id="linkTextarea" class="url-textarea" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png&#10;https://example.com/img3.webp&#10;..." rows="8"></textarea>
             <div class="link-actions">
-              <label class="btn btn-ghost">
-                <span>📄 从文本文件导入</span>
-                <input type="file" id="linkFileInput" accept=".txt,.csv" hidden>
-              </label>
               <button class="btn btn-ghost" id="clearLinkBtn">
                 <span>清空</span>
               </button>
@@ -90,8 +86,9 @@
             </div>
             <div class="file-actions">
               <span></span>
-              <button class="download-template">
-                📄 <span data-editable data-edit-label="下载模板按钮">下载模板</span>
+              <button class="btn-download-template">
+                <span class="dl-icon">⬇</span>
+                <span data-editable data-edit-label="下载模板按钮">下载模板</span>
               </button>
             </div>
             <div class="tip-box" data-editable data-edit-label="文件上传说明">
@@ -131,7 +128,10 @@
             </div>
             <div class="file-actions">
               <span></span>
-              <button class="download-template">📄 重新下载模板</button>
+              <button class="btn-download-template">
+                <span class="dl-icon">⬇</span>
+                <span>重新下载模板</span>
+              </button>
             </div>
           </div>
 
