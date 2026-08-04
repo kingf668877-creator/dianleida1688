@@ -64,6 +64,19 @@ const mockTasks = [
     finished: 160,
     createTime: '2026-08-02 14:10:00',
     finishTime: '2026-08-02 16:30:20'
+  },
+  {
+    id: 6,
+    name: '冬季羽绒服批量寻源',
+    type: 'file',
+    typeText: '文件上传',
+    count: 800,
+    status: 'waiting',
+    statusText: '待执行',
+    progress: 0,
+    finished: 0,
+    createTime: '2026-08-04 11:30:00',
+    finishTime: '-'
   }
 ];
 
@@ -414,11 +427,13 @@ function getTaskActions(task) {
   const actions = [];
   const sep = '<span class="action-sep">|</span>';
 
-  if (task.status === 'running') {
-    // 执行中：终止任务
+  if (task.status === 'running' || task.status === 'waiting') {
+    // 执行中 / 待执行：终止任务
     actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止任务</span>`);
   } else if (task.status === 'done') {
-    // 已完成：复制任务、寻源结果、删除任务
+    // 已完成：任务详情、复制任务、寻源结果、删除任务
+    actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
@@ -856,15 +871,15 @@ resetEditBtn?.addEventListener('click', () => {
     '美妆工具', '护肤套装', '香水批发', '首饰配件', '手表寻源'];
   const types = ['link', 'file', 'image'];
   const typeTexts = { link: '图片链接', file: '文件上传', image: '上传图片' };
-  const statuses = ['done', 'running', 'stopped', 'pending'];
-  const statusTexts = { done: '已完成', running: '执行中', stopped: '已终止', pending: '未执行' };
+  const statuses = ['done', 'running', 'stopped', 'pending', 'waiting'];
+  const statusTexts = { done: '已完成', running: '执行中', stopped: '已终止', pending: '未执行', waiting: '待执行' };
 
   for (let i = 0; i < 35; i++) {
     const type = types[i % 3];
-    const status = statuses[i % 4];
+    const status = statuses[i % 5];
     const count = Math.floor(Math.random() * 800 + 50);
-    const progress = status === 'done' ? 100 : status === 'pending' ? 0 : Math.floor(Math.random() * 90 + 5);
-    const finished = status === 'pending' ? 0 : Math.floor(count * progress / 100);
+    const progress = status === 'done' ? 100 : (status === 'pending' || status === 'waiting') ? 0 : Math.floor(Math.random() * 90 + 5);
+    const finished = (status === 'pending' || status === 'waiting') ? 0 : Math.floor(count * progress / 100);
     const day = String(1 + (i % 30)).padStart(2, '0');
     const hour = String(8 + (i % 12)).padStart(2, '0');
 
@@ -879,7 +894,7 @@ resetEditBtn?.addEventListener('click', () => {
       progress,
       finished,
       createTime: `2026-07-${day} ${hour}:${String(i % 60).padStart(2, '0')}:00`,
-      finishTime: (status === 'running' || status === 'pending') ? '-' : `2026-07-${day} ${String(parseInt(hour) + 1).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00`
+      finishTime: (status === 'running' || status === 'pending' || status === 'waiting') ? '-' : `2026-07-${day} ${String(parseInt(hour) + 1).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00`
     });
   }
   tasks = [...mockTasks];

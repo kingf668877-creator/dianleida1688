@@ -1097,6 +1097,9 @@ button {
 .status-tag.pending { color: var(--warning); }
 .status-tag.pending .status-dot { background: var(--warning); }
 
+.status-tag.waiting { color: var(--info); }
+.status-tag.waiting .status-dot { background: var(--info); }
+
 .progress-cell {
   display: flex;
   flex-direction: column;
