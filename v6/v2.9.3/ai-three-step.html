@@ -258,22 +258,27 @@
     </div>
 
     <!-- 分页 -->
-    <div class="pagination">
-      <div class="pagination-left">
-        <span>每页显示</span>
-        <select class="form-input page-size" id="pageSize">
-          <option value="10">10</option>
-          <option value="20" selected>20</option>
-          <option value="50">50</option>
+    <div class="pagination-wrap" id="paginationWrap">
+      <span class="pagination-total">共 5 条</span>
+      <div class="pagination-center">
+        <select class="form-input page-size-select" id="pageSize">
+          <option value="10">10条/页</option>
+          <option value="20" selected>20条/页</option>
+          <option value="50">50条/页</option>
         </select>
-        <span>条</span>
+        <div class="pagination-nav" id="paginationNav">
+          <button class="page-nav-btn prev" disabled>&lt;</button>
+          <button class="page-nav-btn active">1</button>
+          <button class="page-nav-btn">2</button>
+          <button class="page-nav-btn">3</button>
+          <button class="page-nav-btn next">&gt;</button>
+        </div>
       </div>
-      <div class="pagination-right">
-        <button class="page-btn" disabled>上一页</button>
-        <button class="page-btn active">1</button>
-        <button class="page-btn">2</button>
-        <button class="page-btn">3</button>
-        <button class="page-btn">下一页</button>
+      <div class="pagination-goto">
+        <span>前往</span>
+        <input type="number" class="goto-input" id="gotoPageInput" min="1" value="1">
+        <span>页</span>
+        <button class="goto-btn" id="gotoPageBtn">GO</button>
       </div>
     </div>
   </section>
@@ -284,6 +289,21 @@
 <div class="edit-toolbar">
   <button class="edit-btn primary" id="editModeBtn">编辑模式</button>
   <button class="edit-btn" id="resetEditBtn" disabled>重置修改</button>
+</div>
+
+<!-- 删除确认浮窗 -->
+<div class="delete-float-modal" id="deleteFloatModal">
+  <div class="delete-float-backdrop" onclick="cancelDelete()"></div>
+  <div class="delete-float-content">
+    <div class="delete-float-body">
+      <div class="delete-float-icon">⚠️</div>
+      <div class="delete-float-text">确定要删除此任务吗？</div>
+    </div>
+    <div class="delete-float-actions">
+      <button class="btn btn-default" onclick="cancelDelete()">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeleteAction()">确定删除</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->

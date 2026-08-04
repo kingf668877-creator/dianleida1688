@@ -1045,6 +1045,7 @@ button {
 .action-cell {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .action-link {
@@ -1055,6 +1056,7 @@ button {
   padding: 4px 6px;
   border-radius: 4px;
   transition: background .15s ease;
+  white-space: nowrap;
 }
 
 .action-link:hover {
@@ -1066,6 +1068,13 @@ button {
 }
 .action-link.danger:hover {
   background: var(--danger-bg);
+}
+
+.action-link.primary {
+  color: var(--success);
+}
+.action-link.primary:hover {
+  background: var(--success-bg);
 }
 
 /* ===== 空状态 ===== */
@@ -1099,36 +1108,44 @@ button {
 }
 
 /* ===== 分页 ===== */
-.pagination {
+.pagination-wrap {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  gap: 16px;
   margin-top: 16px;
-}
-
-.pagination-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.page-size {
-  width: 80px;
-  height: 32px;
+.pagination-total {
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
-.pagination-right {
+.pagination-center {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 12px;
 }
 
-.page-btn {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 10px;
+.page-size-select {
+  width: 90px;
+  height: 32px;
+  font-size: 13px;
+  padding: 0 8px;
+}
+
+.pagination-nav {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.page-nav-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
   border-radius: var(--radius-sm);
   background: var(--bg-secondary);
   color: var(--text-secondary);
@@ -1138,22 +1155,152 @@ button {
   border: 1px solid var(--border-light);
   transition: var(--transition);
   font-family: inherit;
+  display: grid;
+  place-items: center;
 }
 
-.page-btn:hover:not(:disabled):not(.active) {
+.page-nav-btn:hover:not(:disabled):not(.active) {
   border-color: var(--primary);
   color: var(--primary);
 }
 
-.page-btn.active {
+.page-nav-btn.active {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
 }
 
-.page-btn:disabled {
+.page-nav-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.pagination-goto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.goto-input {
+  width: 48px;
+  height: 32px;
+  padding: 0 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: center;
+  outline: none;
+  transition: var(--transition);
+  font-family: inherit;
+}
+.goto-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.08);
+}
+
+.goto-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  transition: var(--transition);
+  font-family: inherit;
+}
+.goto-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ===== 删除确认浮窗 ===== */
+.delete-float-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 40px;
+}
+.delete-float-modal.show {
+  display: flex;
+}
+
+.delete-float-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.delete-float-content {
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  min-width: 320px;
+  max-width: 420px;
+  animation: floatUp .3s ease;
+}
+
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.delete-float-body {
+  padding: 24px 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delete-float-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.delete-float-text {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.delete-float-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 20px;
+}
+
+.delete-float-actions .btn {
+  height: 36px;
+  padding: 0 18px;
+  font-size: 13px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: var(--transition);
+}
+.btn-danger:hover {
+  background: #ff3344;
 }
 
 /* ===== 编辑模式 ===== */

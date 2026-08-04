@@ -67,8 +67,6 @@ const mockTasks = [
   }
 ];
 
-let tasks = [...mockTasks];
-
 // ===== Toast =====
 const toast = document.getElementById('toast');
 function showToast(msg) {
@@ -404,13 +402,44 @@ function updateTotalBadge() {
   if (total) total.textContent = tasks.length;
 }
 
+// 根据任务状态生成操作按钮
+function getTaskActions(task) {
+  const actions = [];
+  // 所有状态都有详情
+  actions.push(`<span class="action-link" onclick="showDetail(${task.id})">详情</span>`);
+
+  if (task.status === 'running') {
+    // 执行中：终止、查看
+    actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止</span>`);
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">查看</span>`);
+  } else if (task.status === 'done') {
+    // 已完成：查看、复制、删除
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">查看</span>`);
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制</span>`);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除</span>`);
+  } else if (task.status === 'stopped') {
+    // 已停止：执行、查看、复制、删除
+    actions.push(`<span class="action-link primary" onclick="executeTask(${task.id})">执行</span>`);
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">查看</span>`);
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制</span>`);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除</span>`);
+  } else if (task.status === 'failed') {
+    // 失败：执行、复制、删除
+    actions.push(`<span class="action-link primary" onclick="executeTask(${task.id})">执行</span>`);
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制</span>`);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除</span>`);
+  }
+  return actions;
+}
+
 function renderTaskTable() {
+  const pagedTasks = getPagedTasks();
   if (tasks.length === 0) {
     taskTableBody.innerHTML = '';
     document.getElementById('emptyState').style.display = 'block';
   } else {
     document.getElementById('emptyState').style.display = 'none';
-    taskTableBody.innerHTML = tasks.map(task => `
+    taskTableBody.innerHTML = pagedTasks.map(task => `
       <tr data-id="${task.id}">
         <td>
           <div class="task-name-cell" onclick="showDetail(${task.id})" title="${task.name}">${task.name}</div>
@@ -437,16 +466,14 @@ function renderTaskTable() {
         <td style="color: var(--text-secondary); font-size: 12px;">${task.createTime}</td>
         <td>
           <div class="action-cell">
-            <span class="action-link" onclick="showDetail(${task.id})">详情</span>
-            ${task.status === 'running' ? `<span class="action-link danger" onclick="stopTask(${task.id})">停止</span>` : ''}
-            ${task.status === 'done' ? `<span class="action-link" onclick="viewResult(${task.id})">结果</span>` : ''}
-            ${task.status !== 'running' ? `<span class="action-link danger" onclick="deleteTask(${task.id})">删除</span>` : ''}
+            ${getTaskActions(task).join('')}
           </div>
         </td>
       </tr>
     `).join('');
   }
   updateTotalBadge();
+  renderPagination();
 }
 
 // 模拟任务进度
@@ -469,9 +496,8 @@ function simulateTaskProgress(taskId) {
   }, 1500);
 }
 
-// 停止任务
+// 终止任务
 function stopTask(id) {
-  if (!confirm('确定要停止该任务吗？已寻源的数据仍可查看')) return;
   const task = tasks.find(t => t.id === id);
   if (task) {
     task.status = 'stopped';
@@ -479,13 +505,90 @@ function stopTask(id) {
     const now = new Date();
     task.finishTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
     renderTaskTable();
-    showToast('任务已停止');
+    showToast('任务已终止');
   }
+}
+
+// 执行任务（重新执行已停止/失败的任务）
+function executeTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  task.status = 'running';
+  task.statusText = '执行中';
+  task.progress = 0;
+  task.finished = 0;
+  task.finishTime = '-';
+  renderTaskTable();
+  showToast('任务开始执行...');
+  simulateTaskProgress(task.id);
+}
+
+// 复制任务
+function copyTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  // 填充任务名称到创建表单
+  taskNameInput.value = task.name + ' - 副本';
+
+  // 根据任务类型填充对应的数据
+  if (task.type === 'link') {
+    // 切换到图片链接tab
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'link'));
+    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-link'));
+    // 模拟填充链接数据
+    showToast('已复制任务信息到创建表单');
+  } else if (task.type === 'file') {
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'file'));
+    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-file'));
+    // 模拟文件已上传状态
+    fileUploadEmpty.style.display = 'none';
+    fileUploaded.style.display = 'block';
+    selectedFileName.textContent = task.name + '.xlsx';
+    selectedFileMeta.textContent = `${task.count} 条数据`;
+    showToast('已复制任务信息到创建表单');
+  } else if (task.type === 'image') {
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'image'));
+    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-image'));
+    showToast('已复制任务信息到创建表单');
+  }
+
+  // 切换到创建页面
+  switchPage('create');
+}
+
+// 删除确认浮窗
+let deleteTargetId = null;
+function confirmDelete(id) {
+  deleteTargetId = id;
+  const floatModal = document.getElementById('deleteFloatModal');
+  if (floatModal) {
+    floatModal.classList.add('show');
+  } else {
+    // 降级：使用原生 confirm
+    if (confirm('确定要删除此任务吗？')) {
+      deleteTask(id);
+    }
+  }
+}
+
+function cancelDelete() {
+  deleteTargetId = null;
+  const floatModal = document.getElementById('deleteFloatModal');
+  if (floatModal) floatModal.classList.remove('show');
+}
+
+function confirmDeleteAction() {
+  if (deleteTargetId !== null) {
+    deleteTask(deleteTargetId);
+    deleteTargetId = null;
+  }
+  const floatModal = document.getElementById('deleteFloatModal');
+  if (floatModal) floatModal.classList.remove('show');
 }
 
 // 删除任务
 function deleteTask(id) {
-  if (!confirm('确定要删除该任务吗？')) return;
   tasks = tasks.filter(t => t.id !== id);
   renderTaskTable();
   showToast('任务已删除');
@@ -549,14 +652,119 @@ document.getElementById('refreshBtn')?.addEventListener('click', () => {
   showToast('已刷新');
 });
 
-// ===== 分页按钮（纯展示） =====
-document.querySelectorAll('.page-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.disabled) return;
-    document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    showToast(`切换到第 ${btn.textContent} 页`);
-  });
+// ===== 分页状态 =====
+let paginationState = {
+  currentPage: 1,
+  pageSize: 20,
+  totalItems: 0,
+  totalPages: 1
+};
+
+function updatePaginationState() {
+  paginationState.totalItems = tasks.length;
+  paginationState.totalPages = Math.max(1, Math.ceil(tasks.length / paginationState.pageSize));
+  if (paginationState.currentPage > paginationState.totalPages) {
+    paginationState.currentPage = paginationState.totalPages;
+  }
+}
+
+function getPagedTasks() {
+  updatePaginationState();
+  const start = (paginationState.currentPage - 1) * paginationState.pageSize;
+  const end = start + paginationState.pageSize;
+  return tasks.slice(start, end);
+}
+
+function renderPagination() {
+  updatePaginationState();
+  const { currentPage, pageSize, totalItems, totalPages } = paginationState;
+  const paginationWrap = document.getElementById('paginationWrap');
+  if (!paginationWrap) return;
+
+  // 左侧总条数
+  const totalInfo = paginationWrap.querySelector('.pagination-total');
+  if (totalInfo) totalInfo.textContent = `共 ${totalItems} 条`;
+
+  // 页码导航
+  const pageNav = paginationWrap.querySelector('.pagination-nav');
+  if (!pageNav) return;
+
+  let html = '';
+
+  // 上一页
+  html += `<button class="page-nav-btn prev" ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">&lt;</button>`;
+
+  if (totalPages <= 7) {
+    // 页数少，全部显示
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-nav-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+    }
+  } else {
+    // 页数多，显示省略号
+    if (currentPage <= 4) {
+      for (let i = 1; i <= 6; i++) {
+        html += `<button class="page-nav-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<span class="page-ellipsis">...</span>`;
+      html += `<button class="page-nav-btn" onclick="goPage(${totalPages})">${totalPages}</button>`;
+    } else if (currentPage >= totalPages - 3) {
+      html += `<button class="page-nav-btn" onclick="goPage(1)">1</button>`;
+      html += `<span class="page-ellipsis">...</span>`;
+      for (let i = totalPages - 5; i <= totalPages; i++) {
+        html += `<button class="page-nav-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+    } else {
+      html += `<button class="page-nav-btn" onclick="goPage(1)">1</button>`;
+      html += `<span class="page-ellipsis">...</span>`;
+      for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+        html += `<button class="page-nav-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<span class="page-ellipsis">...</span>`;
+      html += `<button class="page-nav-btn" onclick="goPage(${totalPages})">${totalPages}</button>`;
+    }
+  }
+
+  // 下一页
+  html += `<button class="page-nav-btn next" ${currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">&gt;</button>`;
+
+  pageNav.innerHTML = html;
+
+  // 更新"前往"输入框
+  const gotoInput = paginationWrap.querySelector('.goto-input');
+  if (gotoInput) gotoInput.value = currentPage;
+}
+
+function goPage(page) {
+  if (page < 1 || page > paginationState.totalPages) return;
+  paginationState.currentPage = page;
+  renderTaskTable();
+  renderPagination();
+}
+
+// 每页条数切换
+document.getElementById('pageSize')?.addEventListener('change', (e) => {
+  paginationState.pageSize = parseInt(e.target.value);
+  paginationState.currentPage = 1;
+  renderTaskTable();
+  renderPagination();
+});
+
+// 前往页输入
+document.getElementById('gotoPageBtn')?.addEventListener('click', () => {
+  const input = document.getElementById('gotoPageInput');
+  if (!input) return;
+  const page = parseInt(input.value);
+  if (page && page >= 1 && page <= paginationState.totalPages) {
+    goPage(page);
+  } else {
+    showToast('请输入有效的页码');
+  }
+});
+
+document.getElementById('gotoPageInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('gotoPageBtn')?.click();
+  }
 });
 
 // ===== 编辑模式 =====
@@ -608,6 +816,43 @@ resetEditBtn?.addEventListener('click', () => {
   resetEditBtn.disabled = true;
   showToast('已重置修改');
 });
+
+// ===== 生成更多模拟数据（用于分页展示）=====
+(function generateMoreTasks() {
+  const names = ['夏季T恤寻源', '秋季外套批量', '冬季羽绒服', '春季衬衫', '牛仔裤寻源',
+    '休闲裤批量', '运动鞋款', '皮鞋寻源', '包包批发', '帽子围巾',
+    '童装连衣裙', '婴儿用品', '家居四件套', '厨房用品', '收纳整理',
+    '美妆工具', '护肤套装', '香水批发', '首饰配件', '手表寻源'];
+  const types = ['link', 'file', 'image'];
+  const typeTexts = { link: '图片链接', file: '文件上传', image: '上传图片' };
+  const statuses = ['done', 'running', 'stopped', 'failed'];
+  const statusTexts = { done: '已完成', running: '执行中', stopped: '已停止', failed: '失败' };
+
+  for (let i = 0; i < 35; i++) {
+    const type = types[i % 3];
+    const status = statuses[i % 4];
+    const count = Math.floor(Math.random() * 800 + 50);
+    const progress = status === 'done' ? 100 : Math.floor(Math.random() * 90 + 5);
+    const finished = Math.floor(count * progress / 100);
+    const day = String(1 + (i % 30)).padStart(2, '0');
+    const hour = String(8 + (i % 12)).padStart(2, '0');
+
+    mockTasks.push({
+      id: 100 + i,
+      name: names[i % names.length] + ' - ' + (i + 1),
+      type,
+      typeText: typeTexts[type],
+      count,
+      status,
+      statusText: statusTexts[status],
+      progress,
+      finished,
+      createTime: `2026-07-${day} ${hour}:${String(i % 60).padStart(2, '0')}:00`,
+      finishTime: status === 'running' ? '-' : `2026-07-${day} ${String(parseInt(hour) + 1).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00`
+    });
+  }
+  tasks = [...mockTasks];
+})();
 
 // ===== 初始化 =====
 renderTaskTable();
