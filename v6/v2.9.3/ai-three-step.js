@@ -45,12 +45,12 @@ const mockTasks = [
     type: 'file',
     typeText: '文件上传',
     count: 500,
-    status: 'failed',
-    statusText: '失败',
-    progress: 45,
-    finished: 225,
+    status: 'pending',
+    statusText: '未执行',
+    progress: 0,
+    finished: 0,
     createTime: '2026-08-03 16:22:10',
-    finishTime: '2026-08-03 17:08:55'
+    finishTime: '-'
   },
   {
     id: 5,
@@ -59,7 +59,7 @@ const mockTasks = [
     typeText: '图片链接',
     count: 200,
     status: 'stopped',
-    statusText: '已停止',
+    statusText: '已终止',
     progress: 80,
     finished: 160,
     createTime: '2026-08-02 14:10:00',
@@ -412,28 +412,26 @@ function updateTotalBadge() {
 // 根据任务状态生成操作按钮
 function getTaskActions(task) {
   const actions = [];
-  // 所有状态都有任务详情
-  actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
+  const sep = '<span class="action-sep">|</span>';
 
   if (task.status === 'running') {
-    // 执行中：终止、寻源结果
-    actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止</span>`);
-    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
+    // 执行中：终止任务
+    actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止任务</span>`);
   } else if (task.status === 'done') {
-    // 已完成：寻源结果、复制任务、删除任务
+    // 已完成：复制任务、寻源结果、删除任务
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
+    actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
-  } else if (task.status === 'stopped') {
-    // 已停止：执行、寻源结果、复制任务、删除任务
-    actions.push(`<span class="action-link primary" onclick="executeTask(${task.id})">执行</span>`);
-    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
+  } else if (task.status === 'stopped' || task.status === 'pending') {
+    // 已终止 / 未执行：编辑任务、重新执行、复制任务、删除任务
+    actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
+    actions.push(sep);
+    actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
-    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
-  } else if (task.status === 'failed') {
-    // 失败：执行、复制任务、删除任务
-    actions.push(`<span class="action-link primary" onclick="executeTask(${task.id})">执行</span>`);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
+    actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   }
   return actions;
@@ -508,7 +506,7 @@ function stopTask(id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
     task.status = 'stopped';
-    task.statusText = '已停止';
+    task.statusText = '已终止';
     const now = new Date();
     task.finishTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
     renderTaskTable();
@@ -516,8 +514,8 @@ function stopTask(id) {
   }
 }
 
-// 执行任务（重新执行已停止/失败的任务）
-function executeTask(id) {
+// 重新执行任务
+function retryTask(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
   task.status = 'running';
@@ -528,6 +526,32 @@ function executeTask(id) {
   renderTaskTable();
   showToast('任务开始执行...');
   simulateTaskProgress(task.id);
+}
+
+// 编辑任务（跳转到创建表单，填充当前任务信息）
+function editTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  taskNameInput.value = task.name;
+
+  if (task.type === 'link') {
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'link'));
+    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-link'));
+  } else if (task.type === 'file') {
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'file'));
+    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-file'));
+    fileUploadEmpty.style.display = 'none';
+    fileUploaded.style.display = 'block';
+    selectedFileName.textContent = task.name + '.xlsx';
+    selectedFileMeta.textContent = `${task.count} 条数据`;
+  } else if (task.type === 'image') {
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'image'));
+    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-image'));
+  }
+
+  switchPage('create');
+  showToast('已加载任务信息到编辑表单');
 }
 
 // 复制任务
@@ -832,15 +856,15 @@ resetEditBtn?.addEventListener('click', () => {
     '美妆工具', '护肤套装', '香水批发', '首饰配件', '手表寻源'];
   const types = ['link', 'file', 'image'];
   const typeTexts = { link: '图片链接', file: '文件上传', image: '上传图片' };
-  const statuses = ['done', 'running', 'stopped', 'failed'];
-  const statusTexts = { done: '已完成', running: '执行中', stopped: '已停止', failed: '失败' };
+  const statuses = ['done', 'running', 'stopped', 'pending'];
+  const statusTexts = { done: '已完成', running: '执行中', stopped: '已终止', pending: '未执行' };
 
   for (let i = 0; i < 35; i++) {
     const type = types[i % 3];
     const status = statuses[i % 4];
     const count = Math.floor(Math.random() * 800 + 50);
-    const progress = status === 'done' ? 100 : Math.floor(Math.random() * 90 + 5);
-    const finished = Math.floor(count * progress / 100);
+    const progress = status === 'done' ? 100 : status === 'pending' ? 0 : Math.floor(Math.random() * 90 + 5);
+    const finished = status === 'pending' ? 0 : Math.floor(count * progress / 100);
     const day = String(1 + (i % 30)).padStart(2, '0');
     const hour = String(8 + (i % 12)).padStart(2, '0');
 
@@ -855,7 +879,7 @@ resetEditBtn?.addEventListener('click', () => {
       progress,
       finished,
       createTime: `2026-07-${day} ${hour}:${String(i % 60).padStart(2, '0')}:00`,
-      finishTime: status === 'running' ? '-' : `2026-07-${day} ${String(parseInt(hour) + 1).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00`
+      finishTime: (status === 'running' || status === 'pending') ? '-' : `2026-07-${day} ${String(parseInt(hour) + 1).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00`
     });
   }
   tasks = [...mockTasks];

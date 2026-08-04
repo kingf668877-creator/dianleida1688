@@ -1131,8 +1131,9 @@ button {
 
 .action-cell {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .action-link {
@@ -1140,10 +1141,17 @@ button {
   color: var(--primary);
   cursor: pointer;
   font-weight: 500;
-  padding: 4px 6px;
+  padding: 2px 4px;
   border-radius: 4px;
   transition: background .15s ease;
   white-space: nowrap;
+}
+
+.action-sep {
+  color: var(--border);
+  font-size: 12px;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .action-link:hover {
