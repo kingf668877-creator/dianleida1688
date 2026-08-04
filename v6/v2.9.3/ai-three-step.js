@@ -116,6 +116,7 @@ function goCreatePage() {
     switchPage('list');
   } else if (page === 'result') {
     switchPage('result');
+    window._initResultPage = true;
   } else {
     switchPage('create');
   }
@@ -1349,3 +1350,20 @@ document.getElementById('resultResetBtn')?.addEventListener('click', () => {
 document.getElementById('resultSaveBtn')?.addEventListener('click', () => {
   showToast('筛选条件已保存');
 });
+
+// ===== 寻源结果页初始化（URL 直接访问时）=====
+if (window._initResultPage) {
+  const doneTask = mockTasks.find(t => t.status === 'done') || mockTasks[0];
+  if (doneTask) {
+    currentResultTask = doneTask;
+    document.getElementById('resultTaskName').textContent = doneTask.name;
+    document.getElementById('resultTaskType').textContent = doneTask.typeText;
+    document.getElementById('resultTotalCount').textContent = doneTask.finished || doneTask.count || 20;
+    document.getElementById('resultTaskTime').textContent = doneTask.createTime;
+    const sourceImg = document.getElementById('resultSourceImg');
+    sourceImg.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect fill="%23f5f6fa" width="56" height="56"/><text x="28" y="34" text-anchor="middle" font-size="20" fill="%23ff6a00">IMG</text></svg>');
+    generateSourcingResults(20);
+    renderResultCards();
+  }
+  window._initResultPage = false;
+}
