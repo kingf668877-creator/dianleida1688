@@ -410,29 +410,29 @@ function updateTotalBadge() {
 // 根据任务状态生成操作按钮
 function getTaskActions(task) {
   const actions = [];
-  // 所有状态都有详情
-  actions.push(`<span class="action-link" onclick="showDetail(${task.id})">详情</span>`);
+  // 所有状态都有任务详情
+  actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
 
   if (task.status === 'running') {
-    // 执行中：终止、查看
+    // 执行中：终止、寻源结果
     actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止</span>`);
-    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">查看</span>`);
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
   } else if (task.status === 'done') {
-    // 已完成：查看、复制、删除
-    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">查看</span>`);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制</span>`);
-    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除</span>`);
+    // 已完成：寻源结果、复制任务、删除任务
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   } else if (task.status === 'stopped') {
-    // 已停止：执行、查看、复制、删除
+    // 已停止：执行、寻源结果、复制任务、删除任务
     actions.push(`<span class="action-link primary" onclick="executeTask(${task.id})">执行</span>`);
-    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">查看</span>`);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制</span>`);
-    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除</span>`);
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   } else if (task.status === 'failed') {
-    // 失败：执行、复制、删除
+    // 失败：执行、复制任务、删除任务
     actions.push(`<span class="action-link primary" onclick="executeTask(${task.id})">执行</span>`);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制</span>`);
-    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除</span>`);
+    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   }
   return actions;
 }
