@@ -91,6 +91,11 @@ function getUrlParam(name) {
   return params.get(name);
 }
 
+// 跳转到创建页面
+function goCreatePage() {
+  switchPage('create');
+}
+
 // 页面加载时根据 URL 参数切换面板
 (function initPage() {
   const page = getUrlParam('page');

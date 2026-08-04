@@ -27,7 +27,7 @@
             <span class="required">*</span>
             <span data-editable data-edit-label="任务名称标签">任务名称</span>
           </div>
-          <input class="form-input" type="text" id="taskNameInput" placeholder="请输入任务名称，方便后续查找" value="22">
+          <input class="form-input" type="text" id="taskNameInput" placeholder="请输入任务名称，方便后续查找">
         </div>
 
         <!-- 图搜方式 -->
@@ -177,6 +177,18 @@
 
   <!-- ===== 任务列表 ===== -->
   <section class="page-panel" id="page-list">
+    <!-- 功能介绍横幅 -->
+    <div class="list-banner">
+      <div class="list-banner-content">
+        <h2 class="list-banner-title">1688图搜<span class="highlight">批量寻源任务</span></h2>
+        <p class="list-banner-desc">支持一次性上传1000条图片链接，自动搜索1688货源商品</p>
+      </div>
+      <button class="list-banner-btn" onclick="goCreatePage()">
+        <span class="banner-btn-icon">+</span>
+        <span>创建寻源需求</span>
+      </button>
+    </div>
+
     <div class="section-header">
       <h2 class="section-title">任务列表</h2>
       <span class="section-badge" id="totalCountBadge">共 5 条任务</span>
