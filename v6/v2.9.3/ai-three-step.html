@@ -48,7 +48,7 @@
         <!-- 图片链接 Tab -->
         <div class="tab-panel active" id="panel-link">
           <div class="link-upload-wrap">
-            <p class="panel-hint">每行粘贴一个图片URL地址，支持 http/https 链接，不限数量</p>
+            <p class="panel-hint">每行粘贴一个图片URL地址，支持 http/https 链接，最多 1000 条</p>
             <textarea id="linkTextarea" class="url-textarea" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png&#10;https://example.com/img3.webp&#10;..." rows="8"></textarea>
             <div class="link-actions">
               <button class="btn btn-ghost" id="clearLinkBtn">
@@ -125,13 +125,6 @@
                 <span>已选择</span>
               </div>
               <button class="file-remove" id="removeFileBtn" title="移除">✕</button>
-            </div>
-            <div class="file-actions">
-              <span></span>
-              <button class="btn-download-template">
-                <span class="dl-icon">⬇</span>
-                <span>重新下载模板</span>
-              </button>
             </div>
           </div>
 

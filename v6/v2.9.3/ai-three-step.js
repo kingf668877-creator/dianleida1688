@@ -81,8 +81,14 @@ parseLinkBtn.addEventListener('click', () => {
     showToast('未检测到有效的图片链接');
     return;
   }
+  if (parsedLinks.length > 1000) {
+    parsedLinks = parsedLinks.slice(0, 1000);
+    linkTextarea.value = parsedLinks.join('\n');
+    showToast('最多支持 1000 条链接，已自动截断');
+  } else {
+    showToast(`已解析 ${parsedLinks.length} 条链接`);
+  }
   renderLinkThumbs(parsedLinks);
-  showToast(`已解析 ${parsedLinks.length} 条链接`);
 });
 
 clearLinkBtn.addEventListener('click', () => {
