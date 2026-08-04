@@ -16,12 +16,23 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <span class="logo-icon">🔍</span>
+        <span class="logo-icon">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#10B981"/>
+            <path d="M10 12L16 8L22 12V20L16 24L10 20V12Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="3" fill="#fff"/>
+          </svg>
+        </span>
         <span class="logo-text">店雷达选品</span>
       </div>
+      <button class="sidebar-close" title="收起">✕</button>
     </div>
 
     <div class="sidebar-search">
+      <svg class="search-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
       <input type="text" class="sidebar-search-input" placeholder="搜索版本或页面">
     </div>
 
@@ -35,26 +46,38 @@
         </div>
         <div class="nav-group-items">
           <button class="nav-item active" data-page="create">
-            <span class="nav-icon">🅿️</span>
+            <span class="nav-icon-badge" style="background:#FF6B6B;">P</span>
             <span class="nav-text">创建图搜寻源</span>
           </button>
           <button class="nav-item" data-page="list">
-            <span class="nav-icon">📋</span>
+            <span class="nav-icon-badge" style="background:#FF6B6B;">P</span>
             <span class="nav-text">任务列表</span>
           </button>
         </div>
       </div>
 
-      <!-- V2.9.2 版本组 -->
-      <div class="nav-group collapsed">
+      <!-- V2.8.9 版本组 -->
+      <div class="nav-group">
         <div class="nav-group-header">
-          <span class="group-caret">▸</span>
-          <span class="group-title">V2.9.2</span>
+          <span class="group-caret">▾</span>
+          <span class="group-title">V2.8.9</span>
         </div>
-        <div class="nav-group-items" style="display:none;">
-          <button class="nav-item">
-            <span class="nav-icon">🅿️</span>
-            <span class="nav-text">创建图搜寻源</span>
+        <div class="nav-group-items">
+          <button class="nav-item" data-page="v289-search">
+            <span class="nav-icon-badge" style="background:#FF6B6B;">P</span>
+            <span class="nav-text">搜索智能体</span>
+          </button>
+          <button class="nav-item" data-page="v289-ai">
+            <span class="nav-icon-badge" style="background:#7C3AED;">AI</span>
+            <span class="nav-text">AI输出结果交互</span>
+          </button>
+          <button class="nav-item" data-page="v289-doc">
+            <span class="nav-icon-badge" style="background:#F59E0B;">P</span>
+            <span class="nav-text">原型说明</span>
+          </button>
+          <button class="nav-item" data-page="v289-api">
+            <span class="nav-icon-badge" style="background:#10B981;">MD</span>
+            <span class="nav-text">后端对接文档</span>
           </button>
         </div>
       </div>
