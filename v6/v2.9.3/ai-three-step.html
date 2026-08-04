@@ -31,9 +31,18 @@
         <div class="form-label" data-editable data-edit-label="图搜方式标签">图搜方式</div>
 
         <div class="search-tabs" role="tablist">
-          <button class="tab-btn active" data-tab="link" role="tab">图片链接</button>
-          <button class="tab-btn" data-tab="file" role="tab">文件上传</button>
-          <button class="tab-btn" data-tab="image" role="tab">上传图片</button>
+          <button class="tab-btn active" data-tab="link" role="tab">
+            <span class="tab-icon">🔗</span>
+            <span>图片链接</span>
+          </button>
+          <button class="tab-btn" data-tab="file" role="tab">
+            <span class="tab-icon">📋</span>
+            <span>文件上传</span>
+          </button>
+          <button class="tab-btn" data-tab="image" role="tab">
+            <span class="tab-icon">🖼️</span>
+            <span>上传图片</span>
+          </button>
         </div>
 
         <!-- 图片链接 Tab -->
@@ -53,7 +62,12 @@
           <!-- 上传前状态 -->
           <div id="fileUploadEmpty">
             <div class="upload-area" id="fileDropZone">
-              <div class="upload-icon">↑</div>
+              <div class="upload-icon">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M32 42V14M32 14L20 26M32 14L44 26" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 34v12a6 6 0 006 6h28a6 6 0 006-6V34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </div>
               <div class="upload-title">点击或将文件拖拽到此处<em>上传</em></div>
               <div class="upload-desc">支持 xlsx、xls 格式，单个文件不超过 30M</div>
               <input type="file" class="hidden-input" id="fileInput" accept=".xlsx,.xls">
@@ -61,7 +75,7 @@
             <div class="file-actions">
               <span></span>
               <button class="download-template">
-                ↓ <span data-editable data-edit-label="下载模板按钮">下载模板</span>
+                📄 <span data-editable data-edit-label="下载模板按钮">下载模板</span>
               </button>
             </div>
             <div class="tip-box" data-editable data-edit-label="文件上传说明">
@@ -101,22 +115,22 @@
             </div>
             <div class="file-actions">
               <span></span>
-              <button class="download-template">↓ 重新下载模板</button>
+              <button class="download-template">📄 重新下载模板</button>
             </div>
           </div>
 
           <!-- 上传失败状态 -->
           <div id="fileUploadError" style="display:none;">
-            <div class="file-selected" style="background: #fff7f7; border-color: #ffd8d6;">
-              <div class="file-icon" style="background: linear-gradient(135deg, #f53f3f, #ff7875);">XLS</div>
+            <div class="file-selected" style="background: var(--danger-bg); border-color: #ffd8d6;">
+              <div class="file-icon" style="background: linear-gradient(135deg, var(--danger), #ff7875);">XLS</div>
               <div class="file-info">
-                <div class="file-name" style="color: #f53f3f;">店雷达 1688选品库-近30天 2026-08-03 174118.xls</div>
-                <div class="file-meta" style="color: #f53f3f;">模板格式异常，详细原因：图片链接校验失败</div>
+                <div class="file-name" style="color: var(--danger);">店雷达 1688选品库-近30天 2026-08-03 174118.xls</div>
+                <div class="file-meta" style="color: var(--danger);">模板格式异常，详细原因：图片链接校验失败</div>
               </div>
               <button class="file-remove" id="removeErrorFileBtn" title="移除">✕</button>
             </div>
             <div class="file-error-tip">
-              <span class="err-icon">⚠</span>
+              <span class="err-icon">⚠️</span>
               <span data-editable data-edit-label="文件错误提示">模板格式异常，详细原因：图片链接校验失败，请检查模板格式后重新上传。</span>
             </div>
           </div>
@@ -140,7 +154,10 @@
 
     <div class="modal-footer">
       <button class="btn btn-default" id="cancelBtn">取消</button>
-      <button class="btn btn-primary" id="submitBtn">开始执行</button>
+      <button class="btn btn-primary" id="submitBtn">
+        <span class="btn-icon">🔍</span>
+        <span>开始执行</span>
+      </button>
     </div>
   </div>
 </div>
