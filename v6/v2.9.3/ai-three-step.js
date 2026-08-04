@@ -910,7 +910,8 @@ resetEditBtn?.addEventListener('click', () => {
   const typeTexts = { link: '图片链接', file: '文件上传', image: '上传图片' };
   const statuses = ['done', 'running', 'stopped', 'pending', 'waiting'];
   const statusTexts = { done: '已完成', running: '执行中', stopped: '已终止', pending: '未执行', waiting: '待执行' };
-  let runningAssigned = false; // 确保只有一个running任务
+  // 检查初始数据中是否已有执行中的任务
+  let runningAssigned = mockTasks.some(t => t.status === 'running');
 
   for (let i = 0; i < 35; i++) {
     const type = types[i % 3];
