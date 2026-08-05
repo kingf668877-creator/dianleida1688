@@ -464,22 +464,36 @@ function updateCreditsStats() {
   const statsBar = document.getElementById('creditsStats');
   if (!statsBar) return;
 
+  const purchaseBtn = document.getElementById('statsPurchaseBtn');
+
   if (uploaded > 0) {
     statsBar.style.display = 'flex';
-    document.getElementById('uploadedCount').textContent = uploaded + ' 张';
-    document.getElementById('deductionCount').textContent = uploaded + ' 张';
+    document.getElementById('uploadedCount').textContent = formatNumber(uploaded) + ' 张';
+    document.getElementById('deductionCount').textContent = formatNumber(uploaded) + ' 张';
+
     const remaining = userCredits - uploaded;
     const remainingEl = document.getElementById('remainingCredits');
-    remainingEl.textContent = formatNumber(Math.max(0, remaining)) + ' 张';
+
     if (remaining < 0) {
-      remainingEl.className = 'stats-value deduction';
-    } else if (remaining < 1000) {
-      remainingEl.className = 'stats-value warning';
+      // 超出剩余张数
+      remainingEl.textContent = '-' + formatNumber(Math.abs(remaining)) + ' 张';
+      remainingEl.className = 'stats-value deficit';
+      statsBar.classList.add('exceeded');
+      if (purchaseBtn) purchaseBtn.style.display = 'inline-flex';
     } else {
-      remainingEl.className = 'stats-value remaining';
+      remainingEl.textContent = formatNumber(remaining) + ' 张';
+      statsBar.classList.remove('exceeded');
+      if (purchaseBtn) purchaseBtn.style.display = 'none';
+      if (remaining < 1000) {
+        remainingEl.className = 'stats-value warning';
+      } else {
+        remainingEl.className = 'stats-value remaining';
+      }
     }
   } else {
     statsBar.style.display = 'none';
+    statsBar.classList.remove('exceeded');
+    if (purchaseBtn) purchaseBtn.style.display = 'none';
   }
 }
 
