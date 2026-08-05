@@ -1131,7 +1131,9 @@ tasks.filter(t => t.status === 'running').forEach(t => simulateTaskProgress(t.id
 // ===== 寻源结果数据 =====
 let currentResultTask = null;
 let sourcingResults = [];
+let allSourcingResults = []; // 原始全量数据（不受状态筛选影响）
 let resultSelectedIds = new Set();
+let resultStatusFilter = 'all'; // all | success | fail
 let resultPaginationState = { currentPage: 1, pageSize: 20, totalItems: 0, totalPages: 1 };
 
 // 商品名模板
@@ -1204,9 +1206,12 @@ function generateSourcingResults(count) {
     if (Math.random() > 0.7) memberTypes.push('超级工厂');
     if (Math.random() > 0.3) memberTypes.push('诚信通');
 
+    // 寻源状态：大部分成功，少量失败
+    const searchStatus = Math.random() > 0.15 ? 'success' : 'fail';
+
     sourcingResults.push({
       id: i + 1,
-      img1: `https://picsum.photos/seed/p${i}a/160/160`,
+      img1: `https://picsum.photos/seed/p${i}a/400/400`,
       img2: `https://picsum.photos/seed/p${i}b/160/160`,
       title: productNames[i % productNames.length],
       category: ['毛绒公仔', '家居日用', '收纳整理', '厨房用品', '纺织品', '电子产品', '陶瓷工艺'][i % 7],
@@ -1229,12 +1234,44 @@ function generateSourcingResults(count) {
       isFactory,
       storeName: isFactory ? factoryNames[i % factoryNames.length] : storeNames[i % storeNames.length],
       memberTypes,
-      similarity
+      similarity,
+      searchStatus
     });
   }
 
   resultPaginationState.totalItems = sourcingResults.length;
   resultPaginationState.currentPage = 1;
+  allSourcingResults = [...sourcingResults];
+  resultStatusFilter = 'all';
+  updateResultStatusTabs();
+}
+
+// 状态筛选：更新标签计数
+function updateResultStatusTabs() {
+  const total = allSourcingResults.length;
+  const successCount = allSourcingResults.filter(p => p.searchStatus === 'success').length;
+  const failCount = allSourcingResults.filter(p => p.searchStatus === 'fail').length;
+  document.getElementById('statusTabAllCount').textContent = total;
+  document.getElementById('statusTabSuccessCount').textContent = successCount;
+  document.getElementById('statusTabFailCount').textContent = failCount;
+}
+
+// 应用状态筛选
+function applyStatusFilter(status) {
+  resultStatusFilter = status;
+  // 更新标签高亮
+  document.querySelectorAll('.result-status-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.status === status);
+  });
+  // 筛选数据
+  if (status === 'all') {
+    sourcingResults = [...allSourcingResults];
+  } else {
+    sourcingResults = allSourcingResults.filter(p => p.searchStatus === status);
+  }
+  resultPaginationState.currentPage = 1;
+  resultPaginationState.totalItems = sourcingResults.length;
+  renderResultCards();
 }
 
 // 获取相似度等级
@@ -1263,84 +1300,65 @@ function renderResultCards() {
       const simPercent = (p.similarity * 100).toFixed(0);
       const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
       const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
+      const statusClass = p.searchStatus === 'success' ? 'success' : 'fail';
+      const statusText = p.searchStatus === 'success' ? '寻源成功' : '寻源失败';
       return `
         <div class="result-product-card ${selected}" data-id="${p.id}">
           <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
-          <div class="result-card-top">
-            <div class="result-product-imgs">
-              <img src="${p.img1}" alt="商品图1" onerror="this.style.display='none'">
-              <img src="${p.img2}" alt="商品图2" onerror="this.style.display='none'">
-            </div>
-            <div class="result-product-info">
-              <div class="result-product-title">${p.title}</div>
-              <div class="result-product-tags">
-                <span class="result-tag category">${p.category}</span>
-                <span class="result-tag sku">SKU: ${p.skuCount}</span>
-                ${p.isNew ? '<span class="result-tag new">新品</span>' : ''}
-              </div>
-              <div style="font-size:11px;color:var(--text-muted);">上架: ${p.listingDate} (${p.listingDays}天)</div>
-            </div>
-            <div class="result-similarity ${simLevel}" title="相似度">${simPercent}%</div>
+          <div class="result-card-img-wrap">
+            <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
+            <span class="result-status-badge ${statusClass}">${statusText}</span>
+            <span class="result-similarity ${simLevel}" title="相似度">相似度 ${simPercent}%</span>
           </div>
-          <div class="result-card-body">
-            <div class="result-data-row">
-              <div class="result-data-item">
-                <span class="result-data-label">批发价</span>
-                <span class="result-data-value price">¥${p.price.toFixed(2)}</span>
-              </div>
-              <div class="result-data-item">
+          <div class="result-card-info">
+            <div class="result-product-tags">
+              <span class="result-tag category">${p.category}</span>
+              <span class="result-tag sku">SKU: ${p.skuCount}</span>
+              ${p.isNew ? '<span class="result-tag new">新品</span>' : ''}
+            </div>
+            <div class="result-product-title" title="${p.title}">${p.title}</div>
+            <div class="result-card-price-row">
+              <span class="result-card-price">¥${p.price.toFixed(2)}</span>
+              <span class="result-card-price-suffix">起</span>
+            </div>
+            <div class="result-card-listing">上架: ${p.listingDate} (${p.listingDays}天)</div>
+            <div class="result-card-data-grid">
+              <div class="result-data-cell">
                 <span class="result-data-label">起批量</span>
                 <span class="result-data-value">${p.moq} 件</span>
               </div>
-              <div class="result-data-item">
-                <span class="result-data-label">发货信息</span>
-                <span class="result-data-value muted">${p.shippingFee} · ${p.city}</span>
+              <div class="result-data-cell">
+                <span class="result-data-label">发货</span>
+                <span class="result-data-value muted">${p.shippingFee}</span>
               </div>
-              <div class="result-data-item">
-                <span class="result-data-label">重量</span>
-                <span class="result-data-value muted">${p.weightMin}-${p.weightMax}g</span>
-              </div>
-            </div>
-            <div class="result-data-row">
-              <div class="result-data-item">
-                <span class="result-data-label">月订单</span>
-                <span class="result-data-value">${p.monthlyOrders}</span>
-              </div>
-              <div class="result-data-item">
+              <div class="result-data-cell">
                 <span class="result-data-label">月件数</span>
                 <span class="result-data-value">${p.monthlyPieces}</span>
               </div>
-              <div class="result-data-item">
+              <div class="result-data-cell">
                 <span class="result-data-label">月销售额</span>
-                <span class="result-data-value">¥${p.monthlySales.toFixed(2)}</span>
+                <span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span>
               </div>
-            </div>
-            <div class="result-data-row">
-              <div class="result-data-item">
-                <span class="result-data-label">24H揽收率</span>
+              <div class="result-data-cell">
+                <span class="result-data-label">24H揽收</span>
                 <span class="result-data-value ${p.collect24h >= 90 ? 'green' : ''}">${p.collect24h}%</span>
               </div>
-              <div class="result-data-item">
-                <span class="result-data-label">48H揽收率</span>
+              <div class="result-data-cell">
+                <span class="result-data-label">48H揽收</span>
                 <span class="result-data-value ${p.collect48h >= 90 ? 'green' : ''}">${p.collect48h}%</span>
-              </div>
-              <div class="result-data-item">
-                <span class="result-data-label">3分钟响应率</span>
-                <span class="result-data-value muted">${p.responseRate}%</span>
               </div>
             </div>
           </div>
           <div class="result-card-store">
             <span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span>
             <span class="result-store-name" title="${p.storeName}">${p.storeName}</span>
-            ${p.memberTypes.map(m => `<span class="result-tag" style="background:var(--primary-bg);color:var(--primary);">${m}</span>`).join('')}
+            <span class="result-store-location">${p.city}</span>
           </div>
           <div class="result-card-actions">
-            <span class="result-action-link" onclick="showToast('全网图搜中...')">全网图搜</span>
-            <span class="result-action-link" onclick="showToast('铺货Temu中...')">铺货Temu</span>
-            <span class="result-action-link" onclick="showToast('已关注商品')">关注商品</span>
-            <span class="result-action-link" onclick="showToast('下载中...')">信息下载</span>
-            <button class="result-action-btn" onclick="showToast('打开咨询窗口')">💬 咨询</button>
+            <span class="result-action-link" onclick="showToast('全网图搜中...')">图搜</span>
+            <span class="result-action-link" onclick="showToast('铺货Temu中...')">铺货</span>
+            <span class="result-action-link" onclick="showToast('已关注商品')">关注</span>
+            <span class="result-action-link" onclick="showToast('下载中...')">下载</span>
           </div>
         </div>
       `;
@@ -1457,7 +1475,13 @@ document.getElementById('resultSearchBtn')?.addEventListener('click', () => {
   const weightMin = parseInt(document.getElementById('weightMin').value) || 0;
   const weightMax = parseInt(document.getElementById('weightMax').value) || Infinity;
 
-  const filtered = sourcingResults.filter(p => {
+  // 先按状态筛选
+  let baseResults = allSourcingResults;
+  if (resultStatusFilter !== 'all') {
+    baseResults = baseResults.filter(p => p.searchStatus === resultStatusFilter);
+  }
+
+  const filtered = baseResults.filter(p => {
     if (keyword && !p.title.toLowerCase().includes(keyword)) return false;
     if (p.price < priceMin || p.price > priceMax) return false;
     if (p.monthlyPieces < salesMin || p.monthlyPieces > salesMax) return false;
@@ -1465,14 +1489,11 @@ document.getElementById('resultSearchBtn')?.addEventListener('click', () => {
     return true;
   });
 
-  // 临时替换显示
-  const originalResults = sourcingResults;
   sourcingResults = filtered;
+  resultPaginationState.totalItems = sourcingResults.length;
   resultPaginationState.currentPage = 1;
   renderResultCards();
   showToast(`查询到 ${filtered.length} 条结果`);
-  // 恢复原始数据供后续筛选
-  sourcingResults = originalResults;
 });
 
 // 重置筛选
@@ -1492,8 +1513,8 @@ document.getElementById('resultResetBtn')?.addEventListener('click', () => {
   document.getElementById('memberVerified').checked = false;
   document.getElementById('memberSuperFactory').checked = false;
   document.getElementById('memberTrustPass').checked = false;
-  resultPaginationState.currentPage = 1;
-  renderResultCards();
+  // 恢复到当前状态筛选的数据
+  applyStatusFilter(resultStatusFilter);
   showToast('已重置筛选');
 });
 

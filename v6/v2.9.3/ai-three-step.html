@@ -464,6 +464,22 @@
       </div>
     </div>
 
+    <!-- 寻源状态筛选标签 -->
+    <div class="result-status-tabs">
+      <div class="result-status-tab active" data-status="all" onclick="applyStatusFilter('all')">
+        <span>全部结果</span>
+        <span class="tab-count" id="statusTabAllCount">0</span>
+      </div>
+      <div class="result-status-tab" data-status="success" onclick="applyStatusFilter('success')">
+        <span>寻源成功</span>
+        <span class="tab-count" id="statusTabSuccessCount">0</span>
+      </div>
+      <div class="result-status-tab" data-status="fail" onclick="applyStatusFilter('fail')">
+        <span>寻源失败</span>
+        <span class="tab-count" id="statusTabFailCount">0</span>
+      </div>
+    </div>
+
     <!-- 结果工具栏 -->
     <div class="result-toolbar">
       <div class="result-toolbar-left">
