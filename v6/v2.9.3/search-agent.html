@@ -102,7 +102,7 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="ai-three-step.html" title="效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="../ai-three-step.html" title="效果图"></iframe></section>
     <section class="panel spec-panel-page" id="panel-spec">
       <article class="spec-doc">
         <header class="spec-head">
@@ -132,9 +132,9 @@
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
   let currentPage = 'create';
-  let iframeSrc = 'ai-three-step.html';
-  if (pageParam === 'list') { currentPage = 'list'; iframeSrc = 'ai-three-step.html?page=list'; }
-  else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = 'ai-three-step.html?page=result'; }
+  let iframeSrc = '../ai-three-step.html';
+  if (pageParam === 'list') { currentPage = 'list'; iframeSrc = '../ai-three-step.html?page=list'; }
+  else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = '../ai-three-step.html?page=result'; }
   document.getElementById('previewFrame').src = iframeSrc;
 
   const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果' };
@@ -197,9 +197,9 @@
       .catch(() => { document.getElementById(targetId).textContent = '加载失败：' + url; });
   }
   function reloadAllCode() {
-    loadCode('html', 'ai-three-step.html', 'codeHtml', extractHtmlSection);
-    loadCode('css', 'ai-three-step.css', 'codeCss', extractCssSection);
-    loadCode('js', 'ai-three-step.js', 'codeJs', extractJsSection);
+    loadCode('html', '../ai-three-step.html', 'codeHtml', extractHtmlSection);
+    loadCode('css', '../ai-three-step.css', 'codeCss', extractCssSection);
+    loadCode('js', '../ai-three-step.js', 'codeJs', extractJsSection);
   }
   reloadAllCode();
   document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', async () => {
