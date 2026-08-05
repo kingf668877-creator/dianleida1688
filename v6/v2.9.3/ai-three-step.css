@@ -986,6 +986,61 @@ button {
   color: var(--warning);
 }
 
+.stats-value.deficit {
+  color: var(--danger);
+  animation: deficitPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes deficitPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 超出状态 - 统计栏变红 */
+.credits-stats.exceeded {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  border-style: solid;
+}
+
+.credits-stats.exceeded .stats-divider {
+  background: rgba(255, 71, 87, 0.2);
+}
+
+/* 统计栏内增购按钮 */
+.stats-purchase-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 8px;
+  box-shadow: var(--shadow-primary);
+  transition: var(--transition);
+  animation: btnBounce .4s ease;
+}
+
+@keyframes btnBounce {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.stats-purchase-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 106, 0, 0.35);
+}
+
 .stats-divider {
   width: 1px;
   height: 32px;
