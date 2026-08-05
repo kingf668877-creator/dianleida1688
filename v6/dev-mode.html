@@ -265,7 +265,15 @@
     outline:none; margin-bottom:16px;
   }
   .token-modal input:focus { border-color:var(--blue); box-shadow:0 0 0 2px rgba(51,112,255,.10); }
-  .token-modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+  .token-modal-actions { display:flex; gap:10px; justify-content:flex-end; align-items:center; }
+  .token-modal-status {
+    min-height:20px; margin:-6px 0 12px; font-size:12px; line-height:1.5;
+    color:#86909c;
+  }
+  .token-modal-status.error { color:#e54848; }
+  .token-modal-status.info { color:var(--blue); }
+  .token-reset-btn { margin-right:auto; }
+  .spec-btn:disabled { opacity:.65; cursor:not-allowed; }
   .token-link { color:var(--blue); font-size:12px; text-decoration:none; }
   .token-link:hover { text-decoration:underline; }
 
@@ -773,14 +781,26 @@
   const deployBtn = document.getElementById('deployBtn');
   const tokenModal = document.getElementById('tokenModal');
   const tokenInput = document.getElementById('tokenInput');
+  const tokenStatus = document.getElementById('tokenStatus');
   const tokenCancelBtn = document.getElementById('tokenCancelBtn');
   const tokenConfirmBtn = document.getElementById('tokenConfirmBtn');
+  const tokenResetBtn = document.getElementById('tokenResetBtn');
+
+  function openTokenModal(message) {
+    tokenStatus.textContent = message || '';
+    tokenStatus.className = 'token-modal-status' + (message ? ' info' : '');
+    tokenConfirmBtn.textContent = '确认并提交';
+    tokenConfirmBtn.disabled = false;
+    tokenCancelBtn.disabled = false;
+    tokenInput.disabled = false;
+    tokenModal.style.display = 'flex';
+    setTimeout(() => tokenInput.focus(), 0);
+  }
 
   deployBtn.addEventListener('click', async () => {
     const token = localStorage.getItem('dianleida-github-token');
     if (!token) {
-      tokenModal.style.display = 'flex';
-      tokenInput.focus();
+      openTokenModal('Token 只保存在当前浏览器，用于本次及后续提交。');
     } else {
       await deployToGitHub(token);
     }
@@ -788,39 +808,74 @@
 
   tokenCancelBtn.addEventListener('click', () => {
     tokenModal.style.display = 'none';
+    tokenStatus.textContent = '';
+  });
+
+  tokenResetBtn.addEventListener('click', () => {
+    localStorage.removeItem('dianleida-github-token');
+    tokenInput.value = '';
+    tokenStatus.textContent = '已清除，请输入新的 Token。';
+    tokenStatus.className = 'token-modal-status info';
+    tokenInput.focus();
+  });
+
+  tokenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !tokenConfirmBtn.disabled) tokenConfirmBtn.click();
   });
 
   tokenConfirmBtn.addEventListener('click', async () => {
     const token = tokenInput.value.trim();
-    if (!token) { specToast('请输入Token', 'error'); return; }
+    if (!token) {
+      tokenStatus.textContent = '请输入 GitHub Token 后再提交。';
+      tokenStatus.className = 'token-modal-status error';
+      tokenInput.focus();
+      return;
+    }
+
+    tokenConfirmBtn.textContent = '正在提交...';
+    tokenConfirmBtn.disabled = true;
+    tokenCancelBtn.disabled = true;
+    tokenInput.disabled = true;
+    tokenStatus.textContent = '正在连接 GitHub，请稍候...';
+    tokenStatus.className = 'token-modal-status info';
     localStorage.setItem('dianleida-github-token', token);
-    tokenModal.style.display = 'none';
-    tokenInput.value = '';
-    await deployToGitHub(token);
+
+    const result = await deployToGitHub(token, true);
+    if (result.ok) {
+      tokenModal.style.display = 'none';
+      tokenInput.value = '';
+    } else {
+      tokenStatus.textContent = result.message + '。请检查 Token 权限，或清除后重新输入。';
+      tokenStatus.className = 'token-modal-status error';
+      tokenConfirmBtn.textContent = '重新提交';
+      tokenConfirmBtn.disabled = false;
+      tokenCancelBtn.disabled = false;
+      tokenInput.disabled = false;
+      tokenInput.select();
+    }
   });
 
-  async function deployToGitHub(token) {
+  async function deployToGitHub(token, keepModalOpen) {
     deployBtn.textContent = '更新中...';
     deployBtn.disabled = true;
-    specToast('正在更新到GitHub...', 'info');
+    specToast('正在更新到 GitHub...', 'info');
 
     try {
       const content = JSON.stringify(specData, null, 2);
       const b64 = btoa(unescape(encodeURIComponent(content)));
 
-      // 1. 获取现有文件SHA（如果存在）
       let sha = null;
-      try {
-        const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}?ref=${GITHUB_BRANCH}`, {
-          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          sha = data.sha;
-        }
-      } catch(e) {}
+      const getResp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}?ref=${GITHUB_BRANCH}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (getResp.ok) {
+        const data = await getResp.json();
+        sha = data.sha;
+      } else if (getResp.status !== 404) {
+        const getErr = await getResp.json().catch(() => ({}));
+        throw new Error(getErr.message || `GitHub 验证失败（${getResp.status}）`);
+      }
 
-      // 2. 创建/更新文件
       const body = {
         message: `docs: update prototype spec for ${currentPageKey}`,
         content: b64,
@@ -831,21 +886,31 @@
       const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(body)
       });
 
-      if (resp.ok) {
-        specToast('更新成功！', 'success');
-      } else {
-        const err = await resp.json();
-        specToast('更新失败: ' + (err.message || resp.status), 'error');
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.message || `GitHub 提交失败（${resp.status}）`);
       }
+
+      specToast('更新成功，原型说明已同步到线上。', 'success');
+      return { ok: true, message: '更新成功' };
     } catch(err) {
-      specToast('网络错误: ' + err.message, 'error');
+      const message = err.message === 'Bad credentials'
+        ? 'Token 无效或已过期'
+        : err.message;
+      specToast('更新失败：' + message, 'error');
+      if (!keepModalOpen) {
+        openTokenModal(message + '，请重新输入 Token。');
+        tokenStatus.className = 'token-modal-status error';
+        localStorage.removeItem('dianleida-github-token');
+      }
+      return { ok: false, message };
     } finally {
       deployBtn.textContent = '↑ 更新';
       deployBtn.disabled = false;
