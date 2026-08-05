@@ -126,7 +126,8 @@
     <section class="panel code-panel" id="panel-js"><div class="code-header"><small id="jsFileName">ai-three-step.js</small><button class="copy-btn" data-copy="js">复制 JS</button></div><pre class="code" id="codeJs">正在加载…</pre></section>
   </div>
   <div class="ctx-menu" id="ctxMenu"></div>
-  <div class="modal" id="modal"><div class="modal-card"><h3>提交原型说明到线上？</h3><p>当前编辑内容会先保存在浏览器本地。确认提交后，后续可接入 GitHub 文件写入，将原型说明同步到线上配置。</p><div class="modal-actions"><button class="tool" id="cancel">取消</button><button class="tool online" id="confirm">确认提交</button></div></div></div>
+  <div class="modal" id="modal"><div class="modal-card"><h3>提交原型说明到线上？</h3><p>确认后会将当前原型说明表格数据提交到 GitHub，同步到线上。</p><div class="modal-actions"><button class="tool" id="cancel">取消</button><button class="tool online" id="confirm">确认提交</button></div></div></div>
+  <div class="modal" id="tokenModal"><div class="modal-card"><h3>输入 GitHub Token</h3><p>需要 GitHub Personal Access Token 才能提交到线上，Token 会保存在浏览器本地。</p><input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;margin:8px 0;font-size:13px"><div class="modal-actions"><button class="tool" id="tokenCancel">取消</button><button class="tool online" id="tokenConfirm">确认并提交</button></div></div></div>
 </section></main></div>
 <script>
   const urlParams = new URLSearchParams(window.location.search);
@@ -309,9 +310,30 @@
   function openContextMenu(e,r,c){ e.preventDefault(); const q = range(); if(!q || r<q.r1 || r>q.r2 || c<q.c1 || c>q.c2){ start = end = {r,c}; paint(); } const s = range(), rowText = s.r1===s.r2 ? '第 '+(s.r1+1)+' 行' : '第 '+(s.r1+1)+'-'+(s.r2+1)+' 行', colText = s.c1===s.c2 ? '第 '+String.fromCharCode(65+s.c1)+' 列' : '第 '+String.fromCharCode(65+s.c1)+'-'+String.fromCharCode(65+s.c2)+' 列'; ctxMenu.innerHTML = '<div class="ctx-item" data-action="row-up"><span class="ctx-icon">↑</span>向上插入 1 行</div><div class="ctx-item" data-action="row-down"><span class="ctx-icon">↓</span>向下插入 1 行</div><div class="ctx-item" data-action="col-left"><span class="ctx-icon">←</span>向左插入 1 列</div><div class="ctx-item" data-action="col-right"><span class="ctx-icon">→</span>向右插入 1 列</div><div class="ctx-divider"></div><div class="ctx-item" data-action="merge"><span class="ctx-icon">▦</span>合并单元格</div><div class="ctx-item" data-action="split"><span class="ctx-icon">▥</span>拆分单元格</div><div class="ctx-divider"></div><div class="ctx-item danger" data-action="delete-row"><span class="ctx-icon">⌫</span>删除'+rowText+'</div><div class="ctx-item danger" data-action="delete-col"><span class="ctx-icon">⌫</span>删除'+colText+'</div>'; ctxMenu.style.left = Math.min(e.clientX,window.innerWidth-190)+'px'; ctxMenu.style.top = Math.min(e.clientY,window.innerHeight-320)+'px'; ctxMenu.classList.add('show'); }
   ctxMenu.onclick = e => { const a = e.target.closest('[data-action]')?.dataset.action, q = range(); if(!a || !q) return; if(a==='row-up') insertRow(q.r1); if(a==='row-down') insertRow(q.r2+1); if(a==='col-left') insertCol(q.c1); if(a==='col-right') insertCol(q.c2+1); if(a==='merge') mergeCells(); if(a==='split') splitCells(); if(a==='delete-row') deleteRows(); if(a==='delete-col') deleteCols(); ctxMenu.classList.remove('show'); };
   const modal = document.getElementById('modal');
+  const tokenModal = document.getElementById('tokenModal');
+  const tokenInput = document.getElementById('tokenInput');
+  const GITHUB_OWNER = 'kingf668877-creator';
+  const GITHUB_REPO = 'dianleida1688';
+  const GITHUB_BRANCH = 'master';
+  const SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
   submitOnline.onclick = () => modal.classList.add('show');
   cancel.onclick = () => modal.classList.remove('show');
-  confirm.onclick = () => modal.classList.remove('show');
+  confirm.onclick = async () => { modal.classList.remove('show'); const token = localStorage.getItem('dianleida-github-token'); if(!token){ tokenModal.classList.add('show'); tokenInput.focus(); } else { await deployToGitHub(token); } };
+  document.getElementById('tokenCancel').onclick = () => tokenModal.classList.remove('show');
+  document.getElementById('tokenConfirm').onclick = async () => { const token = tokenInput.value.trim(); if(!token){ alert('请输入 Token'); return; } localStorage.setItem('dianleida-github-token', token); tokenModal.classList.remove('show'); tokenInput.value = ''; await deployToGitHub(token); };
+  async function deployToGitHub(token) {
+    submitOnline.textContent = '提交中...'; submitOnline.disabled = true;
+    try {
+      const content = JSON.stringify(state, null, 2);
+      const b64 = btoa(unescape(encodeURIComponent(content)));
+      let sha = null;
+      try { const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}?ref=${GITHUB_BRANCH}`, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } }); if(r.ok){ const d = await r.json(); sha = d.sha; } } catch(e){}
+      const body = { message: `docs: update prototype spec for ${currentPage}`, content: b64, branch: GITHUB_BRANCH };
+      if(sha) body.sha = sha;
+      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}`, { method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if(resp.ok){ alert('提交成功！原型说明已同步到 GitHub。'); } else { const err = await resp.json(); alert('提交失败: ' + (err.message || resp.status)); }
+    } catch(err){ alert('网络错误: ' + err.message); } finally { submitOnline.textContent = '提交到线上'; submitOnline.disabled = false; }
+  }
 </script>
 </body>
 </html>
