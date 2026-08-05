@@ -882,6 +882,352 @@ button {
   font-size: 16px;
 }
 
+/* ===== 张数统计 ===== */
+/* 剩余张数信息条（任务列表） */
+.credits-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #fff8f2 0%, #fff5e6 100%);
+  border: 1px solid #ffe0b8;
+  border-radius: var(--radius-lg);
+}
+
+.credits-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.credits-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  box-shadow: var(--shadow-primary);
+  flex-shrink: 0;
+}
+
+.credits-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credits-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.credits-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.credits-unit {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.credits-purchase-btn {
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* 实时张数统计（创建表单） */
+.credits-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 14px 16px;
+  margin-top: 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--primary-light);
+  animation: slideInUp .3s ease;
+}
+
+.stats-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stats-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stats-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stats-value.deduction {
+  color: var(--danger);
+}
+
+.stats-value.remaining {
+  color: var(--success);
+}
+
+.stats-value.warning {
+  color: var(--warning);
+}
+
+.stats-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+}
+
+/* 增购张数弹窗 */
+.purchase-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.purchase-modal.show {
+  display: flex;
+}
+
+.purchase-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.purchase-content {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: purchaseIn .3s ease;
+}
+
+@keyframes purchaseIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.purchase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.purchase-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.purchase-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  border: none;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.purchase-close:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.purchase-body {
+  padding: 24px;
+}
+
+.purchase-price-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--primary-bg);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.price-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.price-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.purchase-current {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.purchase-current b {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.purchase-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.purchase-option {
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+  background: var(--bg-secondary);
+}
+
+.purchase-option:hover {
+  border-color: var(--primary-light);
+  background: var(--primary-bg);
+}
+
+.purchase-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.1);
+}
+
+.option-count {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.purchase-option.selected .option-count {
+  color: var(--primary);
+}
+
+.option-price {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.purchase-custom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.custom-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.custom-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: var(--transition);
+  font-family: inherit;
+  background: var(--bg-secondary);
+}
+
+.custom-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.08);
+}
+
+.custom-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.purchase-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.purchase-summary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.purchase-summary b {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.purchase-amount {
+  color: var(--primary) !important;
+  font-size: 18px !important;
+}
+
+.purchase-footer .btn {
+  min-width: 100px;
+}
+
+@media (max-width: 768px) {
+  .purchase-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .purchase-footer {
+    flex-wrap: wrap;
+  }
+}
+
 /* ===== 筛选卡片 ===== */
 .filter-card {
   background: var(--bg-secondary);
