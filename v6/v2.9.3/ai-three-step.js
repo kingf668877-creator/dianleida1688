@@ -143,6 +143,7 @@ tabBtns.forEach(btn => {
     const tab = btn.dataset.tab;
     tabBtns.forEach(b => b.classList.toggle('active', b === btn));
     subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+    updateCreditsStats();
   });
 });
 
@@ -211,6 +212,7 @@ parseLinkBtn.addEventListener('click', () => {
     showToast(`已解析 ${parsedLinks.length} 条链接`);
   }
   renderLinkThumbs(parsedLinks);
+  updateCreditsStats();
 });
 
 clearLinkBtn.addEventListener('click', () => {
@@ -218,6 +220,7 @@ clearLinkBtn.addEventListener('click', () => {
   parsedLinks = [];
   linkPreview.style.display = 'none';
   showToast('已清空');
+  updateCreditsStats();
 });
 
 // ===== 文件上传 Tab =====
@@ -266,6 +269,7 @@ function simulateUpload(fileName) {
           selectedFileMeta.textContent = `${size} MB · ${count} 条数据`;
           fileUploaded.style.display = 'block';
           showToast('文件上传成功');
+          updateCreditsStats();
         } else {
           fileUploadError.style.display = 'block';
           showToast('文件格式校验失败');
@@ -295,8 +299,8 @@ fileInput.addEventListener('change', e => {
     e.target.value = '';
   }
 });
-removeFileBtn.addEventListener('click', () => { resetFileState(); showToast('已移除文件'); });
-removeErrorFileBtn.addEventListener('click', () => { resetFileState(); showToast('已移除文件'); });
+removeFileBtn.addEventListener('click', () => { resetFileState(); showToast('已移除文件'); updateCreditsStats(); });
+removeErrorFileBtn.addEventListener('click', () => { resetFileState(); showToast('已移除文件'); updateCreditsStats(); });
 
 // ===== 上传图片 Tab =====
 const imageGrid = document.getElementById('imageGrid');
@@ -332,6 +336,7 @@ function renderImages() {
   });
   imageCount.textContent = images.length;
   imageUploadBtn.style.display = images.length >= MAX_IMAGES ? 'none' : 'flex';
+  updateCreditsStats();
 }
 
 imageUploadBtn.addEventListener('click', e => {
@@ -431,7 +436,123 @@ resetBtn.addEventListener('click', () => {
   images = [];
   renderImages();
   showToast('已重置');
+  updateCreditsStats();
 });
+
+// ===== 张数管理 =====
+let userCredits = 10000;
+let purchaseSelectedCount = 0;
+
+function formatNumber(n) {
+  return n.toLocaleString('zh-CN');
+}
+
+function updateUserCreditsDisplay() {
+  const el = document.getElementById('userCreditsDisplay');
+  if (el) el.innerHTML = formatNumber(userCredits) + ' <span class="credits-unit">张</span>';
+  const purchaseCurrent = document.getElementById('purchaseCurrentCredits');
+  if (purchaseCurrent) purchaseCurrent.textContent = formatNumber(userCredits);
+}
+
+function updateCreditsStats() {
+  const type = getCurrentType();
+  let uploaded = 0;
+  if (type === 'link') uploaded = parsedLinks.length;
+  else if (type === 'file' && fileUploaded.style.display !== 'none') uploaded = getCurrentCount();
+  else if (type === 'image') uploaded = images.length;
+
+  const statsBar = document.getElementById('creditsStats');
+  if (!statsBar) return;
+
+  if (uploaded > 0) {
+    statsBar.style.display = 'flex';
+    document.getElementById('uploadedCount').textContent = uploaded + ' 张';
+    document.getElementById('deductionCount').textContent = uploaded + ' 张';
+    const remaining = userCredits - uploaded;
+    const remainingEl = document.getElementById('remainingCredits');
+    remainingEl.textContent = formatNumber(Math.max(0, remaining)) + ' 张';
+    if (remaining < 0) {
+      remainingEl.className = 'stats-value deduction';
+    } else if (remaining < 1000) {
+      remainingEl.className = 'stats-value warning';
+    } else {
+      remainingEl.className = 'stats-value remaining';
+    }
+  } else {
+    statsBar.style.display = 'none';
+  }
+}
+
+// 增购弹窗
+function openPurchaseModal() {
+  const modal = document.getElementById('purchaseModal');
+  if (modal) {
+    modal.classList.add('show');
+    updateUserCreditsDisplay();
+    resetPurchaseSelection();
+  }
+}
+
+function closePurchaseModal() {
+  const modal = document.getElementById('purchaseModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function resetPurchaseSelection() {
+  purchaseSelectedCount = 0;
+  document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
+  const customInput = document.getElementById('customPurchaseCount');
+  if (customInput) customInput.value = '';
+  document.getElementById('customPurchasePrice').textContent = '¥0.00';
+  document.getElementById('purchaseSelectedCount').textContent = '0';
+  document.getElementById('purchaseTotalAmount').textContent = '¥0.00';
+  document.getElementById('confirmPurchaseBtn').disabled = true;
+}
+
+function selectPurchaseOption(el, count) {
+  document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('customPurchaseCount').value = '';
+  document.getElementById('customPurchasePrice').textContent = '¥0.00';
+  purchaseSelectedCount = count;
+  updatePurchaseSummary();
+}
+
+function updatePurchaseSummary() {
+  const count = purchaseSelectedCount;
+  const amount = (count * 0.02).toFixed(2);
+  document.getElementById('purchaseSelectedCount').textContent = formatNumber(count);
+  document.getElementById('purchaseTotalAmount').textContent = '¥' + amount;
+  document.getElementById('confirmPurchaseBtn').disabled = count <= 0;
+}
+
+// 自定义数量输入
+document.getElementById('customPurchaseCount')?.addEventListener('input', (e) => {
+  const val = parseInt(e.target.value) || 0;
+  if (val > 0) {
+    document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
+    purchaseSelectedCount = val;
+    document.getElementById('customPurchasePrice').textContent = '¥' + (val * 0.02).toFixed(2);
+    updatePurchaseSummary();
+  } else {
+    purchaseSelectedCount = 0;
+    document.getElementById('customPurchasePrice').textContent = '¥0.00';
+    updatePurchaseSummary();
+  }
+});
+
+// 确认购买
+document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
+  if (purchaseSelectedCount <= 0) return;
+  userCredits += purchaseSelectedCount;
+  updateUserCreditsDisplay();
+  updateCreditsStats();
+  showToast('增购成功！已添加 ' + formatNumber(purchaseSelectedCount) + ' 张');
+  closePurchaseModal();
+});
+
+// 增购按钮
+document.getElementById('purchaseBtn')?.addEventListener('click', openPurchaseModal);
 
 // ===== 任务列表 =====
 const taskTableBody = document.getElementById('taskTableBody');
@@ -983,6 +1104,7 @@ resetEditBtn?.addEventListener('click', () => {
 
 // ===== 初始化 =====
 renderTaskTable();
+updateUserCreditsDisplay();
 // 让已有的执行中任务继续跑
 tasks.filter(t => t.status === 'running').forEach(t => simulateTaskProgress(t.id));
 
