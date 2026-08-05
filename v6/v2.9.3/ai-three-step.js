@@ -223,6 +223,12 @@ clearLinkBtn.addEventListener('click', () => {
   updateCreditsStats();
 });
 
+// 实时监听文本输入，自动解析链接数量并更新统计（无需点击"解析链接"）
+linkTextarea.addEventListener('input', () => {
+  parsedLinks = parseLinksFromText(linkTextarea.value);
+  updateCreditsStats();
+});
+
 // ===== 文件上传 Tab =====
 const fileDropZone = document.getElementById('fileDropZone');
 const fileInput = document.getElementById('fileInput');
@@ -440,7 +446,7 @@ resetBtn.addEventListener('click', () => {
 });
 
 // ===== 张数管理 =====
-let userCredits = 10000;
+let userCredits = 2;
 let purchaseSelectedCount = 0;
 
 function formatNumber(n) {
