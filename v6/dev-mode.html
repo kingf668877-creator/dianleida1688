@@ -92,8 +92,8 @@
   }
   .icon-p { background:#ff6b6b; }
   /* 主内容区 */
-  .stage { min-width:0; flex:1; height:100%; background:#eef0f3; padding:20px; position:relative; }
-  .frame-shell { width:100%; height:100%; overflow:hidden; background:#fff; border:1px solid #dfe1e5; border-radius:8px; box-shadow:0 8px 24px rgba(29,33,41,.08); }
+  .stage { min-width:0; flex:1; height:100%; background:#eef0f3; padding:20px; position:relative; display:flex; gap:16px; }
+  .frame-shell { flex:1; min-width:0; height:100%; overflow:hidden; background:#fff; border:1px solid #dfe1e5; border-radius:8px; box-shadow:0 8px 24px rgba(29,33,41,.08); }
   iframe { width:100%; height:100%; border:0; display:block; background:#fff; }
   /* 侧边栏收起时的展开按钮 */
   .expand-btn {
@@ -108,9 +108,191 @@
   }
   .expand-btn:hover { background:var(--hover); color:var(--text); }
   .expand-btn.show { display:flex; }
+
+  /* ===== 原型说明面板 ===== */
+  .spec-panel {
+    width:440px; flex:0 0 440px;
+    height:100%; background:#fff;
+    border:1px solid #dfe1e5; border-radius:8px;
+    box-shadow:0 8px 24px rgba(29,33,41,.08);
+    display:flex; flex-direction:column;
+    transition: width .25s ease, flex-basis .25s ease, opacity .25s ease;
+    overflow:hidden;
+  }
+  .spec-panel.collapsed {
+    width:0; flex-basis:0; opacity:0; border:0;
+  }
+  .spec-header {
+    height:52px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px; border-bottom:1px solid var(--border);
+    background:#fafbfc;
+  }
+  .spec-header-left { display:flex; align-items:center; gap:8px; min-width:0; }
+  .spec-header h3 { font-size:15px; font-weight:600; white-space:nowrap; }
+  .spec-page-tag {
+    font-size:11px; padding:2px 8px; border-radius:4px;
+    background:#e8f0ff; color:var(--blue); font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;
+  }
+  .spec-header-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .spec-btn {
+    height:30px; padding:0 12px;
+    border:1px solid var(--border); border-radius:6px;
+    background:#fff; color:#4e5969;
+    font-size:12px; font-weight:500; cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px;
+    transition:.15s; white-space:nowrap;
+  }
+  .spec-btn:hover { background:var(--hover); color:var(--text); }
+  .spec-btn.primary {
+    background:var(--blue); border-color:var(--blue); color:#fff;
+  }
+  .spec-btn.primary:hover { background:#2455d9; }
+  .spec-btn.success {
+    background:#00b894; border-color:#00b894; color:#fff;
+  }
+  .spec-btn.success:hover { background:#00a081; }
+  .spec-btn.danger { color:#e54848; }
+  .spec-btn.danger:hover { background:#fff0f0; }
+  .spec-btn.icon-only { width:30px; padding:0; justify-content:center; }
+
+  /* 表格容器 */
+  .spec-table-wrap {
+    flex:1; overflow:auto; position:relative;
+  }
+  .spec-table {
+    width:100%; border-collapse:collapse; font-size:13px;
+    table-layout:fixed;
+  }
+  .spec-table th, .spec-table td {
+    border:1px solid #e8e8f0; padding:0; position:relative;
+    vertical-align:top;
+  }
+  .spec-table th {
+    background:#f7f8fa; font-weight:600; color:#4e5969;
+    height:40px; text-align:left; padding:0 10px;
+    display:table-cell;
+  }
+  .spec-table th .th-content {
+    display:flex; align-items:center; justify-content:space-between;
+    height:100%; gap:4px;
+  }
+  .spec-table th .th-text {
+    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    cursor:text; outline:none;
+  }
+  .spec-table th .th-text:focus { color:var(--blue); }
+  .spec-table th .th-del {
+    width:18px; height:18px; border-radius:4px;
+    border:0; background:transparent; color:#c9cdd4;
+    cursor:pointer; font-size:12px; flex-shrink:0;
+    display:none; align-items:center; justify-content:center;
+    transition:.15s;
+  }
+  .spec-table th:hover .th-del { display:flex; }
+  .spec-table th .th-del:hover { background:#fff0f0; color:#e54848; }
+
+  .spec-table td .cell-edit {
+    width:100%; min-height:38px; max-height:120px;
+    padding:8px 10px; border:0; outline:none;
+    font:13px/1.5 "PingFang SC","Microsoft YaHei",sans-serif;
+    color:#1d2129; background:transparent;
+    resize:vertical; overflow-y:auto;
+    cursor:text;
+  }
+  .spec-table td .cell-edit:focus { background:#f7f9ff; box-shadow:inset 0 0 0 2px rgba(51,112,255,.12); }
+  .spec-table td .cell-edit:empty::before {
+    content:attr(data-placeholder); color:#c9cdd4;
+  }
+
+  /* 行号 */
+  .spec-table .row-num-cell {
+    width:36px; background:#f7f8fa; text-align:center;
+    color:#86909c; font-size:12px; position:relative;
+  }
+  .spec-table .row-num-cell .row-del {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:20px; height:20px; border-radius:4px;
+    border:0; background:transparent; color:#c9cdd4;
+    cursor:pointer; font-size:11px;
+    display:none; align-items:center; justify-content:center;
+    transition:.15s;
+  }
+  .spec-table tr:hover .row-num-cell .row-del { display:flex; }
+  .spec-table .row-num-cell .row-del:hover { background:#fff0f0; color:#e54848; }
+  .spec-table .row-num-cell .row-num-text { display:block; line-height:38px; }
+  .spec-table tr:hover .row-num-cell .row-num-text { display:none; }
+
+  /* 添加行按钮 */
+  .spec-add-row-bar {
+    flex-shrink:0; padding:8px; border-top:1px solid var(--border);
+    display:flex; gap:8px; justify-content:center; background:#fafbfc;
+  }
+  .spec-add-row-btn {
+    width:100%; height:34px;
+    border:1px dashed #c9cdd4; border-radius:6px;
+    background:#fff; color:#86909c;
+    font-size:13px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:4px;
+    transition:.15s;
+  }
+  .spec-add-row-btn:hover { border-color:var(--blue); color:var(--blue); background:#f7f9ff; }
+
+  /* 空状态 */
+  .spec-empty {
+    padding:40px 20px; text-align:center; color:#86909c; font-size:13px;
+  }
+
+  /* Token 弹窗 */
+  .token-modal {
+    position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,.35); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .token-modal-content {
+    width:440px; background:#fff; border-radius:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,.2);
+    padding:24px;
+  }
+  .token-modal h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+  .token-modal p { font-size:13px; color:#86909c; margin-bottom:16px; line-height:1.6; }
+  .token-modal input {
+    width:100%; height:38px; padding:0 12px;
+    border:1px solid var(--border); border-radius:8px;
+    font:13px "PingFang SC","Microsoft YaHei",sans-serif;
+    outline:none; margin-bottom:16px;
+  }
+  .token-modal input:focus { border-color:var(--blue); box-shadow:0 0 0 2px rgba(51,112,255,.10); }
+  .token-modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+  .token-link { color:var(--blue); font-size:12px; text-decoration:none; }
+  .token-link:hover { text-decoration:underline; }
+
+  /* Toast */
+  .spec-toast {
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    z-index:10000; padding:10px 20px; border-radius:8px;
+    font-size:13px; color:#fff; font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.15);
+    opacity:0; transition:opacity .25s ease, top .25s ease;
+    pointer-events:none;
+  }
+  .spec-toast.show { opacity:1; top:30px; }
+  .spec-toast.success { background:#00b894; }
+  .spec-toast.error { background:#e54848; }
+  .spec-toast.info { background:#3370ff; }
+
+  @media (max-width:1099px) {
+    .spec-panel { width:340px; flex-basis:340px; }
+  }
+  @media (max-width:899px) {
+    .spec-panel { display:none; }
+    .stage { flex-direction:column; }
+  }
   @media (max-width:720px) {
     .layers { width:176px; flex-basis:176px; }
-    .stage { padding:10px; }
+    .stage { padding:10px; gap:8px; }
   }
 </style>
 </head>
@@ -157,8 +339,45 @@
   </aside>
   <main class="stage">
     <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html" title="设计页面预览"></iframe></div>
+    <!-- 原型说明面板 -->
+    <aside class="spec-panel" id="specPanel">
+      <div class="spec-header">
+        <div class="spec-header-left">
+          <h3>原型说明</h3>
+          <span class="spec-page-tag" id="specPageTag">创建图搜寻源</span>
+        </div>
+        <div class="spec-header-actions">
+          <button class="spec-btn" id="addColBtn" title="新增列">+ 列</button>
+          <button class="spec-btn" id="toggleSpecBtn" title="收起">▶</button>
+          <button class="spec-btn success" id="deployBtn" title="更新到GitHub">↑ 更新</button>
+        </div>
+      </div>
+      <div class="spec-table-wrap">
+        <table class="spec-table" id="specTable">
+          <thead id="specTableHead"></thead>
+          <tbody id="specTableBody"></tbody>
+        </table>
+      </div>
+      <div class="spec-add-row-bar">
+        <button class="spec-add-row-btn" id="addRowBtn">+ 添加一行</button>
+      </div>
+    </aside>
   </main>
 </div>
+<!-- Token 弹窗 -->
+<div class="token-modal" id="tokenModal" style="display:none;">
+  <div class="token-modal-content">
+    <h4>输入 GitHub Token</h4>
+    <p>需要 Personal Access Token（需 repo 权限）才能更新到 GitHub。<br><a class="token-link" href="https://github.com/settings/tokens/new?scopes=repo&description=dianleida-deploy" target="_blank">点此创建 Token →</a></p>
+    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
+    <div class="token-modal-actions">
+      <button class="spec-btn" id="tokenCancelBtn">取消</button>
+      <button class="spec-btn primary" id="tokenConfirmBtn">确认保存</button>
+    </div>
+  </div>
+</div>
+<!-- Toast -->
+<div class="spec-toast" id="specToast"></div>
 <script>
   const frame = document.getElementById('designFrame');
   const items = Array.from(document.querySelectorAll('.layer-item'));
@@ -208,6 +427,7 @@
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
     frame.src = item.dataset.page;
+    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(item.dataset.page);
   }));
   // ===== 监听 iframe 内部板块切换（postMessage）=====
   // 当 iframe 内部调用 switchPage 时，同步侧边栏选中状态（不刷新 iframe）
@@ -274,6 +494,367 @@
   } else {
     toggleSidebar(false);
   }
+
+  // ===== 原型说明：可编辑动态表格 =====
+  const GITHUB_OWNER = 'kingf668877-creator';
+  const GITHUB_REPO = 'dianleida1688';
+  const GITHUB_BRANCH = 'master';
+  const SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
+
+  // 页面名称映射
+  const pageNames = {
+    'v2.9.3/search-agent.html': '创建图搜寻源',
+    'v2.9.3/search-agent.html?page=list': '任务列表',
+    'v2.9.3/search-agent.html?page=result': '寻源结果'
+  };
+
+  // 默认列
+  const defaultColumns = ['功能模块', '功能描述', '交互说明', '数据来源', '备注'];
+
+  // 每个页面的默认数据
+  const defaultPageData = {
+    '创建图搜寻源': [
+      { '功能模块': '任务名称', '功能描述': '输入任务名称', '交互说明': '文本输入框，必填', '数据来源': '用户输入', '备注': '用于后续查找' },
+      { '功能模块': '图搜方式', '功能描述': '选择图搜方式', '交互说明': 'Tab切换：图片链接/文件上传/上传图片', '数据来源': '用户选择', '备注': '支持3种方式' },
+      { '功能模块': '图片链接', '功能描述': '批量粘贴图片URL', '交互说明': 'textarea输入，最多1000条', '数据来源': '用户输入', '备注': '自动解析有效链接' },
+      { '功能模块': '文件上传', '功能描述': '上传xlsx/xls文件', '交互说明': '拖拽或点击上传', '数据来源': '用户上传', '备注': '需下载模板' },
+      { '功能模块': '上传图片', '功能描述': '直接上传图片', '交互说明': '点击上传，最多1000张', '数据来源': '用户上传', '备注': '支持多选' },
+      { '功能模块': '张数统计', '功能描述': '显示已上传/预计扣除/剩余', '交互说明': '实时更新统计', '数据来源': '系统计算', '备注': '超出时显示增购' },
+      { '功能模块': '开始寻源', '功能描述': '提交任务', '交互说明': '校验后创建任务', '数据来源': '系统提交', '备注': '按钮文字为"开始寻源"' }
+    ],
+    '任务列表': [
+      { '功能模块': '功能横幅', '功能描述': '展示任务统计和创建入口', '交互说明': '点击创建跳转', '数据来源': '系统数据', '备注': '' },
+      { '功能模块': '剩余张数', '功能描述': '显示当前剩余张数', '交互说明': '点击增购弹窗', '数据来源': '系统数据', '备注': '' },
+      { '功能模块': '筛选区', '功能描述': '按名称/方式/状态/时间筛选', '交互说明': '多条件组合查询', '数据来源': '用户输入', '备注': '' },
+      { '功能模块': '任务表格', '功能描述': '展示任务列表', '交互说明': '状态对应操作按钮', '数据来源': '系统数据', '备注': '分页展示' },
+      { '功能模块': '操作按钮', '功能描述': '任务操作', '交互说明': '按状态映射不同操作', '数据来源': '系统', '备注': '竖线分隔' }
+    ],
+    '寻源结果': [
+      { '功能模块': '图源信息', '功能描述': '展示搜索图源', '交互说明': '显示任务名/方式/数量', '数据来源': '系统数据', '备注': '' },
+      { '功能模块': '状态筛选', '功能描述': '全部/成功/失败', '交互说明': 'Tab切换筛选', '数据来源': '系统计算', '备注': '' },
+      { '功能模块': '筛选条件', '功能描述': '价格/销量/揽收率等', '交互说明': '可收起展开', '数据来源': '用户输入', '备注': '' },
+      { '功能模块': '结果卡片', '功能描述': '垂直卡片展示商品', '交互说明': '图片+状态+相似度+价格+数据', '数据来源': '1688API', '备注': '4列响应式' },
+      { '功能模块': '批量操作', '功能描述': '监控/关注/导出/铺货', '交互说明': '全选后批量操作', '数据来源': '系统', '备注': '' }
+    ]
+  };
+
+  let currentPageKey = '创建图搜寻源';
+  let specData = {}; // { 页面名: { columns: [], rows: [] } }
+
+  // ===== Toast =====
+  const specToastEl = document.getElementById('specToast');
+  let specToastTimer;
+  function specToast(msg, type) {
+    specToastEl.textContent = msg;
+    specToastEl.className = 'spec-toast show ' + (type || 'info');
+    clearTimeout(specToastTimer);
+    specToastTimer = setTimeout(() => {
+      specToastEl.className = 'spec-toast ' + (type || 'info');
+    }, 2200);
+  }
+
+  // ===== 加载/保存数据 =====
+  function loadSpecData() {
+    const saved = localStorage.getItem('dianleida-spec-data');
+    if (saved) {
+      try {
+        specData = JSON.parse(saved);
+      } catch(e) {
+        specData = {};
+      }
+    }
+    // 确保每个页面都有数据
+    Object.keys(pageNames).forEach(pageUrl => {
+      const pageName = pageNames[pageUrl];
+      if (!specData[pageName]) {
+        specData[pageName] = {
+          columns: [...defaultColumns],
+          rows: defaultPageData[pageName] ? [...defaultPageData[pageName]] : []
+        };
+      }
+    });
+    saveSpecData();
+  }
+
+  function saveSpecData() {
+    localStorage.setItem('dianleida-spec-data', JSON.stringify(specData));
+  }
+
+  // ===== 渲染表格 =====
+  function renderSpecTable() {
+    const pageData = specData[currentPageKey];
+    if (!pageData) return;
+    const head = document.getElementById('specTableHead');
+    const body = document.getElementById('specTableBody');
+    const tag = document.getElementById('specPageTag');
+    tag.textContent = currentPageKey;
+
+    // 表头
+    let headHtml = '<tr><th class="row-num-cell" style="width:36px;">#</th>';
+    pageData.columns.forEach((col, ci) => {
+      headHtml += `<th style="min-width:100px;"><div class="th-content">
+        <span class="th-text" contenteditable="true" data-col="${ci}" spellcheck="false">${escapeHtml(col)}</span>
+        ${pageData.columns.length > 1 ? `<button class="th-del" data-col="${ci}" title="删除列">✕</button>` : ''}
+      </div></th>`;
+    });
+    headHtml += '</tr>';
+    head.innerHTML = headHtml;
+
+    // 表体
+    if (pageData.rows.length === 0) {
+      body.innerHTML = `<tr><td colspan="${pageData.columns.length + 1}" class="spec-empty">点击下方"添加一行"开始编辑原型说明</td></tr>`;
+    } else {
+      let bodyHtml = '';
+      pageData.rows.forEach((row, ri) => {
+        bodyHtml += `<tr><td class="row-num-cell"><span class="row-num-text">${ri + 1}</span><button class="row-del" data-row="${ri}" title="删除行">✕</button></td>`;
+        pageData.columns.forEach((col, ci) => {
+          const val = row[col] || '';
+          bodyHtml += `<td><div class="cell-edit" contenteditable="true" data-row="${ri}" data-col="${ci}" data-key="${escapeHtml(col)}" data-placeholder="点击编辑" spellcheck="false">${escapeHtml(val)}</div></td>`;
+        });
+        bodyHtml += '</tr>';
+      });
+      body.innerHTML = bodyHtml;
+    }
+
+    bindTableEvents();
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ===== 绑定表格事件 =====
+  function bindTableEvents() {
+    // 单元格编辑
+    document.querySelectorAll('.cell-edit').forEach(cell => {
+      cell.addEventListener('blur', () => {
+        const ri = parseInt(cell.dataset.row);
+        const ci = parseInt(cell.dataset.col);
+        const colName = specData[currentPageKey].columns[ci];
+        if (!specData[currentPageKey].rows[ri]) return;
+        specData[currentPageKey].rows[ri][colName] = cell.textContent;
+        saveSpecData();
+      });
+      cell.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          cell.blur();
+        }
+      });
+    });
+
+    // 表头编辑
+    document.querySelectorAll('.th-text').forEach(th => {
+      th.addEventListener('blur', () => {
+        const ci = parseInt(th.dataset.col);
+        const oldName = specData[currentPageKey].columns[ci];
+        const newName = th.textContent.trim() || oldName;
+        if (newName !== oldName) {
+          // 更新列名，同步所有行数据
+          specData[currentPageKey].columns[ci] = newName;
+          specData[currentPageKey].rows.forEach(row => {
+            if (oldName in row) {
+              row[newName] = row[oldName];
+              delete row[oldName];
+            }
+          });
+          th.textContent = newName;
+          saveSpecData();
+        }
+      });
+      th.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); th.blur(); }
+      });
+    });
+
+    // 删除列
+    document.querySelectorAll('.th-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ci = parseInt(btn.dataset.col);
+        const colName = specData[currentPageKey].columns[ci];
+        if (!confirm(`确认删除列"${colName}"？`)) return;
+        specData[currentPageKey].columns.splice(ci, 1);
+        specData[currentPageKey].rows.forEach(row => { delete row[colName]; });
+        saveSpecData();
+        renderSpecTable();
+      });
+    });
+
+    // 删除行
+    document.querySelectorAll('.row-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ri = parseInt(btn.dataset.row);
+        specData[currentPageKey].rows.splice(ri, 1);
+        saveSpecData();
+        renderSpecTable();
+      });
+    });
+  }
+
+  // ===== 添加行/列 =====
+  document.getElementById('addRowBtn').addEventListener('click', () => {
+    const pageData = specData[currentPageKey];
+    const newRow = {};
+    pageData.columns.forEach(col => { newRow[col] = ''; });
+    pageData.rows.push(newRow);
+    saveSpecData();
+    renderSpecTable();
+    // 滚动到底部
+    const wrap = document.querySelector('.spec-table-wrap');
+    wrap.scrollTop = wrap.scrollHeight;
+    // 聚焦新行的第一个单元格
+    setTimeout(() => {
+      const cells = document.querySelectorAll('.cell-edit');
+      if (cells.length > 0) {
+        const lastCell = cells[cells.length - 1];
+        lastCell.focus();
+      }
+    }, 50);
+  });
+
+  document.getElementById('addColBtn').addEventListener('click', () => {
+    const pageData = specData[currentPageKey];
+    const colName = '新列' + (pageData.columns.length + 1);
+    pageData.columns.push(colName);
+    pageData.rows.forEach(row => { row[colName] = ''; });
+    saveSpecData();
+    renderSpecTable();
+    // 滚动到右侧
+    const wrap = document.querySelector('.spec-table-wrap');
+    wrap.scrollLeft = wrap.scrollWidth;
+    // 聚焦新列表头
+    setTimeout(() => {
+      const ths = document.querySelectorAll('.th-text');
+      if (ths.length > 0) {
+        ths[ths.length - 1].focus();
+        // 全选文字
+        const range = document.createRange();
+        range.selectNodeContents(ths[ths.length - 1]);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }, 50);
+  });
+
+  // ===== 收起/展开面板 =====
+  const specPanel = document.getElementById('specPanel');
+  const toggleSpecBtn = document.getElementById('toggleSpecBtn');
+  toggleSpecBtn.addEventListener('click', () => {
+    specPanel.classList.toggle('collapsed');
+    toggleSpecBtn.textContent = specPanel.classList.contains('collapsed') ? '◀' : '▶';
+    localStorage.setItem('spec-panel-collapsed', specPanel.classList.contains('collapsed'));
+  });
+  if (localStorage.getItem('spec-panel-collapsed') === 'true') {
+    specPanel.classList.add('collapsed');
+    toggleSpecBtn.textContent = '◀';
+  }
+
+  // ===== 页面切换时更新原型说明 =====
+  function updateCurrentPageKey(pageUrl) {
+    let pageName = pageNames[pageUrl] || '创建图搜寻源';
+    currentPageKey = pageName;
+    renderSpecTable();
+  }
+
+  // postMessage监听：iframe内部切换板块时同步原型说明
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'pageChange') return;
+    const page = e.data.page;
+    if (!page) return;
+    const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : `v2.9.3/search-agent.html?page=${page}`;
+    currentPageKey = pageNames[pageUrl] || currentPageKey;
+    renderSpecTable();
+  });
+
+  // ===== GitHub 部署 =====
+  const deployBtn = document.getElementById('deployBtn');
+  const tokenModal = document.getElementById('tokenModal');
+  const tokenInput = document.getElementById('tokenInput');
+  const tokenCancelBtn = document.getElementById('tokenCancelBtn');
+  const tokenConfirmBtn = document.getElementById('tokenConfirmBtn');
+
+  deployBtn.addEventListener('click', async () => {
+    const token = localStorage.getItem('dianleida-github-token');
+    if (!token) {
+      tokenModal.style.display = 'flex';
+      tokenInput.focus();
+    } else {
+      await deployToGitHub(token);
+    }
+  });
+
+  tokenCancelBtn.addEventListener('click', () => {
+    tokenModal.style.display = 'none';
+  });
+
+  tokenConfirmBtn.addEventListener('click', async () => {
+    const token = tokenInput.value.trim();
+    if (!token) { specToast('请输入Token', 'error'); return; }
+    localStorage.setItem('dianleida-github-token', token);
+    tokenModal.style.display = 'none';
+    tokenInput.value = '';
+    await deployToGitHub(token);
+  });
+
+  async function deployToGitHub(token) {
+    deployBtn.textContent = '更新中...';
+    deployBtn.disabled = true;
+    specToast('正在更新到GitHub...', 'info');
+
+    try {
+      const content = JSON.stringify(specData, null, 2);
+      const b64 = btoa(unescape(encodeURIComponent(content)));
+
+      // 1. 获取现有文件SHA（如果存在）
+      let sha = null;
+      try {
+        const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}?ref=${GITHUB_BRANCH}`, {
+          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          sha = data.sha;
+        }
+      } catch(e) {}
+
+      // 2. 创建/更新文件
+      const body = {
+        message: `docs: update prototype spec for ${currentPageKey}`,
+        content: b64,
+        branch: GITHUB_BRANCH
+      };
+      if (sha) body.sha = sha;
+
+      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (resp.ok) {
+        specToast('更新成功！', 'success');
+      } else {
+        const err = await resp.json();
+        specToast('更新失败: ' + (err.message || resp.status), 'error');
+      }
+    } catch(err) {
+      specToast('网络错误: ' + err.message, 'error');
+    } finally {
+      deployBtn.textContent = '↑ 更新';
+      deployBtn.disabled = false;
+    }
+  }
+
+  // ===== 初始化 =====
+  loadSpecData();
+  renderSpecTable();
 </script>
 </body>
 </html>
