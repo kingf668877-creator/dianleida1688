@@ -377,10 +377,12 @@
   <div class="token-modal-content">
     <h4>输入 GitHub Token</h4>
     <p>需要 Personal Access Token（需 repo 权限）才能更新到 GitHub。<br><a class="token-link" href="https://github.com/settings/tokens/new?scopes=repo&description=dianleida-deploy" target="_blank">点此创建 Token →</a></p>
-    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
+    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+    <div class="token-modal-status" id="tokenStatus" aria-live="polite"></div>
     <div class="token-modal-actions">
+      <button class="spec-btn danger token-reset-btn" id="tokenResetBtn">清除已保存 Token</button>
       <button class="spec-btn" id="tokenCancelBtn">取消</button>
-      <button class="spec-btn primary" id="tokenConfirmBtn">确认保存</button>
+      <button class="spec-btn primary" id="tokenConfirmBtn">确认并提交</button>
     </div>
   </div>
 </div>
