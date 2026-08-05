@@ -84,6 +84,16 @@
     color: #86909c;
     font: 12px Consolas, monospace;
   }
+  .section-tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f0ebff;
+    color: #6236ff;
+  }
   .copy-btn {
     height: 30px;
     padding: 0 14px;
@@ -135,7 +145,7 @@
     <!-- HTML -->
     <section class="panel code-panel" id="panel-html">
       <div class="code-header">
-        <small>ai-three-step.html</small>
+        <small id="htmlFileName">ai-three-step.html</small>
         <button class="copy-btn" data-copy="html">复制 HTML</button>
       </div>
       <pre class="code" id="codeHtml">正在加载…</pre>
@@ -143,7 +153,7 @@
     <!-- CSS -->
     <section class="panel code-panel" id="panel-css">
       <div class="code-header">
-        <small>ai-three-step.css</small>
+        <small id="cssFileName">ai-three-step.css</small>
         <button class="copy-btn" data-copy="css">复制 CSS</button>
       </div>
       <pre class="code" id="codeCss">正在加载…</pre>
@@ -151,27 +161,50 @@
     <!-- JS -->
     <section class="panel code-panel" id="panel-js">
       <div class="code-header">
-        <small>ai-three-step.js</small>
+        <small id="jsFileName">ai-three-step.js</small>
         <button class="copy-btn" data-copy="js">复制 JS</button>
       </div>
       <pre class="code" id="codeJs">正在加载…</pre>
     </section>
   </div>
 <script>
-  // ===== 读取 URL 参数，传递给 iframe =====
+  // ===== 读取 URL 参数，确定当前板块 =====
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
+  let currentPage = 'create';
   let iframeSrc = 'ai-three-step.html';
-  if (pageParam === 'list' || pageParam === 'result') {
-    iframeSrc = 'ai-three-step.html?page=' + pageParam;
+
+  if (pageParam === 'list') {
+    currentPage = 'list';
+    iframeSrc = 'ai-three-step.html?page=list';
+  } else if (pageParam === 'result') {
+    currentPage = 'result';
+    iframeSrc = 'ai-three-step.html?page=result';
   }
   document.getElementById('previewFrame').src = iframeSrc;
 
-  const frame = document.getElementById('previewFrame');
+  // ===== 板块标签映射 =====
+  const sectionLabels = {
+    create: '创建图搜寻源',
+    list: '任务列表',
+    result: '寻源结果'
+  };
+
+  // ===== 更新代码面板标题 =====
+  function updateCodeHeaders(page) {
+    const label = sectionLabels[page] || '';
+    document.getElementById('htmlFileName').innerHTML = `ai-three-step.html <span class="section-tag">${label}</span>`;
+    document.getElementById('cssFileName').innerHTML = `ai-three-step.css <span class="section-tag">${label}</span>`;
+    document.getElementById('jsFileName').innerHTML = `ai-three-step.js <span class="section-tag">${label}</span>`;
+    document.title = label;
+  }
+  updateCodeHeaders(currentPage);
+
+  // ===== Tab 切换 =====
   const tabs = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.panel');
   const codeCache = { html: '', css: '', js: '' };
-  // tab 切换
+
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -179,21 +212,107 @@
       panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
     });
   });
-  // 加载源码
-  function loadCode(type, url, targetId) {
+
+  // ===== 提取 HTML 板块代码 =====
+  function extractHtmlSection(text, section) {
+    const sectionIds = {
+      create: 'page-create',
+      list: 'page-list',
+      result: 'page-result'
+    };
+    const id = sectionIds[section];
+    if (!id) return text;
+    // 匹配 <section ... id="page-xxx" ...>...</section>
+    const regex = new RegExp(
+      '<section[^>]*id="' + id + '"[^>]*>[\\s\\S]*?<\\/section>',
+      'g'
+    );
+    const match = text.match(regex);
+    return match ? match[0].trim() : text;
+  }
+
+  // ===== 提取 CSS 板块代码 =====
+  // 利用已有的 CSS 注释作为分界标记，提取当前板块相关样式
+  function extractCssSection(text, section) {
+    const sectionMap = {
+      create: [
+        ['/* ===== 创建卡片 ===== */', '/* ===== 筛选卡片 ===== */'],
+        ['/* ===== 编辑模式 ===== */', '/* ===== 滚动条美化 ===== */'],
+      ],
+      list: [
+        ['/* ===== 任务列表功能横幅 ===== */', '/* ===== 创建卡片 ===== */'],
+        ['/* ===== 筛选卡片 ===== */', '/* ===== 寻源结果 - 搜索图源信息条 ===== */'],
+        ['/* ===== 分页 ===== */', '/* ===== 编辑模式 ===== */'],
+      ],
+      result: [
+        ['/* ===== 寻源结果 - 搜索图源信息条 ===== */', '/* ===== 分页 ===== */'],
+      ],
+    };
+
+    const ranges = sectionMap[section];
+    if (!ranges) return text;
+
+    const parts = [];
+    for (const [start, end] of ranges) {
+      const startIdx = text.indexOf(start);
+      const endIdx = text.indexOf(end);
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        parts.push(text.substring(startIdx, endIdx).trim());
+      }
+    }
+    return parts.length > 0 ? parts.join('\n\n') : text;
+  }
+
+  // ===== 提取 JS 板块代码 =====
+  // 利用已有的 JS 注释作为分界标记，提取当前板块相关逻辑
+  function extractJsSection(text, section) {
+    const sectionMap = {
+      create: [
+        ['// ===== 图搜方式 Tab 切换 =====', '// ===== 任务列表 ====='],
+      ],
+      list: [
+        ['// ===== 任务列表 =====', '// ===== 寻源结果数据 ====='],
+      ],
+      result: [
+        ['// ===== 寻源结果数据 =====', null],
+      ],
+    };
+
+    const ranges = sectionMap[section];
+    if (!ranges) return text;
+
+    const parts = [];
+    for (const [start, end] of ranges) {
+      const startIdx = text.indexOf(start);
+      const endIdx = end ? text.indexOf(end) : text.length;
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        parts.push(text.substring(startIdx, endIdx).trim());
+      }
+    }
+    return parts.length > 0 ? parts.join('\n\n') : text;
+  }
+
+  // ===== 加载源码（提取当前板块）=====
+  function loadCode(type, url, targetId, extractFn) {
     fetch(url).then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
       .then(text => {
-        codeCache[type] = text;
-        document.getElementById(targetId).textContent = text;
+        const extracted = extractFn(text, currentPage);
+        codeCache[type] = extracted;
+        document.getElementById(targetId).textContent = extracted;
       })
       .catch(() => {
         document.getElementById(targetId).textContent = '加载失败：' + url;
       });
   }
-  loadCode('html', 'ai-three-step.html', 'codeHtml');
-  loadCode('css', 'ai-three-step.css', 'codeCss');
-  loadCode('js', 'ai-three-step.js', 'codeJs');
-  // 复制按钮
+
+  function reloadAllCode() {
+    loadCode('html', 'ai-three-step.html', 'codeHtml', extractHtmlSection);
+    loadCode('css', 'ai-three-step.css', 'codeCss', extractCssSection);
+    loadCode('js', 'ai-three-step.js', 'codeJs', extractJsSection);
+  }
+  reloadAllCode();
+
+  // ===== 复制按钮 =====
   document.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const type = btn.dataset.copy;
@@ -209,6 +328,40 @@
         btn.textContent = '复制失败';
       }
     });
+  });
+
+  // ===== 监听 iframe 内部页面切换（postMessage）=====
+  // 当 ai-three-step.html 内部调用 switchPage 时，会向 parent 发送消息
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'pageChange') {
+      const page = e.data.page;
+      if (!page || !sectionLabels[page]) return;
+
+      // 更新当前板块
+      currentPage = page;
+
+      // 更新 URL（不刷新页面）
+      const newUrl = new URL(window.location);
+      if (page === 'create') {
+        newUrl.searchParams.delete('page');
+      } else {
+        newUrl.searchParams.set('page', page);
+      }
+      window.history.replaceState({}, '', newUrl);
+
+      // 更新标题
+      updateCodeHeaders(page);
+
+      // 重新加载代码（只展示当前板块）
+      reloadAllCode();
+
+      // 转发给最外层父窗口（dev-mode.html）以同步侧边栏
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'pageChange', page: page }, '*');
+        }
+      } catch(err) {}
+    }
   });
 </script>
 </body>

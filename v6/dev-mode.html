@@ -137,7 +137,7 @@
         <span class="version-badge">最新</span>
       </div>
       <div class="version-pages open" data-version="v2.9.3">
-        <button class="layer-item active" data-page="v2.9.3/search-agent.html" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">P</span>创建图搜寻源</button>
+        <button class="layer-item active" data-page="v2.9.3/search-agent.html" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">C</span>创建图搜寻源</button>
         <button class="layer-item" data-page="v2.9.3/search-agent.html?page=list" data-search="V2.9.3 任务列表 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#ffa502;">L</span>任务列表</button>
         <button class="layer-item" data-page="v2.9.3/search-agent.html?page=result" data-search="V2.9.3 寻源结果 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#00b894;">R</span>寻源结果</button>
       </div>
@@ -147,7 +147,7 @@
         <span>V2.8.9</span>
       </div>
       <div class="version-pages" data-version="v2.8.9">
-        <button class="layer-item" data-page="search-agent.html" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">P</span>搜索智能体</button>
+        <button class="layer-item" data-page="search-agent.html" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">S</span>搜索智能体</button>
         <button class="layer-item" data-page="ai-output-interaction-viewer.html" data-search="V2.8.9 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
         <button class="layer-item" data-page="prototype-spec.html" data-search="V2.8.9 原型说明 版本规划 功能列表"><span class="layer-icon icon-p" style="background:#f59e0b;">P</span>原型说明</button>
         <button class="layer-item" data-page="backend-json-mapping-viewer.html" data-search="V2.8.9 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
@@ -209,6 +209,32 @@
     item.classList.add('active');
     frame.src = item.dataset.page;
   }));
+  // ===== 监听 iframe 内部板块切换（postMessage）=====
+  // 当 iframe 内部调用 switchPage 时，同步侧边栏选中状态（不刷新 iframe）
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'pageChange') return;
+    const page = e.data.page;
+    if (!page) return;
+    // 在 V2.9.3 版本组中查找匹配的导航项
+    const v293Items = items.filter(item => {
+      const dp = item.dataset.page || '';
+      return dp.includes('v2.9.3/search-agent.html');
+    });
+    let targetItem = null;
+    v293Items.forEach(item => {
+      const dp = item.dataset.page || '';
+      if (page === 'create' && !dp.includes('page=')) {
+        targetItem = item;
+      } else if (dp.includes('page=' + page)) {
+        targetItem = item;
+      }
+    });
+    if (targetItem) {
+      v293Items.forEach(node => node.classList.remove('active'));
+      targetItem.classList.add('active');
+      // 不刷新 iframe，内容已在内部切换
+    }
+  });
   // ===== 搜索 =====
   layerSearch.addEventListener('input', () => {
     const keyword = layerSearch.value.trim().toLowerCase();

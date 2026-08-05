@@ -91,11 +91,17 @@ function showToast(msg) {
 
 // ===== 页面面板切换 =====
 const pagePanels = document.querySelectorAll('.page-panel');
+let _pageChangeNotifyEnabled = false;
 
 function switchPage(pageName) {
   pagePanels.forEach(panel => {
     panel.classList.toggle('active', panel.id === 'page-' + pageName);
   });
+  // 通知父窗口（search-agent.html / dev-mode.html）当前板块已切换
+  if (_pageChangeNotifyEnabled) {
+    try { window.parent.postMessage({ type: 'pageChange', page: pageName }, '*'); } catch(e) {}
+    try { window.top.postMessage({ type: 'pageChange', page: pageName }, '*'); } catch(e) {}
+  }
 }
 
 // ===== URL 参数读取 =====
@@ -121,6 +127,9 @@ function goCreatePage() {
     switchPage('create');
   }
 })();
+
+// 初始化完成后启用页面切换通知
+_pageChangeNotifyEnabled = true;
 
 // ===== 图搜方式 Tab 切换 =====
 const tabBtns = document.querySelectorAll('.search-tabs .tab-btn');
