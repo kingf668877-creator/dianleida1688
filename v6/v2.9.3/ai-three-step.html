@@ -163,6 +163,24 @@
             </div>
           </div>
         </div>
+
+        <!-- 实时张数统计 -->
+        <div class="credits-stats" id="creditsStats" style="display:none;">
+          <div class="stats-item">
+            <span class="stats-label">已上传</span>
+            <span class="stats-value" id="uploadedCount">0 张</span>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stats-item">
+            <span class="stats-label">预计扣除</span>
+            <span class="stats-value deduction" id="deductionCount">0 张</span>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stats-item">
+            <span class="stats-label">剩余张数</span>
+            <span class="stats-value remaining" id="remainingCredits">0 张</span>
+          </div>
+        </div>
       </div>
 
       <div class="card-footer">
@@ -186,6 +204,21 @@
       <button class="list-banner-btn" onclick="goCreatePage()">
         <span class="banner-btn-icon">+</span>
         <span>创建寻源需求</span>
+      </button>
+    </div>
+
+    <!-- 剩余张数信息条 -->
+    <div class="credits-bar">
+      <div class="credits-info">
+        <div class="credits-icon">🎫</div>
+        <div class="credits-detail">
+          <span class="credits-label">剩余寻源张数</span>
+          <span class="credits-value" id="userCreditsDisplay">10,000 <span class="credits-unit">张</span></span>
+        </div>
+      </div>
+      <button class="btn btn-primary credits-purchase-btn" id="purchaseBtn">
+        <span>💰</span>
+        <span>增购张数</span>
       </button>
     </div>
 
@@ -501,6 +534,66 @@
     <div class="delete-float-actions">
       <button class="btn btn-default" onclick="cancelDelete()">取消</button>
       <button class="btn btn-danger" onclick="confirmDeleteAction()">确定删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 增购张数弹窗 -->
+<div class="purchase-modal" id="purchaseModal">
+  <div class="purchase-backdrop" onclick="closePurchaseModal()"></div>
+  <div class="purchase-content">
+    <div class="purchase-header">
+      <h3 class="purchase-title">增购寻源张数</h3>
+      <button class="purchase-close" onclick="closePurchaseModal()">✕</button>
+    </div>
+    <div class="purchase-body">
+      <div class="purchase-price-info">
+        <span class="price-label">单价</span>
+        <span class="price-value">¥0.02 / 张</span>
+      </div>
+      <div class="purchase-current">
+        当前剩余：<b id="purchaseCurrentCredits">10,000</b> 张
+      </div>
+      <div class="purchase-options">
+        <div class="purchase-option" data-count="1000" onclick="selectPurchaseOption(this, 1000)">
+          <div class="option-count">1,000 张</div>
+          <div class="option-price">¥20.00</div>
+        </div>
+        <div class="purchase-option" data-count="5000" onclick="selectPurchaseOption(this, 5000)">
+          <div class="option-count">5,000 张</div>
+          <div class="option-price">¥100.00</div>
+        </div>
+        <div class="purchase-option" data-count="10000" onclick="selectPurchaseOption(this, 10000)">
+          <div class="option-count">10,000 张</div>
+          <div class="option-price">¥200.00</div>
+        </div>
+        <div class="purchase-option" data-count="50000" onclick="selectPurchaseOption(this, 50000)">
+          <div class="option-count">50,000 张</div>
+          <div class="option-price">¥1,000.00</div>
+        </div>
+        <div class="purchase-option" data-count="100000" onclick="selectPurchaseOption(this, 100000)">
+          <div class="option-count">100,000 张</div>
+          <div class="option-price">¥2,000.00</div>
+        </div>
+        <div class="purchase-option" data-count="200000" onclick="selectPurchaseOption(this, 200000)">
+          <div class="option-count">200,000 张</div>
+          <div class="option-price">¥4,000.00</div>
+        </div>
+      </div>
+      <!-- 自定义数量 -->
+      <div class="purchase-custom">
+        <label class="custom-label">自定义数量</label>
+        <input type="number" class="custom-input" id="customPurchaseCount" placeholder="输入购买张数" min="1">
+        <span class="custom-price" id="customPurchasePrice">¥0.00</span>
+      </div>
+    </div>
+    <div class="purchase-footer">
+      <div class="purchase-summary">
+        <span>购买数量：<b id="purchaseSelectedCount">0</b> 张</span>
+        <span>应付金额：<b class="purchase-amount" id="purchaseTotalAmount">¥0.00</b></span>
+      </div>
+      <button class="btn btn-default" onclick="closePurchaseModal()">取消</button>
+      <button class="btn btn-primary" id="confirmPurchaseBtn" disabled>立即购买</button>
     </div>
   </div>
 </div>
