@@ -347,7 +347,7 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html?v=submit-fix-20260806" title="设计页面预览"></iframe></div>
     <!-- 原型说明面板 -->
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
@@ -434,10 +434,15 @@
     });
   });
   // ===== 页面切换 =====
+  const INNER_PAGE_VERSION = 'submit-fix-20260806';
+  function withVersion(url) {
+    if (!url.includes('v2.9.3/search-agent.html')) return url;
+    return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
+  }
   items.forEach(item => item.addEventListener('click', () => {
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
-    frame.src = item.dataset.page;
+    frame.src = withVersion(item.dataset.page);
     if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(item.dataset.page);
   }));
   // ===== 监听 iframe 内部板块切换（postMessage）=====
