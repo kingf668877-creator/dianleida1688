@@ -310,15 +310,31 @@
   function openContextMenu(e,r,c){ e.preventDefault(); const q = range(); if(!q || r<q.r1 || r>q.r2 || c<q.c1 || c>q.c2){ start = end = {r,c}; paint(); } const s = range(), rowText = s.r1===s.r2 ? '第 '+(s.r1+1)+' 行' : '第 '+(s.r1+1)+'-'+(s.r2+1)+' 行', colText = s.c1===s.c2 ? '第 '+String.fromCharCode(65+s.c1)+' 列' : '第 '+String.fromCharCode(65+s.c1)+'-'+String.fromCharCode(65+s.c2)+' 列'; ctxMenu.innerHTML = '<div class="ctx-item" data-action="row-up"><span class="ctx-icon">↑</span>向上插入 1 行</div><div class="ctx-item" data-action="row-down"><span class="ctx-icon">↓</span>向下插入 1 行</div><div class="ctx-item" data-action="col-left"><span class="ctx-icon">←</span>向左插入 1 列</div><div class="ctx-item" data-action="col-right"><span class="ctx-icon">→</span>向右插入 1 列</div><div class="ctx-divider"></div><div class="ctx-item" data-action="merge"><span class="ctx-icon">▦</span>合并单元格</div><div class="ctx-item" data-action="split"><span class="ctx-icon">▥</span>拆分单元格</div><div class="ctx-divider"></div><div class="ctx-item danger" data-action="delete-row"><span class="ctx-icon">⌫</span>删除'+rowText+'</div><div class="ctx-item danger" data-action="delete-col"><span class="ctx-icon">⌫</span>删除'+colText+'</div>'; ctxMenu.style.left = Math.min(e.clientX,window.innerWidth-190)+'px'; ctxMenu.style.top = Math.min(e.clientY,window.innerHeight-320)+'px'; ctxMenu.classList.add('show'); }
   ctxMenu.onclick = e => { const a = e.target.closest('[data-action]')?.dataset.action, q = range(); if(!a || !q) return; if(a==='row-up') insertRow(q.r1); if(a==='row-down') insertRow(q.r2+1); if(a==='col-left') insertCol(q.c1); if(a==='col-right') insertCol(q.c2+1); if(a==='merge') mergeCells(); if(a==='split') splitCells(); if(a==='delete-row') deleteRows(); if(a==='delete-col') deleteCols(); ctxMenu.classList.remove('show'); };
   const modal = document.getElementById('modal');
+  const cancelSubmitBtn = document.getElementById('cancel');
+  const confirmSubmitBtn = document.getElementById('confirm');
+  const submitOnlineBtn = document.getElementById('submitOnline');
   const tokenModal = document.getElementById('tokenModal');
   const tokenInput = document.getElementById('tokenInput');
   const GITHUB_OWNER = 'kingf668877-creator';
   const GITHUB_REPO = 'dianleida1688';
   const GITHUB_BRANCH = 'master';
   const SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
-  submitOnline.onclick = () => modal.classList.add('show');
-  cancel.onclick = () => modal.classList.remove('show');
-  confirm.onclick = async () => { modal.classList.remove('show'); const token = localStorage.getItem('dianleida-github-token'); if(!token){ tokenModal.classList.add('show'); tokenInput.focus(); } else { await deployToGitHub(token); } };
+  submitOnlineBtn.onclick = () => modal.classList.add('show');
+  cancelSubmitBtn.onclick = () => modal.classList.remove('show');
+  confirmSubmitBtn.onclick = async () => {
+    confirmSubmitBtn.textContent = '处理中...';
+    confirmSubmitBtn.disabled = true;
+    modal.classList.remove('show');
+    const token = localStorage.getItem('dianleida-github-token');
+    if(!token){
+      tokenModal.classList.add('show');
+      tokenInput.focus();
+    } else {
+      await deployToGitHub(token);
+    }
+    confirmSubmitBtn.textContent = '确认提交';
+    confirmSubmitBtn.disabled = false;
+  };
   document.getElementById('tokenCancel').onclick = () => tokenModal.classList.remove('show');
   document.getElementById('tokenConfirm').onclick = async () => { const token = tokenInput.value.trim(); if(!token){ alert('请输入 Token'); return; } localStorage.setItem('dianleida-github-token', token); tokenModal.classList.remove('show'); tokenInput.value = ''; await deployToGitHub(token); };
   async function deployToGitHub(token) {
