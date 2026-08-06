@@ -2169,7 +2169,14 @@ button {
 
 .result-card-price-suffix {
   font-size: 12px;
-  color: var(--primary);
+  color: #ff5a00;
+}
+
+.result-card-moq {
+  margin-left: auto;
+  font-size: 11px;
+  color: #6b6e85;
+  font-weight: 500;
 }
 
 /* 上架信息 */
