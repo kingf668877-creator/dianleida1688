@@ -1651,6 +1651,38 @@ button {
   color: var(--primary);
 }
 
+/* ===== 货源类型 TAB ===== */
+.result-source-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.result-source-tab-btn {
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.result-source-tab-btn:hover {
+  color: var(--primary);
+}
+
+.result-source-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
 /* ===== 寻源结果 - 工具栏 ===== */
 .result-toolbar {
   display: flex;
