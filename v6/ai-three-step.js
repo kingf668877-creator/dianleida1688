@@ -616,6 +616,30 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// 商品列表横向滚动
+function scrollResultProducts(btn, direction) {
+  const wrapper = btn.closest('.result-scroll-wrapper');
+  if (!wrapper) return;
+  const container = wrapper.querySelector('.result-source-products');
+  if (!container) return;
+  const cardWidth = container.querySelector('.result-product-card')?.offsetWidth || 240;
+  const gap = 12;
+  const scrollAmount = (cardWidth + gap) * 3;
+  container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+}
+
+function updateScrollButtonStates() {
+  document.querySelectorAll('.result-scroll-wrapper').forEach(wrapper => {
+    const container = wrapper.querySelector('.result-source-products');
+    if (!container) return;
+    const leftBtn = wrapper.querySelector('.result-scroll-left');
+    const rightBtn = wrapper.querySelector('.result-scroll-right');
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    if (leftBtn) leftBtn.classList.toggle('disabled', container.scrollLeft <= 2);
+    if (rightBtn) rightBtn.classList.toggle('disabled', container.scrollLeft >= maxScroll - 2);
+  });
+}
+
 // 套餐配置 Tab 切换
 document.querySelectorAll('.pkg-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1409,7 +1433,11 @@ function renderResultCards() {
             <div class="result-source-count">${products.length * 12} 个结果</div>
             <button class="result-source-search-btn" onclick="showToast('全网图搜已触发')">全网图搜</button>
           </aside>
-          <div class="result-source-products">${cards}</div>
+          <div class="result-scroll-wrapper">
+            <button class="result-scroll-btn result-scroll-left" onclick="scrollResultProducts(this, -1)" aria-label="向左滚动">&#8249;</button>
+            <div class="result-source-products">${cards}</div>
+            <button class="result-scroll-btn result-scroll-right" onclick="scrollResultProducts(this, 1)" aria-label="向右滚动">&#8250;</button>
+          </div>
         </section>
       `;
     }).join('');
@@ -1417,6 +1445,10 @@ function renderResultCards() {
 
   updateResultSelectedCount();
   renderResultPagination();
+  updateScrollButtonStates();
+  document.querySelectorAll('.result-source-products').forEach(c => {
+    c.addEventListener('scroll', updateScrollButtonStates, { passive: true });
+  });
 }
 
 // 切换选中
