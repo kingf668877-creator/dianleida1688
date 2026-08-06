@@ -1206,6 +1206,7 @@ function generateSourcingResults(count) {
       id: i + 1,
       img1: `https://picsum.photos/seed/p${i}a/400/400`,
       img2: `https://picsum.photos/seed/p${i}b/160/160`,
+      sourceImg: `https://picsum.photos/seed/source-${Math.floor(i / 4)}/300/300`,
       title: productNames[i % productNames.length],
       category: ['毛绒公仔', '家居日用', '收纳整理', '厨房用品', '纺织品', '电子产品', '陶瓷工艺'][i % 7],
       skuCount,
@@ -1241,12 +1242,8 @@ function generateSourcingResults(count) {
 
 // 状态筛选：更新标签计数
 function updateResultStatusTabs() {
-  const total = allSourcingResults.length;
-  const successCount = allSourcingResults.filter(p => p.searchStatus === 'success').length;
-  const failCount = allSourcingResults.filter(p => p.searchStatus === 'fail').length;
-  document.getElementById('statusTabAllCount').textContent = total;
-  document.getElementById('statusTabSuccessCount').textContent = successCount;
-  document.getElementById('statusTabFailCount').textContent = failCount;
+  // 状态筛选已从结果页移除，保留函数以兼容旧的初始化调用。
+  return;
 }
 
 // 应用状态筛选
@@ -1294,20 +1291,15 @@ function renderResultCards() {
     for (let i = 0; i < paged.length; i += groupSize) groups.push(paged.slice(i, i + groupSize));
     rows.innerHTML = groups.map((products, groupIndex) => {
       const source = products[0];
+      const sourceImage = source.sourceImg || source.img1;
       const cards = products.map(p => {
-        const simLevel = getSimLevel(p.similarity);
-        const simPercent = (p.similarity * 100).toFixed(0);
         const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
         const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
-        const statusClass = p.searchStatus === 'success' ? 'success' : 'fail';
-        const statusText = p.searchStatus === 'success' ? '寻源成功' : '寻源失败';
         return `
           <div class="result-product-card ${selected}" data-id="${p.id}">
             <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
             <div class="result-card-img-wrap">
               <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
-              <span class="result-status-badge ${statusClass}">${statusText}</span>
-              <span class="result-similarity ${simLevel}" title="相似度">相似度 ${simPercent}%</span>
             </div>
             <div class="result-card-info">
               <div class="result-product-tags"><span class="result-tag category">${p.category}</span><span class="result-tag sku">SKU: ${p.skuCount}</span>${p.isNew ? '<span class="result-tag new">新品</span>' : ''}</div>
@@ -1331,7 +1323,7 @@ function renderResultCards() {
       return `
         <section class="result-source-row" data-row="${groupIndex + 1}">
           <aside class="result-source-column">
-            <div class="result-source-image-wrap"><img src="${source.img1}" alt="上传图片 ${groupIndex + 1}"></div>
+            <div class="result-source-image-wrap"><img src="${sourceImage}" alt="上传图片 ${groupIndex + 1}"></div>
             <div class="result-source-label">上传图片 ${groupIndex + 1}</div>
             <div class="result-source-count">本行 ${products.length} 个商品</div>
           </aside>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=result-row-20260806">
+<link rel="stylesheet" href="ai-three-step.css?v=toolbar-clean-20260806">
 </head>
 <body>
 
@@ -445,24 +445,8 @@
       </div>
     </div>
 
-    <!-- 寻源状态筛选标签 -->
-    <div class="result-status-tabs">
-      <div class="result-status-tab active" data-status="all" onclick="applyStatusFilter('all')">
-        <span>全部结果</span>
-        <span class="tab-count" id="statusTabAllCount">0</span>
-      </div>
-      <div class="result-status-tab" data-status="success" onclick="applyStatusFilter('success')">
-        <span>寻源成功</span>
-        <span class="tab-count" id="statusTabSuccessCount">0</span>
-      </div>
-      <div class="result-status-tab" data-status="fail" onclick="applyStatusFilter('fail')">
-        <span>寻源失败</span>
-        <span class="tab-count" id="statusTabFailCount">0</span>
-      </div>
-    </div>
-
-    <!-- 结果工具栏 -->
-    <div class="result-toolbar">
+    <!-- 结果工具栏：参考结果页顶部操作区 -->
+    <div class="result-toolbar result-toolbar-reference">
       <div class="result-toolbar-left">
         <label class="result-select-all">
           <input type="checkbox" id="resultSelectAll">
@@ -476,7 +460,7 @@
         <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
       </div>
       <div class="result-toolbar-right">
-        <span class="result-count">搜索结果: <b id="resultCount">0</b></span>
+        <span class="result-count">结果数量: <b id="resultCount">0</b></span>
       </div>
     </div>
 
@@ -594,6 +578,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=result-row-20260806"></script>
+<script src="ai-three-step.js?v=toolbar-clean-20260806"></script>
 </body>
 </html>
