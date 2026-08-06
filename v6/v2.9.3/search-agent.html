@@ -133,14 +133,15 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
-  const PREVIEW_VERSION = 'pkg-config-20260806';
+  const PREVIEW_VERSION = 'pkg-nav-20260806';
   let currentPage = 'create';
   let iframeSrc = `../ai-three-step.html?v=${PREVIEW_VERSION}`;
   if (pageParam === 'list') { currentPage = 'list'; iframeSrc = `../ai-three-step.html?page=list&v=${PREVIEW_VERSION}`; }
   else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = `../ai-three-step.html?page=result&v=${PREVIEW_VERSION}`; }
+  else if (pageParam === 'package') { currentPage = 'package'; iframeSrc = `../ai-three-step.html?page=package&v=${PREVIEW_VERSION}`; }
   document.getElementById('previewFrame').src = iframeSrc;
 
-  const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果' };
+  const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果', package: '套餐配置' };
   function updateCodeHeaders(page) {
     const label = sectionLabels[page] || '';
     document.getElementById('htmlFileName').innerHTML = `ai-three-step.html <span class="section-tag">${label}</span>`;
@@ -161,7 +162,7 @@
   }));
 
   function extractHtmlSection(text, section) {
-    const sectionIds = { create: 'page-create', list: 'page-list', result: 'page-result' };
+    const sectionIds = { create: 'page-create', list: 'page-list', result: 'page-result', package: 'page-package' };
     const id = sectionIds[section];
     if (!id) return text;
     const regex = new RegExp('<section[^>]*id="' + id + '"[^>]*>[\\s\\S]*?<\\/section>', 'g');
