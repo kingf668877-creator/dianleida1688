@@ -2039,12 +2039,32 @@ button {
   background: #fff1e8;
   overflow: hidden;
 }
-
 .result-card-img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.result-card-meta-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 5px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 10px;
+  color: #686b82;
+  border-top: 1px solid #ececf2;
+}
+.result-card-meta-item {
+  white-space: nowrap;
+}
+.result-card-meta-item strong {
+  color: #3f4156;
+  font-weight: 600;
 }
 
 /* 寻源状态徽章 */
