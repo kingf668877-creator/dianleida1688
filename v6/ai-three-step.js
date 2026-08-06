@@ -1192,8 +1192,8 @@ function generateSourcingResults(count) {
     const similarity = Math.random();
     const isNew = listingDays < 30;
     const skuCount = Math.floor(Math.random() * 30 + 1);
-    const shippingFee = Math.random() > 0.2 ? (Math.random() * 15 + 3).toFixed(1) : '0';
-    const shipText = shippingFee === '0' ? '包邮' : `国内 ¥${shippingFee}`;
+    const shippingFee = Math.random() > 0.2 ? parseFloat((Math.random() * 15 + 3).toFixed(1)) : 0;
+    const shipText = shippingFee === 0 ? '包邮' : `${shippingFee}`;
     const memberTypes = [];
     if (Math.random() > 0.5) memberTypes.push('实力商家');
     if (Math.random() > 0.7) memberTypes.push('超级工厂');
@@ -1286,12 +1286,12 @@ function renderResultCards() {
     rows.innerHTML = groups.map((products, groupIndex) => {
       const source = products[0];
       const sourceImage = source.sourceImg || source.img1;
+      const rowSelected = products.every(p => resultSelectedIds.has(p.id));
+      const rowChecked = rowSelected ? 'checked' : '';
       const cards = products.map(p => {
         const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
-        const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
         return `
           <div class="result-product-card ${selected}" data-id="${p.id}">
-            <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
             <div class="result-card-img-wrap">
               <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
               <div class="result-card-meta-top">
@@ -1301,9 +1301,9 @@ function renderResultCards() {
               </div>
             </div>
             <div class="result-card-info">
-              <div class="result-product-title" title="${p.title}">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}${p.title}</div>
+              <div class="result-product-title" title="${p.title}">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}<span class="result-title-text">${p.title}</span></div>
               <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-moq">起批量 ${p.moq}件</span></div>
-              <div class="result-card-ship-row"><span>运费: ${p.shippingFee}</span><span class="sep">|</span><span>包装信息: 仅披露重量</span></div>
+              <div class="result-card-ship-row"><span>运费: ¥${p.shippingFee}</span><span class="sep">|</span><span>包装: 仅披露重量(${p.weightMin}g)</span></div>
               <div class="result-card-data-grid">
                 <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value">${p.monthlyPieces}</span></div>
                 <div class="result-data-cell"><span class="result-data-label">月销</span><span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span></div>
@@ -1318,6 +1318,7 @@ function renderResultCards() {
       return `
         <section class="result-source-row" data-row="${groupIndex + 1}">
           <aside class="result-source-column">
+            <label class="result-source-checkbox"><input type="checkbox" ${rowChecked} onchange="toggleResultRowSelect(${groupIndex}, this.checked)"></label>
             <div class="result-source-image-wrap"><img src="${sourceImage}" alt="上传图片 ${groupIndex + 1}"></div>
             <div class="result-source-label">url_${String(groupIndex + 1).padStart(4, '0')}.jpg</div>
             <div class="result-source-count">${products.length * 12} 个结果</div>
@@ -1340,10 +1341,23 @@ function toggleResultSelect(id) {
   } else {
     resultSelectedIds.add(id);
   }
-  // 更新卡片样式
   const card = document.querySelector(`.result-product-card[data-id="${id}"]`);
   if (card) card.classList.toggle('selected', resultSelectedIds.has(id));
   updateResultSelectedCount();
+}
+
+// 整行勾选（左侧上传图片勾选框）
+function toggleResultRowSelect(groupIndex, checked) {
+  const paged = getResultPagedItems();
+  const groupSize = 4;
+  const start = groupIndex * groupSize;
+  const rowProducts = paged.slice(start, start + groupSize);
+  if (checked) {
+    rowProducts.forEach(p => resultSelectedIds.add(p.id));
+  } else {
+    rowProducts.forEach(p => resultSelectedIds.delete(p.id));
+  }
+  renderResultCards();
 }
 
 function updateResultSelectedCount() {

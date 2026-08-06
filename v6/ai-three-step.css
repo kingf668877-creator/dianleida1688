@@ -1960,6 +1960,24 @@ button {
   background: #fff;
   border: 1px solid #ececf2;
   border-radius: 10px;
+  position: relative;
+}
+
+.result-source-checkbox {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.result-source-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #ff6a00;
 }
 .result-source-image-wrap {
   width: 100%;
@@ -2177,6 +2195,13 @@ button {
 
 .result-product-title .result-tag.new {
   flex-shrink: 0;
+}
+
+.result-product-title .result-title-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 /* 价格行 */
