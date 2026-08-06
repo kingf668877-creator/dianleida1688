@@ -123,6 +123,8 @@ function goCreatePage() {
   } else if (page === 'result') {
     switchPage('result');
     window._initResultPage = true;
+  } else if (page === 'package') {
+    switchPage('package');
   } else {
     switchPage('create');
   }
