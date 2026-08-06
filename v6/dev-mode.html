@@ -111,6 +111,7 @@
 
   /* ===== 原型说明面板 ===== */
   .spec-panel {
+    display:none !important;
     width:440px; flex:0 0 440px;
     height:100%; background:#fff;
     border:1px solid #dfe1e5; border-radius:8px;
@@ -497,13 +498,8 @@
     });
     layerEmpty.style.display = visibleCount > 0 ? 'none' : 'block';
   });
-  // ===== 初始化 =====
-  const savedState = localStorage.getItem('sidebar-collapsed');
-  if (savedState === 'false') {
-    toggleSidebar(true);
-  } else {
-    toggleSidebar(false);
-  }
+  // ===== 初始化：每次进入页面默认展开左侧导航 =====
+  toggleSidebar(true);
 
   // ===== 原型说明：可编辑动态表格 =====
   const GITHUB_OWNER = 'kingf668877-creator';
