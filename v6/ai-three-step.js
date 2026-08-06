@@ -834,15 +834,8 @@ function viewResult(id) {
   if (!task) return;
   currentResultTask = task;
 
-  // 填充图源信息
-  document.getElementById('resultTaskName').textContent = task.name;
-  document.getElementById('resultTaskType').textContent = task.typeText;
-  document.getElementById('resultTotalCount').textContent = task.finished || task.count;
-  document.getElementById('resultTaskTime').textContent = task.createTime;
-
-  // 模拟图源图片
-  const sourceImg = document.getElementById('resultSourceImg');
-  sourceImg.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect fill="%23f5f6fa" width="56" height="56"/><text x="28" y="34" text-anchor="middle" font-size="20" fill="%23ff6a00">IMG</text></svg>');
+  // 每组结果会在左侧展示对应的上传图源，右侧展示该图源的商品信息
+  // 这里先生成原型数据，真实上传图片接入后替换每组 source.img1 即可
 
   // 生成寻源结果数据
   generateSourcingResults(task.count || 20);
@@ -1281,86 +1274,69 @@ function getSimLevel(sim) {
   return 'low';
 }
 
-// 渲染寻源结果卡片
+// 渲染寻源结果：每一行对应一个上传图源，右侧展示该图源的商品信息
 function renderResultCards() {
-  const grid = document.getElementById('resultCardGrid');
+  const rows = document.getElementById('resultRows');
   const empty = document.getElementById('resultEmpty');
   const paged = getResultPagedItems();
+  const groupSize = 4;
 
   document.getElementById('resultCount').textContent = sourcingResults.length;
   document.getElementById('resultPaginationTotal').textContent = `共 ${sourcingResults.length} 条`;
 
+  if (!rows) return;
   if (sourcingResults.length === 0) {
-    grid.innerHTML = '';
+    rows.innerHTML = '';
     empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    grid.innerHTML = paged.map(p => {
-      const simLevel = getSimLevel(p.similarity);
-      const simPercent = (p.similarity * 100).toFixed(0);
-      const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
-      const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
-      const statusClass = p.searchStatus === 'success' ? 'success' : 'fail';
-      const statusText = p.searchStatus === 'success' ? '寻源成功' : '寻源失败';
+    const groups = [];
+    for (let i = 0; i < paged.length; i += groupSize) groups.push(paged.slice(i, i + groupSize));
+    rows.innerHTML = groups.map((products, groupIndex) => {
+      const source = products[0];
+      const cards = products.map(p => {
+        const simLevel = getSimLevel(p.similarity);
+        const simPercent = (p.similarity * 100).toFixed(0);
+        const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
+        const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
+        const statusClass = p.searchStatus === 'success' ? 'success' : 'fail';
+        const statusText = p.searchStatus === 'success' ? '寻源成功' : '寻源失败';
+        return `
+          <div class="result-product-card ${selected}" data-id="${p.id}">
+            <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
+            <div class="result-card-img-wrap">
+              <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
+              <span class="result-status-badge ${statusClass}">${statusText}</span>
+              <span class="result-similarity ${simLevel}" title="相似度">相似度 ${simPercent}%</span>
+            </div>
+            <div class="result-card-info">
+              <div class="result-product-tags"><span class="result-tag category">${p.category}</span><span class="result-tag sku">SKU: ${p.skuCount}</span>${p.isNew ? '<span class="result-tag new">新品</span>' : ''}</div>
+              <div class="result-product-title" title="${p.title}">${p.title}</div>
+              <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-price-suffix">起</span></div>
+              <div class="result-card-listing">上架: ${p.listingDate} (${p.listingDays}天)</div>
+              <div class="result-card-data-grid">
+                <div class="result-data-cell"><span class="result-data-label">起批量</span><span class="result-data-value">${p.moq} 件</span></div>
+                <div class="result-data-cell"><span class="result-data-label">发货</span><span class="result-data-value muted">${p.shippingFee}</span></div>
+                <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value">${p.monthlyPieces}</span></div>
+                <div class="result-data-cell"><span class="result-data-label">月销售额</span><span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span></div>
+                <div class="result-data-cell"><span class="result-data-label">24H揽收</span><span class="result-data-value ${p.collect24h >= 90 ? 'green' : ''}">${p.collect24h}%</span></div>
+                <div class="result-data-cell"><span class="result-data-label">48H揽收</span><span class="result-data-value ${p.collect48h >= 90 ? 'green' : ''}">${p.collect48h}%</span></div>
+              </div>
+            </div>
+            <div class="result-card-store"><span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span><span class="result-store-name" title="${p.storeName}">${p.storeName}</span><span class="result-store-location">${p.city}</span></div>
+            <div class="result-card-actions"><span class="result-action-link" onclick="showToast('全网图搜中...')">图搜</span><span class="result-action-link" onclick="showToast('已关注商品')">关注</span><span class="result-action-link" onclick="showToast('下载中...')">下载</span></div>
+          </div>
+        `;
+      }).join('');
       return `
-        <div class="result-product-card ${selected}" data-id="${p.id}">
-          <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
-          <div class="result-card-img-wrap">
-            <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
-            <span class="result-status-badge ${statusClass}">${statusText}</span>
-            <span class="result-similarity ${simLevel}" title="相似度">相似度 ${simPercent}%</span>
-          </div>
-          <div class="result-card-info">
-            <div class="result-product-tags">
-              <span class="result-tag category">${p.category}</span>
-              <span class="result-tag sku">SKU: ${p.skuCount}</span>
-              ${p.isNew ? '<span class="result-tag new">新品</span>' : ''}
-            </div>
-            <div class="result-product-title" title="${p.title}">${p.title}</div>
-            <div class="result-card-price-row">
-              <span class="result-card-price">¥${p.price.toFixed(2)}</span>
-              <span class="result-card-price-suffix">起</span>
-            </div>
-            <div class="result-card-listing">上架: ${p.listingDate} (${p.listingDays}天)</div>
-            <div class="result-card-data-grid">
-              <div class="result-data-cell">
-                <span class="result-data-label">起批量</span>
-                <span class="result-data-value">${p.moq} 件</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">发货</span>
-                <span class="result-data-value muted">${p.shippingFee}</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">月件数</span>
-                <span class="result-data-value">${p.monthlyPieces}</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">月销售额</span>
-                <span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">24H揽收</span>
-                <span class="result-data-value ${p.collect24h >= 90 ? 'green' : ''}">${p.collect24h}%</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">48H揽收</span>
-                <span class="result-data-value ${p.collect48h >= 90 ? 'green' : ''}">${p.collect48h}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="result-card-store">
-            <span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span>
-            <span class="result-store-name" title="${p.storeName}">${p.storeName}</span>
-            <span class="result-store-location">${p.city}</span>
-          </div>
-          <div class="result-card-actions">
-            <span class="result-action-link" onclick="showToast('全网图搜中...')">图搜</span>
-            <span class="result-action-link" onclick="showToast('铺货Temu中...')">铺货</span>
-            <span class="result-action-link" onclick="showToast('已关注商品')">关注</span>
-            <span class="result-action-link" onclick="showToast('下载中...')">下载</span>
-          </div>
-        </div>
+        <section class="result-source-row" data-row="${groupIndex + 1}">
+          <aside class="result-source-column">
+            <div class="result-source-image-wrap"><img src="${source.img1}" alt="上传图片 ${groupIndex + 1}"></div>
+            <div class="result-source-label">上传图片 ${groupIndex + 1}</div>
+            <div class="result-source-count">本行 ${products.length} 个商品</div>
+          </aside>
+          <div class="result-source-products">${cards}</div>
+        </section>
       `;
     }).join('');
   }
@@ -1528,12 +1504,6 @@ if (window._initResultPage) {
   const doneTask = mockTasks.find(t => t.status === 'done') || mockTasks[0];
   if (doneTask) {
     currentResultTask = doneTask;
-    document.getElementById('resultTaskName').textContent = doneTask.name;
-    document.getElementById('resultTaskType').textContent = doneTask.typeText;
-    document.getElementById('resultTotalCount').textContent = doneTask.finished || doneTask.count || 20;
-    document.getElementById('resultTaskTime').textContent = doneTask.createTime;
-    const sourceImg = document.getElementById('resultSourceImg');
-    sourceImg.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect fill="%23f5f6fa" width="56" height="56"/><text x="28" y="34" text-anchor="middle" font-size="20" fill="%23ff6a00">IMG</text></svg>');
     generateSourcingResults(20);
     renderResultCards();
   }

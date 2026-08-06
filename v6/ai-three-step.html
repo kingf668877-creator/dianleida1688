@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=20260806a">
+<link rel="stylesheet" href="ai-three-step.css?v=result-row-20260806">
 </head>
 <body>
 
@@ -327,24 +327,6 @@
 
   <!-- ===== 寻源结果 ===== -->
   <section class="page-panel" id="page-result">
-    <!-- 搜索图源信息条 -->
-    <div class="result-source-bar">
-      <div class="result-source-left">
-        <img class="result-source-img" id="resultSourceImg" src="" alt="搜索图源">
-        <div class="result-source-info">
-          <span class="result-source-name" id="resultTaskName">--</span>
-          <span class="result-source-meta">
-            <span id="resultTaskType">--</span>
-            <span class="sep">|</span>
-            <span>共 <b id="resultTotalCount">0</b> 条结果</span>
-            <span class="sep">|</span>
-            <span id="resultTaskTime">--</span>
-          </span>
-        </div>
-      </div>
-      <button class="btn btn-default" onclick="goListPage()">返回任务列表</button>
-    </div>
-
     <!-- 筛选条件 -->
     <div class="result-filter-card">
       <div class="result-filter-header">
@@ -369,7 +351,6 @@
             <select class="form-input result-template-select" id="resultTemplate">
               <option value="">我的模板</option>
               <option value="t1">默认模板</option>
-              <option value="t2">Temu铺货模板</option>
             </select>
           </div>
         </div>
@@ -493,19 +474,15 @@
         <button class="btn btn-default btn-sm" onclick="showToast('批量监控已触发')">监控</button>
         <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
         <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
-        <button class="btn btn-primary btn-sm" onclick="showToast('铺货Temu功能开发中')">
-          铺货Temu
-          <span class="new-badge">NEW</span>
-        </button>
       </div>
       <div class="result-toolbar-right">
         <span class="result-count">搜索结果: <b id="resultCount">0</b></span>
       </div>
     </div>
 
-    <!-- 结果卡片网格 -->
-    <div class="result-card-grid" id="resultCardGrid">
-      <!-- JS 渲染 -->
+    <!-- 结果布局：每行左侧上传图源 + 右侧该图片的商品网格 -->
+    <div class="result-layout-wrapper" id="resultLayoutWrapper">
+      <div class="result-rows" id="resultRows"></div>
     </div>
 
     <!-- 空状态 -->
@@ -617,6 +594,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=20260806a"></script>
+<script src="ai-three-step.js?v=result-row-20260806"></script>
 </body>
 </html>
