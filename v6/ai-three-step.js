@@ -1264,13 +1264,6 @@ function applyStatusFilter(status) {
   renderResultCards();
 }
 
-// 获取相似度等级
-function getSimLevel(sim) {
-  if (sim >= 0.7) return 'high';
-  if (sim >= 0.3) return 'mid';
-  return 'low';
-}
-
 // 渲染寻源结果：每一行对应一个上传图源，右侧展示该图源的商品信息
 function renderResultCards() {
   const rows = document.getElementById('resultRows');
