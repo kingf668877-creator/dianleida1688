@@ -521,9 +521,6 @@ function closePurchaseModal() {
 function resetPurchaseSelection() {
   purchaseSelectedCount = 0;
   document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
-  const customInput = document.getElementById('customPurchaseCount');
-  if (customInput) customInput.value = '';
-  document.getElementById('customPurchasePrice').textContent = '¥0.00';
   document.getElementById('purchaseSelectedCount').textContent = '0';
   document.getElementById('purchaseTotalAmount').textContent = '¥0.00';
   document.getElementById('confirmPurchaseBtn').disabled = true;
@@ -532,8 +529,6 @@ function resetPurchaseSelection() {
 function selectPurchaseOption(el, count) {
   document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
-  document.getElementById('customPurchaseCount').value = '';
-  document.getElementById('customPurchasePrice').textContent = '¥0.00';
   purchaseSelectedCount = count;
   updatePurchaseSummary();
 }
@@ -545,21 +540,6 @@ function updatePurchaseSummary() {
   document.getElementById('purchaseTotalAmount').textContent = '¥' + amount;
   document.getElementById('confirmPurchaseBtn').disabled = count <= 0;
 }
-
-// 自定义数量输入
-document.getElementById('customPurchaseCount')?.addEventListener('input', (e) => {
-  const val = parseInt(e.target.value) || 0;
-  if (val > 0) {
-    document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
-    purchaseSelectedCount = val;
-    document.getElementById('customPurchasePrice').textContent = '¥' + (val * 0.02).toFixed(2);
-    updatePurchaseSummary();
-  } else {
-    purchaseSelectedCount = 0;
-    document.getElementById('customPurchasePrice').textContent = '¥0.00';
-    updatePurchaseSummary();
-  }
-});
 
 // 确认购买
 document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
