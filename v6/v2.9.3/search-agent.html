@@ -133,10 +133,11 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
+  const PREVIEW_VERSION = 'v2903-20260806';
   let currentPage = 'create';
-  let iframeSrc = '../ai-three-step.html';
-  if (pageParam === 'list') { currentPage = 'list'; iframeSrc = '../ai-three-step.html?page=list'; }
-  else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = '../ai-three-step.html?page=result'; }
+  let iframeSrc = `../ai-three-step.html?v=${PREVIEW_VERSION}`;
+  if (pageParam === 'list') { currentPage = 'list'; iframeSrc = `../ai-three-step.html?page=list&v=${PREVIEW_VERSION}`; }
+  else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = `../ai-three-step.html?page=result&v=${PREVIEW_VERSION}`; }
   document.getElementById('previewFrame').src = iframeSrc;
 
   const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果' };
