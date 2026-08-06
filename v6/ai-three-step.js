@@ -597,12 +597,16 @@ function openPaymentModal(taskId) {
     defaultRadio.closest('.payment-method-item')?.classList.add('active');
     document.getElementById('qrMethodName').textContent = '支付宝';
   }
+  modal.style.display = 'flex';
   modal.classList.add('show');
 }
 
 function closePaymentModal() {
   const modal = document.getElementById('paymentModal');
-  if (modal) modal.classList.remove('show');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+  }
   paymentTaskId = null;
 }
 
@@ -617,13 +621,16 @@ document.addEventListener('click', (e) => {
   const payOption = e.target.closest('.payment-method-item');
   if (payOption) {
     const radio = payOption.querySelector('input[type="radio"]');
-    if (radio) {
-      radio.checked = true;
-      document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
-      payOption.classList.add('active');
-      const methodNames = { alipay: '支付宝', wechat: '微信支付', bank: '银行卡' };
-      document.getElementById('qrMethodName').textContent = methodNames[radio.value] || '支付宝';
-    }
+      if (radio) {
+        radio.checked = true;
+        document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
+        payOption.classList.add('active');
+        const methodNames = { alipay: '支付宝', wechat: '微信支付', bank: '银行卡', card: '信用卡' };
+        const method = methodNames[radio.value] || '支付宝';
+        document.getElementById('qrMethodName').textContent = method;
+        const qr = document.getElementById('qrPlaceholder');
+        if (qr) qr.textContent = method + '扫码';
+      }
   }
 });
 
@@ -687,6 +694,18 @@ function getTaskActions(task) {
   return actions;
 }
 
+function bindBuyButtons() {
+  document.querySelectorAll('.action-link.buy').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openPaymentModal(Number(btn.dataset.taskId));
+    });
+  });
+}
+
 function renderTaskTable() {
   const pagedTasks = getPagedTasks();
   if (tasks.length === 0) {
@@ -726,6 +745,7 @@ function renderTaskTable() {
         </td>
       </tr>
     `).join('');
+    bindBuyButtons();
   }
   updateTotalBadge();
   renderPagination();
