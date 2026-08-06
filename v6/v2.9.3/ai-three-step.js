@@ -717,6 +717,7 @@ function renderTaskTable() {
             </div>
           </div>
         </td>
+        <td class="deduct-count-cell"><b>${task.finished}</b> 张</td>
         <td style="color: var(--text-secondary); font-size: 12px;">${task.createTime}</td>
         <td>
           <div class="action-cell">

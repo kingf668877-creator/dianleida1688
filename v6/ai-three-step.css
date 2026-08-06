@@ -1400,6 +1400,16 @@ button {
   vertical-align: middle;
 }
 
+.deduct-count-cell {
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.deduct-count-cell b {
+  color: var(--primary);
+  font-weight: 800;
+}
+
 .task-table tbody tr {
   transition: background .2s ease;
 }
