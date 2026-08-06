@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=select-all-pages-20260806">
+<link rel="stylesheet" href="ai-three-step.css?v=payment-modal-20260806">
 </head>
 <body>
 
@@ -518,6 +518,57 @@
   </div>
 </div>
 
+<!-- 支付页面弹窗 -->
+<div class="payment-modal" id="paymentModal">
+  <div class="payment-backdrop" onclick="closePaymentModal()"></div>
+  <div class="payment-content">
+    <div class="payment-header">
+      <h3 class="payment-title">确认支付</h3>
+      <button class="payment-close" onclick="closePaymentModal()">✕</button>
+    </div>
+    <div class="payment-body">
+      <div class="payment-order">
+        <div class="payment-order-row"><span class="payment-label">订单编号</span><span class="payment-value" id="payOrderId">DLDD202608060001</span></div>
+        <div class="payment-order-row"><span class="payment-label">任务名称</span><span class="payment-value" id="payTaskName">-</span></div>
+        <div class="payment-order-row"><span class="payment-label">商品数量</span><span class="payment-value" id="payItemCount">0 件</span></div>
+        <div class="payment-order-row"><span class="payment-label">单价</span><span class="payment-value">¥0.02 / 件</span></div>
+      </div>
+      <div class="payment-amount-box">
+        <span class="payment-amount-label">应付金额</span>
+        <span class="payment-amount" id="payAmount">¥0.00</span>
+      </div>
+      <div class="payment-methods">
+        <div class="payment-method-title">选择支付方式</div>
+        <div class="payment-method-list">
+          <label class="payment-method-item active">
+            <input type="radio" name="payMethod" value="alipay" checked>
+            <span class="method-icon alipay">支</span>
+            <span class="method-name">支付宝</span>
+          </label>
+          <label class="payment-method-item">
+            <input type="radio" name="payMethod" value="wechat">
+            <span class="method-icon wechat">微</span>
+            <span class="method-name">微信支付</span>
+          </label>
+          <label class="payment-method-item">
+            <input type="radio" name="payMethod" value="bank">
+            <span class="method-icon bank">银</span>
+            <span class="method-name">银行卡</span>
+          </label>
+        </div>
+      </div>
+      <div class="payment-qr" id="paymentQr">
+        <div class="qr-placeholder">扫码支付</div>
+        <div class="qr-tips">请使用 <b id="qrMethodName">支付宝</b> 扫描二维码完成支付</div>
+      </div>
+    </div>
+    <div class="payment-footer">
+      <button class="btn btn-default" onclick="closePaymentModal()">取消</button>
+      <button class="btn btn-primary" id="confirmPayBtn">确认支付</button>
+    </div>
+  </div>
+</div>
+
 <!-- 增购张数弹窗 -->
 <div class="purchase-modal" id="purchaseModal">
   <div class="purchase-backdrop" onclick="closePurchaseModal()"></div>
@@ -577,6 +628,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=select-all-pages-20260806"></script>
+<script src="ai-three-step.js?v=payment-modal-20260806"></script>
 </body>
 </html>

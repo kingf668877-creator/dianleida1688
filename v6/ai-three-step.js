@@ -574,6 +574,55 @@ document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
 // 增购按钮
 document.getElementById('purchaseBtn')?.addEventListener('click', openPurchaseModal);
 
+// ===== 支付弹窗 =====
+let paymentTaskId = null;
+const UNIT_PRICE = 0.02;
+
+function openPaymentModal(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  paymentTaskId = taskId;
+  const modal = document.getElementById('paymentModal');
+  if (!modal) return;
+  const orderNo = 'DLDD' + new Date().toISOString().slice(0,10).replace(/-/g,'') + String(taskId).padStart(4,'0');
+  document.getElementById('payOrderId').textContent = orderNo;
+  document.getElementById('payTaskName').textContent = task.name;
+  document.getElementById('payItemCount').textContent = task.count + ' 件';
+  const amount = (task.count * UNIT_PRICE).toFixed(2);
+  document.getElementById('payAmount').textContent = '¥' + amount;
+  modal.classList.add('show');
+}
+
+function closePaymentModal() {
+  const modal = document.getElementById('paymentModal');
+  if (modal) modal.classList.remove('show');
+  paymentTaskId = null;
+}
+
+// 支付方式切换
+document.querySelectorAll('input[name="payMethod"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
+    radio.closest('.payment-method-item').classList.add('active');
+    const methodNames = { alipay: '支付宝', wechat: '微信', bank: '银行APP' };
+    document.getElementById('qrMethodName').textContent = methodNames[radio.value] || '支付宝';
+  });
+});
+
+// 确认支付
+document.getElementById('confirmPayBtn')?.addEventListener('click', () => {
+  const btn = document.getElementById('confirmPayBtn');
+  btn.textContent = '支付中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    const task = tasks.find(t => t.id === paymentTaskId);
+    if (task) showToast('支付成功！任务「' + task.name + '」已购买');
+    btn.textContent = '确认支付';
+    btn.disabled = false;
+    closePaymentModal();
+  }, 1500);
+});
+
 // ===== 任务列表 =====
 const taskTableBody = document.getElementById('taskTableBody');
 
@@ -588,12 +637,15 @@ function updateTotalBadge() {
 function getTaskActions(task) {
   const actions = [];
   const sep = '<span class="action-sep">|</span>';
+  const buyBtn = `<span class="action-link buy" onclick="openPaymentModal(${task.id})">立即购买</span>`;
 
   if (task.status === 'running' || task.status === 'waiting') {
-    // 执行中 / 待执行：终止任务
+    actions.push(buyBtn);
+    actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止任务</span>`);
   } else if (task.status === 'done') {
-    // 已完成：任务详情、复制任务、寻源结果、删除任务
+    actions.push(buyBtn);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
@@ -602,7 +654,8 @@ function getTaskActions(task) {
     actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   } else if (task.status === 'stopped' || task.status === 'pending') {
-    // 已终止 / 未执行：编辑任务、重新执行、复制任务、删除任务
+    actions.push(buyBtn);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
