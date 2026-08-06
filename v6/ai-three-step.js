@@ -1396,12 +1396,12 @@ function renderResultCards() {
             <div class="result-card-info">
               <div class="result-product-title" title="${p.title}">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}<span class="result-title-text">${p.title}</span></div>
               <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-moq">起批量 ${p.moq}件</span></div>
-              <div class="result-card-ship-row"><span>运费: ¥${p.shippingFee}</span><span class="sep">|</span><span>包装: 仅披露重量(${p.weightMin}g)</span></div>
+              <div class="result-card-ship-row"><span class="result-ship-item ${p.shippingFee === 0 ? 'free-shipping' : ''}">运费: ${p.shippingFee === 0 ? '包邮' : `¥${p.shippingFee}`}</span><span class="result-ship-item">包装: 仅披露重量(${p.weightMin}g)</span></div>
               <div class="result-card-data-grid">
-                <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value">${p.monthlyPieces}</span></div>
+                <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value emphasis">${p.monthlyPieces}</span></div>
                 <div class="result-data-cell"><span class="result-data-label">月销</span><span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span></div>
-                <div class="result-data-cell"><span class="result-data-label">24H</span><span class="result-data-value ${p.collect24h >= 90 ? 'green' : ''}">${p.collect24h}%</span></div>
-                <div class="result-data-cell"><span class="result-data-label">48H</span><span class="result-data-value ${p.collect48h >= 90 ? 'green' : ''}">${p.collect48h}%</span></div>
+                <div class="result-data-cell"><span class="result-data-label">24H</span><span class="result-data-value">${p.collect24h}%</span></div>
+                <div class="result-data-cell"><span class="result-data-label">48H</span><span class="result-data-value">${p.collect48h}%</span></div>
               </div>
             </div>
             <div class="result-card-store"><span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span><span class="result-store-name" title="${p.storeName}">${p.storeName}</span><span class="result-store-location">${p.city}</span></div>
