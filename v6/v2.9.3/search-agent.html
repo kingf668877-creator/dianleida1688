@@ -115,6 +115,7 @@
           <div class="format-wrap"><button class="format-btn" id="fontColorBtn" title="字体颜色"><b>A</b><span class="underline" id="fontUnderline" style="background:#1f2329"></span><span class="caret">▼</span></button><div class="palette" id="fontPalette"><div class="palette-title">字体颜色</div><div class="no-color" data-color="#1f2329" data-type="font"><span style="width:18px;height:18px;background:#1f2329;border-radius:2px"></span>默认</div><div class="swatches" data-type="font"></div><div class="palette-section">最近使用自定义颜色</div><div class="recent-empty">暂无</div><div class="more-color"><span class="rainbow"></span>更多颜色<input type="color" id="moreFont" hidden></div></div></div>
           <div class="format-wrap"><button class="format-btn" id="bgColorBtn" title="背景颜色"><span class="fill-icon"></span><span class="underline" id="bgUnderline" style="background:#fff1a8"></span><span class="caret">▼</span></button><div class="palette" id="bgPalette"><div class="palette-title">背景颜色</div><div class="no-color" data-color="transparent" data-type="bg"><span class="no-color-icon"></span>无填充色</div><div class="swatches" data-type="bg"></div><div class="palette-section">最近使用自定义颜色</div><div class="recent-empty">暂无</div><div class="more-color"><span class="rainbow"></span>更多颜色<input type="color" id="moreBg" hidden></div></div></div>
           <span class="selection" id="selectionText">右键单元格可操作行列</span>
+          <button class="tool" id="pullOnline" title="从 GitHub 拉取线上最新数据覆盖本地">↻ 从线上恢复</button>
           <button class="tool online" id="submitOnline">提交到线上</button>
         </div>
         <div class="table-wrap"><table class="sheet"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -241,6 +242,46 @@
     start = end = null;
     render();
   }
+  const RAW_SPEC_URL = 'https://raw.githubusercontent.com/kingf668877-creator/dianleida1688/master/v6/v2.9.3/prototype-spec.json';
+  async function pullFromGitHub(){
+    const btn = document.getElementById('pullOnline');
+    if(!btn) return;
+    btn.textContent = '↻ 加载中...'; btn.disabled = true;
+    try {
+      const resp = await fetch(RAW_SPEC_URL + '?t=' + Date.now());
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      if(!data || !Array.isArray(data.rows) || data.rows.length === 0) throw new Error('数据为空');
+      state = data;
+      cols = state.cols || [...defaultCols];
+      state.cols = cols;
+      localStorage.setItem(storageKey(), JSON.stringify(state));
+      start = end = null;
+      render();
+      alert('已从线上恢复最新数据。');
+    } catch(err){
+      alert('从线上恢复失败: ' + err.message);
+    } finally {
+      btn.textContent = '↻ 从线上恢复'; btn.disabled = false;
+    }
+  }
+  document.getElementById('pullOnline').onclick = () => { if(confirm('确定从 GitHub 拉取线上最新数据？这将覆盖当前本地编辑的内容。')) pullFromGitHub(); };
+  async function autoPullIfNoLocal(){
+    const saved = localStorage.getItem(storageKey());
+    if(saved) return;
+    try {
+      const resp = await fetch(RAW_SPEC_URL + '?t=' + Date.now());
+      if(!resp.ok) return;
+      const data = await resp.json();
+      if(!data || !Array.isArray(data.rows) || data.rows.length === 0) return;
+      state = data;
+      cols = state.cols || [...defaultCols];
+      state.cols = cols;
+      start = end = null;
+      render();
+    } catch(e){}
+  }
+  autoPullIfNoLocal();
   const colors = ['#000000','#333333','#555555','#777777','#9b9b9b','#d9d9d9','#e8e8e8','#f3f3f3','#fafafa','#ffffff','#e84545','#f06b20','#f4a000','#ffd51b','#60b817','#00afa8','#00a6d6','#3155d9','#6d36d9','#d22b92','#f8dfe2','#fde8d4','#fff1c9','#fff7cc','#e7f3d4','#d6f5ef','#d8f2f7','#dde5fc','#e8ddfb','#f7dded','#ee9ba6','#f5ba7a','#f8ce74','#ffe76f','#b9df7a','#77dacf','#70cfe4','#91a9ef','#ad93e6','#e88bc5','#dd5366','#ed9036','#f2b21a','#e4ca00','#73c90d','#00b8a9','#009db3','#3261df','#7543db','#db329d','#b8192d','#c65a00','#c68400','#947f00','#398400','#007c74','#00667e','#173b9b','#45219a','#901467','#770715','#823800','#815900','#5e5100','#255600','#00534e','#004355','#0c2465','#2e1367','#5d0a43'];
   function buildPalettes(){ document.querySelectorAll('.swatches').forEach(g => { colors.forEach(c => { const s = document.createElement('span'); s.className = 'swatch'; s.style.background = c; s.dataset.color = c; s.dataset.type = g.dataset.type; g.appendChild(s); }); }); }
   buildPalettes();
