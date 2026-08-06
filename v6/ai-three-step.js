@@ -1297,14 +1297,13 @@ function renderResultCards() {
               <div class="result-card-meta-top">
                 <span class="result-card-meta-item"><strong>类目:</strong> ${p.category}</span>
                 <span class="result-card-meta-item"><strong>SKU:</strong> ${p.skuCount}</span>
-                <span class="result-card-meta-item"><strong>发货:</strong> ${p.shippingFee}</span>
                 <span class="result-card-meta-item"><strong>上架:</strong> ${p.listingDate}</span>
               </div>
             </div>
             <div class="result-card-info">
-              <div class="result-product-tags">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}</div>
-              <div class="result-product-title" title="${p.title}">${p.title}</div>
-              <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-price-suffix">起</span><span class="result-card-moq">起批量 ${p.moq}件</span></div>
+              <div class="result-product-title" title="${p.title}">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}${p.title}</div>
+              <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-moq">起批量 ${p.moq}件</span></div>
+              <div class="result-card-ship-row"><span>运费: ${p.shippingFee}</span><span class="sep">|</span><span>包装信息: 仅披露重量</span></div>
               <div class="result-card-data-grid">
                 <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value">${p.monthlyPieces}</span></div>
                 <div class="result-data-cell"><span class="result-data-label">月销</span><span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span></div>
