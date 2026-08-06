@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=payment-modal-20260806">
+<link rel="stylesheet" href="ai-three-step.css?v=payment-fix-20260806">
 </head>
 <body>
 
@@ -538,7 +538,7 @@
         <span class="payment-amount" id="payAmount">¥0.00</span>
       </div>
       <div class="payment-methods">
-        <div class="payment-method-title">选择支付方式</div>
+        <div class="payment-method-title">支付方式</div>
         <div class="payment-method-list">
           <label class="payment-method-item active">
             <input type="radio" name="payMethod" value="alipay" checked>
@@ -554,6 +554,11 @@
             <input type="radio" name="payMethod" value="bank">
             <span class="method-icon bank">银</span>
             <span class="method-name">银行卡</span>
+          </label>
+          <label class="payment-method-item">
+            <input type="radio" name="payMethod" value="card">
+            <span class="method-icon bank">卡</span>
+            <span class="method-name">信用卡</span>
           </label>
         </div>
       </div>
@@ -628,6 +633,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=payment-modal-20260806"></script>
+<script src="ai-three-step.js?v=payment-fix-20260806"></script>
 </body>
 </html>

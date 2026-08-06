@@ -590,6 +590,13 @@ function openPaymentModal(taskId) {
   document.getElementById('payItemCount').textContent = task.count + ' 件';
   const amount = (task.count * UNIT_PRICE).toFixed(2);
   document.getElementById('payAmount').textContent = '¥' + amount;
+  const defaultRadio = document.querySelector('input[name="payMethod"][value="alipay"]');
+  if (defaultRadio) {
+    defaultRadio.checked = true;
+    document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
+    defaultRadio.closest('.payment-method-item')?.classList.add('active');
+    document.getElementById('qrMethodName').textContent = '支付宝';
+  }
   modal.classList.add('show');
 }
 
@@ -599,15 +606,28 @@ function closePaymentModal() {
   paymentTaskId = null;
 }
 
-// 支付方式切换
-document.querySelectorAll('input[name="payMethod"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
-    radio.closest('.payment-method-item').classList.add('active');
-    const methodNames = { alipay: '支付宝', wechat: '微信', bank: '银行APP' };
-    document.getElementById('qrMethodName').textContent = methodNames[radio.value] || '支付宝';
-  });
+// 任务列表按钮事件委托
+document.addEventListener('click', (e) => {
+  const buyBtn = e.target.closest('.action-link.buy');
+  if (buyBtn) {
+    const taskId = Number(buyBtn.dataset.taskId);
+    openPaymentModal(taskId);
+    return;
+  }
+  const payOption = e.target.closest('.payment-method-item');
+  if (payOption) {
+    const radio = payOption.querySelector('input[type="radio"]');
+    if (radio) {
+      radio.checked = true;
+      document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
+      payOption.classList.add('active');
+      const methodNames = { alipay: '支付宝', wechat: '微信支付', bank: '银行卡' };
+      document.getElementById('qrMethodName').textContent = methodNames[radio.value] || '支付宝';
+    }
+  }
 });
+
+// 支付方式切换
 
 // 确认支付
 document.getElementById('confirmPayBtn')?.addEventListener('click', () => {
@@ -637,7 +657,7 @@ function updateTotalBadge() {
 function getTaskActions(task) {
   const actions = [];
   const sep = '<span class="action-sep">|</span>';
-  const buyBtn = `<span class="action-link buy" onclick="openPaymentModal(${task.id})">立即购买</span>`;
+  const buyBtn = `<button type="button" class="action-link buy" data-task-id="${task.id}">立即购买</button>`;
 
   if (task.status === 'running' || task.status === 'waiting') {
     actions.push(buyBtn);
