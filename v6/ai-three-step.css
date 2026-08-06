@@ -1942,7 +1942,7 @@ button {
 .result-rows { display: flex; flex-direction: column; gap: 14px; }
 .result-source-row {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: 128px minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
   padding: 10px;
@@ -1954,6 +1954,7 @@ button {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  align-self: start;
   padding: 8px;
   background: #fff;
   border: 1px solid #e8eaf0;
@@ -1965,13 +1966,14 @@ button {
   overflow: hidden;
   border-radius: 8px;
   background: #fff1e8;
+  border: 2px solid #ff6a00;
 }
 .result-source-image-wrap img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .result-source-label { margin-top: 8px; color: #202235; font-size: 12px; font-weight: 700; line-height: 1.4; }
-.result-source-count { margin-top: 3px; color: #9498ad; font-size: 10px; }
+.result-source-count { align-self: flex-start; margin-top: 6px; padding: 3px 7px; border-radius: 10px; background: #fff2e9; color: #ff5a00; font-size: 10px; font-weight: 700; }
 .result-source-products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 @media (min-width: 1800px) {
-  .result-source-row { grid-template-columns: 112px minmax(0, 1fr); gap: 14px; padding: 10px; }
+  .result-source-row { grid-template-columns: 128px minmax(0, 1fr); gap: 14px; padding: 10px; }
   .result-source-products { gap: 12px; }
 }
 @media (max-width: 1399px) {
@@ -2032,7 +2034,7 @@ button {
 .result-card-img-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / .88;
+  aspect-ratio: 1 / .78;
   background: #fff1e8;
   overflow: hidden;
 }

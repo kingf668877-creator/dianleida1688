@@ -1269,7 +1269,8 @@ function renderResultCards() {
   const rows = document.getElementById('resultRows');
   const empty = document.getElementById('resultEmpty');
   const paged = getResultPagedItems();
-  const groupSize = 4;
+  // 1920 宽度参考图每行展示 5 个商品，窄屏由 CSS 自动降列
+  const groupSize = 5;
 
   document.getElementById('resultCount').textContent = sourcingResults.length;
   document.getElementById('resultPaginationTotal').textContent = `共 ${sourcingResults.length} 条`;
@@ -1317,8 +1318,8 @@ function renderResultCards() {
         <section class="result-source-row" data-row="${groupIndex + 1}">
           <aside class="result-source-column">
             <div class="result-source-image-wrap"><img src="${sourceImage}" alt="上传图片 ${groupIndex + 1}"></div>
-            <div class="result-source-label">上传图片 ${groupIndex + 1}</div>
-            <div class="result-source-count">本行 ${products.length} 个商品</div>
+            <div class="result-source-label">url_${String(groupIndex + 1).padStart(4, '0')}.jpg</div>
+            <div class="result-source-count">${products.length * 12} 个结果</div>
           </aside>
           <div class="result-source-products">${cards}</div>
         </section>
