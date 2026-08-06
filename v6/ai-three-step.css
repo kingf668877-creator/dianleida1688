@@ -1953,11 +1953,12 @@ button {
 .result-source-column {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   min-width: 0;
-  align-self: start;
+  align-self: stretch;
   padding: 8px;
   background: #fff;
-  border: 1px solid #e8eaf0;
+  border: 1px solid #ececf2;
   border-radius: 10px;
 }
 .result-source-image-wrap {

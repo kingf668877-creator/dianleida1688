@@ -1269,8 +1269,8 @@ function renderResultCards() {
   const rows = document.getElementById('resultRows');
   const empty = document.getElementById('resultEmpty');
   const paged = getResultPagedItems();
-  // 1920 宽度参考图每行展示 5 个商品，窄屏由 CSS 自动降列
-  const groupSize = 5;
+  // 回退到每行4个商品，兼容性和视觉效果更稳妥
+  const groupSize = 4;
 
   document.getElementById('resultCount').textContent = sourcingResults.length;
   document.getElementById('resultPaginationTotal').textContent = `共 ${sourcingResults.length} 条`;
