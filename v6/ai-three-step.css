@@ -2622,7 +2622,7 @@ button {
 .payment-modal {
   position: fixed;
   inset: 0;
-  z-index: 300;
+  z-index: 1000;
   display: none;
   align-items: center;
   justify-content: center;
@@ -2637,6 +2637,7 @@ button {
 }
 .payment-content {
   position: relative;
+  z-index: 1;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);

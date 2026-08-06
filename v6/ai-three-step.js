@@ -657,7 +657,7 @@ function updateTotalBadge() {
 function getTaskActions(task) {
   const actions = [];
   const sep = '<span class="action-sep">|</span>';
-  const buyBtn = `<button type="button" class="action-link buy" data-task-id="${task.id}">立即购买</button>`;
+  const buyBtn = `<button type="button" class="action-link buy" data-task-id="${task.id}" onclick="openPaymentModal(${task.id})">立即购买</button>`;
 
   if (task.status === 'running' || task.status === 'waiting') {
     actions.push(buyBtn);
