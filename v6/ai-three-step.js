@@ -1363,18 +1363,27 @@ function toggleResultRowSelect(groupIndex, checked) {
 function updateResultSelectedCount() {
   document.getElementById('resultSelectedCount').textContent = resultSelectedIds.size;
   const selectAll = document.getElementById('resultSelectAll');
+  if (!selectAll) return;
   const paged = getResultPagedItems();
-  const allSelected = paged.length > 0 && paged.every(p => resultSelectedIds.has(p.id));
-  if (selectAll) selectAll.checked = allSelected;
+  const selectedInPage = paged.filter(p => resultSelectedIds.has(p.id)).length;
+  if (selectedInPage === 0) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+  } else if (selectedInPage === paged.length) {
+    selectAll.checked = true;
+    selectAll.indeterminate = false;
+  } else {
+    selectAll.checked = false;
+    selectAll.indeterminate = true;
+  }
 }
 
-// 全选（仅当前页，跨页保留已选）
+// 全选：切换全部结果的选中状态
 document.getElementById('resultSelectAll')?.addEventListener('change', (e) => {
-  const paged = getResultPagedItems();
   if (e.target.checked) {
-    paged.forEach(p => resultSelectedIds.add(p.id));
+    sourcingResults.forEach(p => resultSelectedIds.add(p.id));
   } else {
-    paged.forEach(p => resultSelectedIds.delete(p.id));
+    resultSelectedIds.clear();
   }
   renderResultCards();
 });
