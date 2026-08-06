@@ -1312,7 +1312,6 @@ function renderResultCards() {
               </div>
             </div>
             <div class="result-card-store"><span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span><span class="result-store-name" title="${p.storeName}">${p.storeName}</span><span class="result-store-location">${p.city}</span></div>
-            <div class="result-card-actions"><span class="result-action-link" onclick="showToast('全网图搜中...')">图搜</span><span class="result-action-link" onclick="showToast('已关注商品')">关注</span><span class="result-action-link" onclick="showToast('下载中...')">下载</span></div>
           </div>
         `;
       }).join('');
@@ -1322,6 +1321,7 @@ function renderResultCards() {
             <div class="result-source-image-wrap"><img src="${sourceImage}" alt="上传图片 ${groupIndex + 1}"></div>
             <div class="result-source-label">url_${String(groupIndex + 1).padStart(4, '0')}.jpg</div>
             <div class="result-source-count">${products.length * 12} 个结果</div>
+            <button class="result-source-search-btn" onclick="showToast('全网图搜已触发')">全网图搜</button>
           </aside>
           <div class="result-source-products">${cards}</div>
         </section>

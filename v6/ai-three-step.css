@@ -1972,6 +1972,23 @@ button {
 .result-source-image-wrap img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .result-source-label { margin-top: 8px; color: #202235; font-size: 12px; font-weight: 700; line-height: 1.4; }
 .result-source-count { align-self: flex-start; margin-top: 6px; padding: 3px 7px; border-radius: 10px; background: #fff2e9; color: #ff5a00; font-size: 10px; font-weight: 700; }
+.result-source-search-btn {
+  margin-top: 8px;
+  padding: 6px 0;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff6a00 0%, #ff8534 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow .15s ease, transform .15s ease;
+  box-shadow: 0 2px 6px rgba(255, 106, 0, 0.25);
+}
+.result-source-search-btn:hover {
+  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.35);
+  transform: translateY(-1px);
+}
 .result-source-products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 @media (min-width: 1800px) {
   .result-source-row { grid-template-columns: 128px minmax(0, 1fr); gap: 14px; padding: 10px; }
