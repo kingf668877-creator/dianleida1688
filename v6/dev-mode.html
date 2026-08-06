@@ -347,7 +347,7 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html?v=token-fix-20260806b" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html?v=pull-fix-20260806" title="设计页面预览"></iframe></div>
     <!-- 原型说明面板 -->
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
@@ -434,7 +434,7 @@
     });
   });
   // ===== 页面切换 =====
-  const INNER_PAGE_VERSION = 'token-fix-20260806b';
+  const INNER_PAGE_VERSION = 'pull-fix-20260806';
   function withVersion(url) {
     if (!url.includes('v2.9.3/search-agent.html')) return url;
     return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
