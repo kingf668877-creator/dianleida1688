@@ -521,9 +521,6 @@ function closePurchaseModal() {
 function resetPurchaseSelection() {
   purchaseSelectedCount = 0;
   document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
-  const customInput = document.getElementById('customPurchaseCount');
-  if (customInput) customInput.value = '';
-  document.getElementById('customPurchasePrice').textContent = '¥0.00';
   document.getElementById('purchaseSelectedCount').textContent = '0';
   document.getElementById('purchaseTotalAmount').textContent = '¥0.00';
   document.getElementById('confirmPurchaseBtn').disabled = true;
@@ -532,8 +529,6 @@ function resetPurchaseSelection() {
 function selectPurchaseOption(el, count) {
   document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
-  document.getElementById('customPurchaseCount').value = '';
-  document.getElementById('customPurchasePrice').textContent = '¥0.00';
   purchaseSelectedCount = count;
   updatePurchaseSummary();
 }
@@ -545,21 +540,6 @@ function updatePurchaseSummary() {
   document.getElementById('purchaseTotalAmount').textContent = '¥' + amount;
   document.getElementById('confirmPurchaseBtn').disabled = count <= 0;
 }
-
-// 自定义数量输入
-document.getElementById('customPurchaseCount')?.addEventListener('input', (e) => {
-  const val = parseInt(e.target.value) || 0;
-  if (val > 0) {
-    document.querySelectorAll('.purchase-option').forEach(o => o.classList.remove('selected'));
-    purchaseSelectedCount = val;
-    document.getElementById('customPurchasePrice').textContent = '¥' + (val * 0.02).toFixed(2);
-    updatePurchaseSummary();
-  } else {
-    purchaseSelectedCount = 0;
-    document.getElementById('customPurchasePrice').textContent = '¥0.00';
-    updatePurchaseSummary();
-  }
-});
 
 // 确认购买
 document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
@@ -573,6 +553,82 @@ document.getElementById('confirmPurchaseBtn')?.addEventListener('click', () => {
 
 // 增购按钮
 document.getElementById('purchaseBtn')?.addEventListener('click', openPurchaseModal);
+
+// ===== 支付弹窗 =====
+let paymentTaskId = null;
+const UNIT_PRICE = 0.02;
+
+function openPaymentModal(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  paymentTaskId = taskId;
+  const modal = document.getElementById('paymentModal');
+  if (!modal) return;
+  const orderNo = 'DLDD' + new Date().toISOString().slice(0,10).replace(/-/g,'') + String(taskId).padStart(4,'0');
+  document.getElementById('payOrderId').textContent = orderNo;
+  document.getElementById('payTaskName').textContent = task.name;
+  document.getElementById('payItemCount').textContent = task.count + ' 件';
+  const amount = (task.count * UNIT_PRICE).toFixed(2);
+  document.getElementById('payAmount').textContent = '¥' + amount;
+  const defaultRadio = document.querySelector('input[name="payMethod"][value="alipay"]');
+  if (defaultRadio) {
+    defaultRadio.checked = true;
+    document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
+    defaultRadio.closest('.payment-method-item')?.classList.add('active');
+    document.getElementById('qrMethodName').textContent = '支付宝';
+  }
+  modal.style.display = 'flex';
+  modal.classList.add('show');
+}
+
+function closePaymentModal() {
+  const modal = document.getElementById('paymentModal');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+  }
+  paymentTaskId = null;
+}
+
+// 任务列表按钮事件委托
+document.addEventListener('click', (e) => {
+  const buyBtn = e.target.closest('.action-link.buy');
+  if (buyBtn) {
+    const taskId = Number(buyBtn.dataset.taskId);
+    openPaymentModal(taskId);
+    return;
+  }
+  const payOption = e.target.closest('.payment-method-item');
+  if (payOption) {
+    const radio = payOption.querySelector('input[type="radio"]');
+      if (radio) {
+        radio.checked = true;
+        document.querySelectorAll('.payment-method-item').forEach(item => item.classList.remove('active'));
+        payOption.classList.add('active');
+        const methodNames = { alipay: '支付宝', wechat: '微信支付', bank: '银行卡', card: '信用卡' };
+        const method = methodNames[radio.value] || '支付宝';
+        document.getElementById('qrMethodName').textContent = method;
+        const qr = document.getElementById('qrPlaceholder');
+        if (qr) qr.textContent = method + '扫码';
+      }
+  }
+});
+
+// 支付方式切换
+
+// 确认支付
+document.getElementById('confirmPayBtn')?.addEventListener('click', () => {
+  const btn = document.getElementById('confirmPayBtn');
+  btn.textContent = '支付中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    const task = tasks.find(t => t.id === paymentTaskId);
+    if (task) showToast('支付成功！任务「' + task.name + '」已购买');
+    btn.textContent = '确认支付';
+    btn.disabled = false;
+    closePaymentModal();
+  }, 1500);
+});
 
 // ===== 任务列表 =====
 const taskTableBody = document.getElementById('taskTableBody');
@@ -588,12 +644,15 @@ function updateTotalBadge() {
 function getTaskActions(task) {
   const actions = [];
   const sep = '<span class="action-sep">|</span>';
+  const buyBtn = `<button type="button" class="action-link buy" data-task-id="${task.id}" onclick="openPaymentModal(${task.id})">立即购买</button>`;
 
   if (task.status === 'running' || task.status === 'waiting') {
-    // 执行中 / 待执行：终止任务
+    actions.push(buyBtn);
+    actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止任务</span>`);
   } else if (task.status === 'done') {
-    // 已完成：任务详情、复制任务、寻源结果、删除任务
+    actions.push(buyBtn);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
@@ -602,7 +661,8 @@ function getTaskActions(task) {
     actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   } else if (task.status === 'stopped' || task.status === 'pending') {
-    // 已终止 / 未执行：编辑任务、重新执行、复制任务、删除任务
+    actions.push(buyBtn);
+    actions.push(sep);
     actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
@@ -612,6 +672,18 @@ function getTaskActions(task) {
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   }
   return actions;
+}
+
+function bindBuyButtons() {
+  document.querySelectorAll('.action-link.buy').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openPaymentModal(Number(btn.dataset.taskId));
+    });
+  });
 }
 
 function renderTaskTable() {
@@ -653,6 +725,7 @@ function renderTaskTable() {
         </td>
       </tr>
     `).join('');
+    bindBuyButtons();
   }
   updateTotalBadge();
   renderPagination();
@@ -834,15 +907,8 @@ function viewResult(id) {
   if (!task) return;
   currentResultTask = task;
 
-  // 填充图源信息
-  document.getElementById('resultTaskName').textContent = task.name;
-  document.getElementById('resultTaskType').textContent = task.typeText;
-  document.getElementById('resultTotalCount').textContent = task.finished || task.count;
-  document.getElementById('resultTaskTime').textContent = task.createTime;
-
-  // 模拟图源图片
-  const sourceImg = document.getElementById('resultSourceImg');
-  sourceImg.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect fill="%23f5f6fa" width="56" height="56"/><text x="28" y="34" text-anchor="middle" font-size="20" fill="%23ff6a00">IMG</text></svg>');
+  // 每组结果会在左侧展示对应的上传图源，右侧展示该图源的商品信息
+  // 这里先生成原型数据，真实上传图片接入后替换每组 source.img1 即可
 
   // 生成寻源结果数据
   generateSourcingResults(task.count || 20);
@@ -1199,8 +1265,8 @@ function generateSourcingResults(count) {
     const similarity = Math.random();
     const isNew = listingDays < 30;
     const skuCount = Math.floor(Math.random() * 30 + 1);
-    const shippingFee = Math.random() > 0.2 ? (Math.random() * 15 + 3).toFixed(1) : '0';
-    const shipText = shippingFee === '0' ? '包邮' : `国内 ¥${shippingFee}`;
+    const shippingFee = Math.random() > 0.2 ? parseFloat((Math.random() * 15 + 3).toFixed(1)) : 0;
+    const shipText = shippingFee === 0 ? '包邮' : `${shippingFee}`;
     const memberTypes = [];
     if (Math.random() > 0.5) memberTypes.push('实力商家');
     if (Math.random() > 0.7) memberTypes.push('超级工厂');
@@ -1213,6 +1279,7 @@ function generateSourcingResults(count) {
       id: i + 1,
       img1: `https://picsum.photos/seed/p${i}a/400/400`,
       img2: `https://picsum.photos/seed/p${i}b/160/160`,
+      sourceImg: `https://picsum.photos/seed/source-${Math.floor(i / 4)}/300/300`,
       title: productNames[i % productNames.length],
       category: ['毛绒公仔', '家居日用', '收纳整理', '厨房用品', '纺织品', '电子产品', '陶瓷工艺'][i % 7],
       skuCount,
@@ -1248,12 +1315,8 @@ function generateSourcingResults(count) {
 
 // 状态筛选：更新标签计数
 function updateResultStatusTabs() {
-  const total = allSourcingResults.length;
-  const successCount = allSourcingResults.filter(p => p.searchStatus === 'success').length;
-  const failCount = allSourcingResults.filter(p => p.searchStatus === 'fail').length;
-  document.getElementById('statusTabAllCount').textContent = total;
-  document.getElementById('statusTabSuccessCount').textContent = successCount;
-  document.getElementById('statusTabFailCount').textContent = failCount;
+  // 状态筛选已从结果页移除，保留函数以兼容旧的初始化调用。
+  return;
 }
 
 // 应用状态筛选
@@ -1274,93 +1337,68 @@ function applyStatusFilter(status) {
   renderResultCards();
 }
 
-// 获取相似度等级
-function getSimLevel(sim) {
-  if (sim >= 0.7) return 'high';
-  if (sim >= 0.3) return 'mid';
-  return 'low';
-}
-
-// 渲染寻源结果卡片
+// 渲染寻源结果：每一行对应一个上传图源，右侧展示该图源的商品信息
 function renderResultCards() {
-  const grid = document.getElementById('resultCardGrid');
+  const rows = document.getElementById('resultRows');
   const empty = document.getElementById('resultEmpty');
   const paged = getResultPagedItems();
+  // 回退到每行4个商品，兼容性和视觉效果更稳妥
+  const groupSize = 4;
 
   document.getElementById('resultCount').textContent = sourcingResults.length;
   document.getElementById('resultPaginationTotal').textContent = `共 ${sourcingResults.length} 条`;
 
+  if (!rows) return;
   if (sourcingResults.length === 0) {
-    grid.innerHTML = '';
+    rows.innerHTML = '';
     empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    grid.innerHTML = paged.map(p => {
-      const simLevel = getSimLevel(p.similarity);
-      const simPercent = (p.similarity * 100).toFixed(0);
-      const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
-      const checked = resultSelectedIds.has(p.id) ? 'checked' : '';
-      const statusClass = p.searchStatus === 'success' ? 'success' : 'fail';
-      const statusText = p.searchStatus === 'success' ? '寻源成功' : '寻源失败';
+    const groups = [];
+    for (let i = 0; i < paged.length; i += groupSize) groups.push(paged.slice(i, i + groupSize));
+    rows.innerHTML = groups.map((products, groupIndex) => {
+      const source = products[0];
+      const sourceImage = source.sourceImg || source.img1;
+      const rowSelected = products.every(p => resultSelectedIds.has(p.id));
+      const rowChecked = rowSelected ? 'checked' : '';
+      const cards = products.map(p => {
+        const selected = resultSelectedIds.has(p.id) ? 'selected' : '';
+        return `
+          <div class="result-product-card ${selected}" data-id="${p.id}">
+            <div class="result-card-img-wrap">
+              <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
+              <div class="result-card-meta-top">
+                <span class="result-card-meta-item"><strong>类目:</strong> ${p.category}</span>
+                <span class="result-card-meta-item"><strong>SKU:</strong> ${p.skuCount}</span>
+                <span class="result-card-meta-item"><strong>上架:</strong> ${p.listingDate}</span>
+              </div>
+            </div>
+            <div class="result-card-info">
+              <div class="result-product-title" title="${p.title}">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}<span class="result-title-text">${p.title}</span></div>
+              <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-moq">起批量 ${p.moq}件</span></div>
+              <div class="result-card-ship-row"><span class="result-ship-item ${p.shippingFee === 0 ? 'free-shipping' : ''}">运费: ${p.shippingFee === 0 ? '包邮' : `¥${p.shippingFee}`}</span><span class="result-ship-item">包装: 仅披露重量(${p.weightMin}g)</span></div>
+              <div class="result-card-data-grid">
+                <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value emphasis">${p.monthlyPieces}</span></div>
+                <div class="result-data-cell"><span class="result-data-label">月销</span><span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span></div>
+                <div class="result-data-cell"><span class="result-data-label">24H</span><span class="result-data-value">${p.collect24h}%</span></div>
+                <div class="result-data-cell"><span class="result-data-label">48H</span><span class="result-data-value">${p.collect48h}%</span></div>
+              </div>
+            </div>
+            <div class="result-card-store"><span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span><span class="result-store-name" title="${p.storeName}">${p.storeName}</span><span class="result-store-location">${p.city}</span></div>
+          </div>
+        `;
+      }).join('');
       return `
-        <div class="result-product-card ${selected}" data-id="${p.id}">
-          <label class="result-card-checkbox"><input type="checkbox" data-id="${p.id}" ${checked} onchange="toggleResultSelect(${p.id})"></label>
-          <div class="result-card-img-wrap">
-            <img src="${p.img1}" alt="${p.title}" onerror="this.style.display='none'">
-            <span class="result-status-badge ${statusClass}">${statusText}</span>
-            <span class="result-similarity ${simLevel}" title="相似度">相似度 ${simPercent}%</span>
-          </div>
-          <div class="result-card-info">
-            <div class="result-product-tags">
-              <span class="result-tag category">${p.category}</span>
-              <span class="result-tag sku">SKU: ${p.skuCount}</span>
-              ${p.isNew ? '<span class="result-tag new">新品</span>' : ''}
-            </div>
-            <div class="result-product-title" title="${p.title}">${p.title}</div>
-            <div class="result-card-price-row">
-              <span class="result-card-price">¥${p.price.toFixed(2)}</span>
-              <span class="result-card-price-suffix">起</span>
-            </div>
-            <div class="result-card-listing">上架: ${p.listingDate} (${p.listingDays}天)</div>
-            <div class="result-card-data-grid">
-              <div class="result-data-cell">
-                <span class="result-data-label">起批量</span>
-                <span class="result-data-value">${p.moq} 件</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">发货</span>
-                <span class="result-data-value muted">${p.shippingFee}</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">月件数</span>
-                <span class="result-data-value">${p.monthlyPieces}</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">月销售额</span>
-                <span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">24H揽收</span>
-                <span class="result-data-value ${p.collect24h >= 90 ? 'green' : ''}">${p.collect24h}%</span>
-              </div>
-              <div class="result-data-cell">
-                <span class="result-data-label">48H揽收</span>
-                <span class="result-data-value ${p.collect48h >= 90 ? 'green' : ''}">${p.collect48h}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="result-card-store">
-            <span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span>
-            <span class="result-store-name" title="${p.storeName}">${p.storeName}</span>
-            <span class="result-store-location">${p.city}</span>
-          </div>
-          <div class="result-card-actions">
-            <span class="result-action-link" onclick="showToast('全网图搜中...')">图搜</span>
-            <span class="result-action-link" onclick="showToast('铺货Temu中...')">铺货</span>
-            <span class="result-action-link" onclick="showToast('已关注商品')">关注</span>
-            <span class="result-action-link" onclick="showToast('下载中...')">下载</span>
-          </div>
-        </div>
+        <section class="result-source-row" data-row="${groupIndex + 1}">
+          <aside class="result-source-column">
+            <label class="result-source-checkbox"><input type="checkbox" ${rowChecked} onchange="toggleResultRowSelect(${groupIndex}, this.checked)"></label>
+            <div class="result-source-image-wrap"><img src="${sourceImage}" alt="上传图片 ${groupIndex + 1}"></div>
+            <div class="result-source-label">url_${String(groupIndex + 1).padStart(4, '0')}.jpg</div>
+            <div class="result-source-count">${products.length * 12} 个结果</div>
+            <button class="result-source-search-btn" onclick="showToast('全网图搜已触发')">全网图搜</button>
+          </aside>
+          <div class="result-source-products">${cards}</div>
+        </section>
       `;
     }).join('');
   }
@@ -1376,27 +1414,49 @@ function toggleResultSelect(id) {
   } else {
     resultSelectedIds.add(id);
   }
-  // 更新卡片样式
   const card = document.querySelector(`.result-product-card[data-id="${id}"]`);
   if (card) card.classList.toggle('selected', resultSelectedIds.has(id));
   updateResultSelectedCount();
 }
 
+// 整行勾选（左侧上传图片勾选框）
+function toggleResultRowSelect(groupIndex, checked) {
+  const paged = getResultPagedItems();
+  const groupSize = 4;
+  const start = groupIndex * groupSize;
+  const rowProducts = paged.slice(start, start + groupSize);
+  if (checked) {
+    rowProducts.forEach(p => resultSelectedIds.add(p.id));
+  } else {
+    rowProducts.forEach(p => resultSelectedIds.delete(p.id));
+  }
+  renderResultCards();
+}
+
 function updateResultSelectedCount() {
   document.getElementById('resultSelectedCount').textContent = resultSelectedIds.size;
   const selectAll = document.getElementById('resultSelectAll');
+  if (!selectAll) return;
   const paged = getResultPagedItems();
-  const allSelected = paged.length > 0 && paged.every(p => resultSelectedIds.has(p.id));
-  if (selectAll) selectAll.checked = allSelected;
+  const selectedInPage = paged.filter(p => resultSelectedIds.has(p.id)).length;
+  if (selectedInPage === 0) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+  } else if (selectedInPage === paged.length) {
+    selectAll.checked = true;
+    selectAll.indeterminate = false;
+  } else {
+    selectAll.checked = false;
+    selectAll.indeterminate = true;
+  }
 }
 
-// 全选
+// 全选：切换全部结果的选中状态
 document.getElementById('resultSelectAll')?.addEventListener('change', (e) => {
-  const paged = getResultPagedItems();
   if (e.target.checked) {
-    paged.forEach(p => resultSelectedIds.add(p.id));
+    sourcingResults.forEach(p => resultSelectedIds.add(p.id));
   } else {
-    paged.forEach(p => resultSelectedIds.delete(p.id));
+    resultSelectedIds.clear();
   }
   renderResultCards();
 });
@@ -1457,83 +1517,11 @@ document.getElementById('resultGotoPageInput')?.addEventListener('keydown', (e) 
   if (e.key === 'Enter') document.getElementById('resultGotoPageBtn')?.click();
 });
 
-// 筛选面板折叠
-document.getElementById('filterToggleBtn')?.addEventListener('click', () => {
-  const body = document.getElementById('resultFilterBody');
-  const btn = document.getElementById('filterToggleBtn');
-  body.classList.toggle('collapsed');
-  btn.textContent = body.classList.contains('collapsed') ? '展开筛选条件' : '收起筛选条件';
-});
-
-// 筛选查询
-document.getElementById('resultSearchBtn')?.addEventListener('click', () => {
-  const keyword = document.getElementById('resultKeyword').value.trim().toLowerCase();
-  const priceMin = parseFloat(document.getElementById('priceMin').value) || 0;
-  const priceMax = parseFloat(document.getElementById('priceMax').value) || Infinity;
-  const salesMin = parseInt(document.getElementById('salesMin').value) || 0;
-  const salesMax = parseInt(document.getElementById('salesMax').value) || Infinity;
-  const weightMin = parseInt(document.getElementById('weightMin').value) || 0;
-  const weightMax = parseInt(document.getElementById('weightMax').value) || Infinity;
-
-  // 先按状态筛选
-  let baseResults = allSourcingResults;
-  if (resultStatusFilter !== 'all') {
-    baseResults = baseResults.filter(p => p.searchStatus === resultStatusFilter);
-  }
-
-  const filtered = baseResults.filter(p => {
-    if (keyword && !p.title.toLowerCase().includes(keyword)) return false;
-    if (p.price < priceMin || p.price > priceMax) return false;
-    if (p.monthlyPieces < salesMin || p.monthlyPieces > salesMax) return false;
-    if (p.weightMax < weightMin || p.weightMin > weightMax) return false;
-    return true;
-  });
-
-  sourcingResults = filtered;
-  resultPaginationState.totalItems = sourcingResults.length;
-  resultPaginationState.currentPage = 1;
-  renderResultCards();
-  showToast(`查询到 ${filtered.length} 条结果`);
-});
-
-// 重置筛选
-document.getElementById('resultResetBtn')?.addEventListener('click', () => {
-  document.getElementById('resultKeyword').value = '';
-  document.getElementById('priceMin').value = '';
-  document.getElementById('priceMax').value = '';
-  document.getElementById('salesMin').value = '';
-  document.getElementById('salesMax').value = '';
-  document.getElementById('weightMin').value = '';
-  document.getElementById('weightMax').value = '';
-  document.querySelectorAll('input[name="collect24h"]').forEach(r => { if (r.value === '') r.checked = true; });
-  document.querySelectorAll('input[name="collect48h"]').forEach(r => { if (r.value === '') r.checked = true; });
-  document.querySelectorAll('input[name="companyType"]').forEach(r => { if (r.value === '') r.checked = true; });
-  document.getElementById('condMoq1').checked = false;
-  document.getElementById('condFreeShip').checked = false;
-  document.getElementById('memberVerified').checked = false;
-  document.getElementById('memberSuperFactory').checked = false;
-  document.getElementById('memberTrustPass').checked = false;
-  // 恢复到当前状态筛选的数据
-  applyStatusFilter(resultStatusFilter);
-  showToast('已重置筛选');
-});
-
-// 保存筛选
-document.getElementById('resultSaveBtn')?.addEventListener('click', () => {
-  showToast('筛选条件已保存');
-});
-
 // ===== 寻源结果页初始化（URL 直接访问时）=====
 if (window._initResultPage) {
   const doneTask = mockTasks.find(t => t.status === 'done') || mockTasks[0];
   if (doneTask) {
     currentResultTask = doneTask;
-    document.getElementById('resultTaskName').textContent = doneTask.name;
-    document.getElementById('resultTaskType').textContent = doneTask.typeText;
-    document.getElementById('resultTotalCount').textContent = doneTask.finished || doneTask.count || 20;
-    document.getElementById('resultTaskTime').textContent = doneTask.createTime;
-    const sourceImg = document.getElementById('resultSourceImg');
-    sourceImg.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect fill="%23f5f6fa" width="56" height="56"/><text x="28" y="34" text-anchor="middle" font-size="20" fill="%23ff6a00">IMG</text></svg>');
     generateSourcingResults(20);
     renderResultCards();
   }

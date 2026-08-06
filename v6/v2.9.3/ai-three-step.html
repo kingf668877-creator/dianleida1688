@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=20260805b">
+<link rel="stylesheet" href="ai-three-step.css?v=remove-result-filter-20260806">
 </head>
 <body>
 
@@ -327,185 +327,27 @@
 
   <!-- ===== 寻源结果 ===== -->
   <section class="page-panel" id="page-result">
-    <!-- 搜索图源信息条 -->
-    <div class="result-source-bar">
-      <div class="result-source-left">
-        <img class="result-source-img" id="resultSourceImg" src="" alt="搜索图源">
-        <div class="result-source-info">
-          <span class="result-source-name" id="resultTaskName">--</span>
-          <span class="result-source-meta">
-            <span id="resultTaskType">--</span>
-            <span class="sep">|</span>
-            <span>共 <b id="resultTotalCount">0</b> 条结果</span>
-            <span class="sep">|</span>
-            <span id="resultTaskTime">--</span>
-          </span>
-        </div>
-      </div>
-      <button class="btn btn-default" onclick="goListPage()">返回任务列表</button>
-    </div>
-
-    <!-- 筛选条件 -->
-    <div class="result-filter-card">
-      <div class="result-filter-header">
-        <span class="result-filter-title">筛选条件</span>
-        <button class="result-filter-toggle" id="filterToggleBtn">收起筛选条件</button>
-      </div>
-      <div class="result-filter-body" id="resultFilterBody">
-        <!-- 关键词搜索 -->
-        <div class="result-filter-row">
-          <div class="result-filter-item result-filter-item-grow">
-            <label class="result-filter-label">商品关键词</label>
-            <div class="result-keyword-wrap">
-              <select class="result-match-select" id="resultMatchMode">
-                <option value="fuzzy">模糊匹配</option>
-                <option value="exact">精确匹配</option>
-              </select>
-              <input class="form-input result-keyword-input" type="text" id="resultKeyword" placeholder="输入商品关键词，多个关键词用空格分隔">
-            </div>
-          </div>
-          <div class="result-filter-item">
-            <label class="result-filter-label">模板</label>
-            <select class="form-input result-template-select" id="resultTemplate">
-              <option value="">我的模板</option>
-              <option value="t1">默认模板</option>
-              <option value="t2">Temu铺货模板</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 价格 & 销量 -->
-        <div class="result-filter-row">
-          <div class="result-filter-item">
-            <label class="result-filter-label">价格 ¥</label>
-            <div class="result-range-wrap">
-              <input class="form-input result-range-input" type="number" id="priceMin" placeholder="最低价">
-              <span class="result-range-sep">~</span>
-              <input class="form-input result-range-input" type="number" id="priceMax" placeholder="最高价">
-            </div>
-          </div>
-          <div class="result-filter-item">
-            <label class="result-filter-label">月件数</label>
-            <div class="result-range-wrap">
-              <input class="form-input result-range-input" type="number" id="salesMin" placeholder="最小">
-              <span class="result-range-sep">~</span>
-              <input class="form-input result-range-input" type="number" id="salesMax" placeholder="最大">
-            </div>
-          </div>
-          <div class="result-filter-item">
-            <label class="result-filter-label">重量(g)</label>
-            <div class="result-range-wrap">
-              <input class="form-input result-range-input" type="number" id="weightMin" placeholder="最小">
-              <span class="result-range-sep">~</span>
-              <input class="form-input result-range-input" type="number" id="weightMax" placeholder="最大">
-            </div>
-          </div>
-        </div>
-
-        <!-- 揽收率 -->
-        <div class="result-filter-row">
-          <div class="result-filter-item">
-            <label class="result-filter-label">24H揽收率</label>
-            <div class="result-radio-group" id="collect24h">
-              <label class="result-radio"><input type="radio" name="collect24h" value="" checked><span>不限</span></label>
-              <label class="result-radio"><input type="radio" name="collect24h" value="lt70"><span>&lt;70%</span></label>
-              <label class="result-radio"><input type="radio" name="collect24h" value="70-90"><span>70%-90%</span></label>
-              <label class="result-radio"><input type="radio" name="collect24h" value="gt90"><span>&ge;90%</span></label>
-            </div>
-          </div>
-          <div class="result-filter-item">
-            <label class="result-filter-label">48H揽收率</label>
-            <div class="result-radio-group" id="collect48h">
-              <label class="result-radio"><input type="radio" name="collect48h" value="" checked><span>不限</span></label>
-              <label class="result-radio"><input type="radio" name="collect48h" value="lt70"><span>&lt;70%</span></label>
-              <label class="result-radio"><input type="radio" name="collect48h" value="70-90"><span>70%-90%</span></label>
-              <label class="result-radio"><input type="radio" name="collect48h" value="gt90"><span>&ge;90%</span></label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 交易条件 & 公司类型 -->
-        <div class="result-filter-row">
-          <div class="result-filter-item">
-            <label class="result-filter-label">交易条件</label>
-            <div class="result-checkbox-group">
-              <label class="result-checkbox"><input type="checkbox" id="condMoq1"><span>一件起订</span></label>
-              <label class="result-checkbox"><input type="checkbox" id="condFreeShip"><span>批发包邮</span></label>
-            </div>
-          </div>
-          <div class="result-filter-item">
-            <label class="result-filter-label">公司类型</label>
-            <div class="result-radio-group" id="companyType">
-              <label class="result-radio"><input type="radio" name="companyType" value="" checked><span>不限</span></label>
-              <label class="result-radio"><input type="radio" name="companyType" value="store"><span>店铺</span></label>
-              <label class="result-radio"><input type="radio" name="companyType" value="factory"><span>工厂</span></label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 卖家会员类型 -->
-        <div class="result-filter-row">
-          <div class="result-filter-item">
-            <label class="result-filter-label">卖家会员类型</label>
-            <div class="result-checkbox-group">
-              <label class="result-checkbox"><input type="checkbox" id="memberVerified"><span>实力商家</span></label>
-              <label class="result-checkbox"><input type="checkbox" id="memberSuperFactory"><span>超级工厂</span></label>
-              <label class="result-checkbox"><input type="checkbox" id="memberTrustPass"><span>诚信通</span></label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="result-filter-actions">
-          <button class="btn btn-primary" id="resultSearchBtn">开始查询</button>
-          <button class="btn btn-default" id="resultResetBtn">重置筛选</button>
-          <button class="btn btn-outline" id="resultSaveBtn">保存筛选</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 寻源状态筛选标签 -->
-    <div class="result-status-tabs">
-      <div class="result-status-tab active" data-status="all" onclick="applyStatusFilter('all')">
-        <span>全部结果</span>
-        <span class="tab-count" id="statusTabAllCount">0</span>
-      </div>
-      <div class="result-status-tab" data-status="success" onclick="applyStatusFilter('success')">
-        <span>寻源成功</span>
-        <span class="tab-count" id="statusTabSuccessCount">0</span>
-      </div>
-      <div class="result-status-tab" data-status="fail" onclick="applyStatusFilter('fail')">
-        <span>寻源失败</span>
-        <span class="tab-count" id="statusTabFailCount">0</span>
-      </div>
-    </div>
-
-    <!-- 结果工具栏 -->
-    <div class="result-toolbar">
+    <!-- 结果工具栏：左侧全选+操作，右侧结果数量 -->
+    <div class="result-toolbar result-toolbar-reference">
       <div class="result-toolbar-left">
         <label class="result-select-all">
           <input type="checkbox" id="resultSelectAll">
-          <span>全选</span>
+          <span>全选全部</span>
         </label>
         <span class="result-selected-count">已选: <b id="resultSelectedCount">0</b></span>
-      </div>
-      <div class="result-toolbar-actions">
-        <button class="btn btn-default btn-sm" onclick="showToast('批量监控已触发')">监控</button>
-        <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
-        <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
-        <button class="btn btn-primary btn-sm" onclick="showToast('铺货Temu功能开发中')">
-          铺货Temu
-          <span class="new-badge">NEW</span>
-        </button>
+        <div class="result-toolbar-actions">
+          <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
+          <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
+        </div>
       </div>
       <div class="result-toolbar-right">
-        <span class="result-count">搜索结果: <b id="resultCount">0</b></span>
+        <span class="result-count">结果数量: <b id="resultCount">0</b></span>
       </div>
     </div>
 
-    <!-- 结果卡片网格 -->
-    <div class="result-card-grid" id="resultCardGrid">
-      <!-- JS 渲染 -->
+    <!-- 结果布局：每行左侧上传图源 + 右侧该图片的商品网格 -->
+    <div class="result-layout-wrapper" id="resultLayoutWrapper">
+      <div class="result-rows" id="resultRows"></div>
     </div>
 
     <!-- 空状态 -->
@@ -558,6 +400,62 @@
   </div>
 </div>
 
+<!-- 支付页面弹窗 -->
+<div class="payment-modal" id="paymentModal">
+  <div class="payment-backdrop" onclick="closePaymentModal()"></div>
+  <div class="payment-content">
+    <div class="payment-header">
+      <h3 class="payment-title">确认支付</h3>
+      <button class="payment-close" onclick="closePaymentModal()">✕</button>
+    </div>
+    <div class="payment-body">
+      <div class="payment-order">
+        <div class="payment-order-row"><span class="payment-label">订单编号</span><span class="payment-value" id="payOrderId">DLDD202608060001</span></div>
+        <div class="payment-order-row"><span class="payment-label">任务名称</span><span class="payment-value" id="payTaskName">-</span></div>
+        <div class="payment-order-row"><span class="payment-label">商品数量</span><span class="payment-value" id="payItemCount">0 件</span></div>
+        <div class="payment-order-row"><span class="payment-label">单价</span><span class="payment-value">¥0.02 / 件</span></div>
+      </div>
+      <div class="payment-amount-box">
+        <span class="payment-amount-label">应付金额</span>
+        <span class="payment-amount" id="payAmount">¥0.00</span>
+      </div>
+      <div class="payment-methods">
+        <div class="payment-method-title">支付方式</div>
+        <div class="payment-method-list">
+          <label class="payment-method-item active">
+            <input type="radio" name="payMethod" value="alipay" checked>
+            <span class="method-icon alipay">支</span>
+            <span class="method-name">支付宝</span>
+          </label>
+          <label class="payment-method-item">
+            <input type="radio" name="payMethod" value="wechat">
+            <span class="method-icon wechat">微</span>
+            <span class="method-name">微信支付</span>
+          </label>
+          <label class="payment-method-item">
+            <input type="radio" name="payMethod" value="bank">
+            <span class="method-icon bank">银</span>
+            <span class="method-name">银行卡</span>
+          </label>
+          <label class="payment-method-item">
+            <input type="radio" name="payMethod" value="card">
+            <span class="method-icon bank">卡</span>
+            <span class="method-name">信用卡</span>
+          </label>
+        </div>
+      </div>
+      <div class="payment-qr" id="paymentQr">
+        <div class="qr-placeholder" id="qrPlaceholder">扫码支付</div>
+        <div class="qr-tips">请使用 <b id="qrMethodName">支付宝</b> 扫描二维码完成支付</div>
+      </div>
+    </div>
+    <div class="payment-footer">
+      <button class="btn btn-default" onclick="closePaymentModal()">取消</button>
+      <button class="btn btn-primary" id="confirmPayBtn">确认支付</button>
+    </div>
+  </div>
+</div>
+
 <!-- 增购张数弹窗 -->
 <div class="purchase-modal" id="purchaseModal">
   <div class="purchase-backdrop" onclick="closePurchaseModal()"></div>
@@ -596,11 +494,9 @@
           <div class="option-price">¥4,000.00</div>
         </div>
       </div>
-      <!-- 自定义数量 -->
-      <div class="purchase-custom">
-        <label class="custom-label">自定义数量</label>
-        <input type="number" class="custom-input" id="customPurchaseCount" placeholder="输入购买张数" min="1">
-        <span class="custom-price" id="customPurchasePrice">¥0.00</span>
+      <div class="purchase-notice">
+        <div class="purchase-notice-title">增购说明</div>
+        <div class="purchase-notice-text">寻源张数有效期为 1 年，若会员到期则额外购买的张数续费套餐后才可使用；不支持退款、兑换套餐、转赠或提现</div>
       </div>
     </div>
     <div class="purchase-footer">
@@ -617,6 +513,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=20260805b"></script>
+<script src="ai-three-step.js?v=remove-result-filter-20260806"></script>
 </body>
 </html>
