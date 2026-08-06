@@ -2795,6 +2795,11 @@ body.edit-mode [data-editable]:hover {
   display: block;
 }
 
+.pkg-tab-panel img {
+  visibility: visible;
+  opacity: 1;
+}
+
 .pkg-screenshot {
   width: 100%;
   height: auto;
