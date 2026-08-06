@@ -1937,136 +1937,63 @@ button {
   color: #fff;
 }
 
-/* ===== 寻源结果：每行左侧上传图 + 右侧商品网格 ===== */
-.result-layout-wrapper {
-  display: block;
-}
-
-.result-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
+/* ===== 寻源结果：参考图的横向结果带 ===== */
+.result-layout-wrapper { display: block; }
+.result-rows { display: flex; flex-direction: column; gap: 14px; }
 .result-source-row {
   display: grid;
-  grid-template-columns: 126px minmax(0, 1fr);
-  align-items: start;
-  gap: 14px;
-  padding: 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  padding: 10px;
+  background: #f7f8fb;
+  border: 1px solid #e8eaf0;
+  border-radius: 12px;
 }
-
 .result-source-column {
-  position: sticky;
-  top: 16px;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 8px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  background: #fff;
+  border: 1px solid #e8eaf0;
+  border-radius: 10px;
 }
-
 .result-source-image-wrap {
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #fff5ed 0%, #fff0e6 100%);
+  border-radius: 8px;
+  background: #fff1e8;
 }
-
-.result-source-image-wrap img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.result-source-label {
-  margin-top: 8px;
-  color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.result-source-count {
-  margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.result-source-products {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  min-width: 0;
-}
-
+.result-source-image-wrap img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.result-source-label { margin-top: 8px; color: #202235; font-size: 12px; font-weight: 700; line-height: 1.4; }
+.result-source-count { margin-top: 3px; color: #9498ad; font-size: 10px; }
+.result-source-products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 @media (min-width: 1800px) {
-  .result-source-row {
-    grid-template-columns: 142px minmax(0, 1fr);
-    gap: 16px;
-  }
-
-  .result-source-products {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-  }
+  .result-source-row { grid-template-columns: 112px minmax(0, 1fr); gap: 14px; padding: 10px; }
+  .result-source-products { gap: 12px; }
 }
-
 @media (max-width: 1399px) {
-  .result-source-row {
-    grid-template-columns: 112px minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .result-source-products {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
+  .result-source-row { grid-template-columns: 104px minmax(0, 1fr); gap: 10px; }
+  .result-source-products { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 }
-
-@media (max-width: 980px) {
-  .result-source-products {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
+@media (max-width: 980px) { .result-source-products { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 699px) {
-  .result-source-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .result-source-column {
-    position: static;
-    display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
-    column-gap: 10px;
-    align-items: center;
-  }
-
-  .result-source-label,
-  .result-source-count {
-    grid-column: 2;
-    margin-top: 0;
-  }
-
-  .result-source-products {
-    grid-template-columns: 1fr;
-  }
+  .result-source-row { grid-template-columns: 1fr; gap: 8px; }
+  .result-source-column { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 10px; align-items: center; }
+  .result-source-label, .result-source-count { grid-column: 2; margin-top: 0; }
+  .result-source-products { grid-template-columns: 1fr; }
 }
 
-/* ===== 寻源结果 - 单个商品卡片（垂直布局） ===== */
+/* ===== 寻源结果 - 参考图商品卡片 ===== */
 .result-product-card {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
+  min-width: 0;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #ececf2;
   overflow: hidden;
-  transition: var(--transition);
+  transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -2105,8 +2032,8 @@ button {
 .result-card-img-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  background: linear-gradient(135deg, #fff5ed 0%, #fff0e6 100%);
+  aspect-ratio: 1 / .88;
+  background: #fff1e8;
   overflow: hidden;
 }
 
@@ -2165,11 +2092,11 @@ button {
 
 /* 信息区 */
 .result-card-info {
-  padding: 12px;
+  padding: 10px 10px 8px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* 标签行 */
@@ -2177,6 +2104,7 @@ button {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
+  min-height: 18px;
 }
 
 .result-tag {
@@ -2186,15 +2114,15 @@ button {
   font-weight: 500;
 }
 
-.result-tag.category { background: var(--info-bg); color: var(--info); }
-.result-tag.sku { background: var(--bg-tertiary); color: var(--text-secondary); }
-.result-tag.new { background: var(--success-bg); color: var(--success); }
+.result-tag.category { background: #eef0ff; color: #6572dc; }
+.result-tag.sku { background: #f4f5f9; color: #8d91a7; }
+.result-tag.new { background: #e7faf3; color: #13a879; }
 
 /* 商品标题 */
 .result-product-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #27283a;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -2211,9 +2139,9 @@ button {
 }
 
 .result-card-price {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
-  color: var(--primary);
+  color: #ff5a00;
 }
 
 .result-card-price-suffix {
@@ -2232,27 +2160,28 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px;
-  background: var(--border-light);
-  border-radius: var(--radius-sm);
+  margin-top: 1px;
+  background: #e9eaf0;
+  border-radius: 0;
   overflow: hidden;
 }
 
 .result-data-cell {
-  background: var(--bg-secondary);
-  padding: 6px 8px;
+  background: #fff;
+  padding: 5px 7px;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .result-data-label {
-  font-size: 10px;
-  color: var(--text-muted);
+  font-size: 9px;
+  color: #969aae;
 }
 
 .result-data-value {
-  font-size: 13px;
-  color: var(--text-primary);
+  font-size: 11px;
+  color: #505268;
   font-weight: 500;
 }
 
@@ -2264,10 +2193,10 @@ button {
 .result-card-store {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border-top: 1px solid var(--border-light);
+  gap: 5px;
+  padding: 7px 10px;
+  background: #f8f8fb;
+  border-top: 1px solid #ececf2;
 }
 
 .result-store-type {
@@ -2299,18 +2228,18 @@ button {
 /* 操作区 */
 .result-card-actions {
   display: flex;
-  gap: 2px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--border-light);
+  gap: 4px;
+  padding: 7px 10px 8px;
+  border-top: 1px solid #ececf2;
   flex-wrap: wrap;
 }
 
 .result-action-link {
-  font-size: 12px;
-  color: var(--primary);
+  font-size: 11px;
+  color: #ff5a00;
   cursor: pointer;
-  font-weight: 500;
-  padding: 4px 8px;
+  font-weight: 700;
+  padding: 3px 6px;
   border-radius: 4px;
   transition: background .15s ease;
   white-space: nowrap;
