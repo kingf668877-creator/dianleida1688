@@ -614,6 +614,15 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// 套餐配置 Tab 切换
+document.querySelectorAll('.pkg-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.pkgTab;
+    document.querySelectorAll('.pkg-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.pkg-tab-panel').forEach(p => p.classList.toggle('active', p.dataset.pkgPanel === tab));
+  });
+});
+
 // 支付方式切换
 
 // 确认支付

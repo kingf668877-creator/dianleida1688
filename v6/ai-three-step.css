@@ -2729,3 +2729,75 @@ body.edit-mode [data-editable]:hover {
     min-width: 100%;
   }
 }
+
+/* ===== 套餐配置 ===== */
+.package-config-section {
+  margin-top: 24px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.package-config-header {
+  padding: 20px 24px 0;
+}
+
+.package-config-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.package-config-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-light);
+  padding: 16px 24px 0;
+  overflow-x: auto;
+}
+
+.pkg-tab-btn {
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: var(--transition);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.pkg-tab-btn:hover {
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.pkg-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.package-config-body {
+  padding: 20px 24px;
+}
+
+.pkg-tab-panel {
+  display: none;
+}
+
+.pkg-tab-panel.active {
+  display: block;
+}
+
+.pkg-screenshot {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
