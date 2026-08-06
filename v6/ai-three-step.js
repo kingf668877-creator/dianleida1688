@@ -1354,7 +1354,7 @@ function updateResultSelectedCount() {
   if (selectAll) selectAll.checked = allSelected;
 }
 
-// 全选
+// 全选（仅当前页，跨页保留已选）
 document.getElementById('resultSelectAll')?.addEventListener('change', (e) => {
   const paged = getResultPagedItems();
   if (e.target.checked) {

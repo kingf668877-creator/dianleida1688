@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=global-search-20260806">
+<link rel="stylesheet" href="ai-three-step.css?v=toolbar-select-20260806">
 </head>
 <body>
 
@@ -445,7 +445,7 @@
       </div>
     </div>
 
-    <!-- 结果工具栏：参考结果页顶部操作区 -->
+    <!-- 结果工具栏：左侧全选+操作，右侧结果数量 -->
     <div class="result-toolbar result-toolbar-reference">
       <div class="result-toolbar-left">
         <label class="result-select-all">
@@ -453,11 +453,10 @@
           <span>全选</span>
         </label>
         <span class="result-selected-count">已选: <b id="resultSelectedCount">0</b></span>
-      </div>
-      <div class="result-toolbar-actions">
-        <button class="btn btn-default btn-sm" onclick="showToast('批量监控已触发')">监控</button>
-        <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
-        <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
+        <div class="result-toolbar-actions">
+          <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
+          <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
+        </div>
       </div>
       <div class="result-toolbar-right">
         <span class="result-count">结果数量: <b id="resultCount">0</b></span>
@@ -578,6 +577,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=global-search-20260806"></script>
+<script src="ai-three-step.js?v=toolbar-select-20260806"></script>
 </body>
 </html>
