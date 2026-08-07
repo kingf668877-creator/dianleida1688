@@ -435,7 +435,7 @@
     });
   });
   // ===== 页面切换 =====
-  const INNER_PAGE_VERSION = 'module-spec-isolated-20260807';
+  const INNER_PAGE_VERSION = 'module-spec-nav-fixed-20260807';
   function withVersion(url) {
     if (!url.includes('v2.9.3/search-agent.html')) return url;
     return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
@@ -797,7 +797,7 @@
   }
 
   // 左侧导航切换时同步当前模块，所有数据只属于当前模块
-  document.querySelectorAll('.page-nav-item').forEach(item => {
+  document.querySelectorAll('.layer-item[data-page]').forEach(item => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
       if (!page) return;
