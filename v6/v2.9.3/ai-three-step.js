@@ -743,14 +743,24 @@ function updateScrollButtonStates() {
 }
 
 // 套餐配置 Tab 切换
-document.querySelectorAll('.pkg-tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.pkgTab;
-    document.querySelectorAll('.pkg-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-    document.querySelectorAll('.pkg-tab-panel').forEach(p => p.classList.toggle('active', p.dataset.pkgPanel === tab));
+function activatePackageTab(tab) {
+  document.querySelectorAll('.pkg-tab-btn').forEach(b => {
+    const active = b.dataset.pkgTab === tab;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', active ? 'true' : 'false');
   });
+  document.querySelectorAll('.pkg-tab-panel').forEach(panel => {
+    const active = panel.dataset.pkgPanel === tab;
+    panel.classList.toggle('active', active);
+    panel.hidden = !active;
+    panel.style.display = active ? '' : 'none';
+  });
+}
+document.querySelectorAll('.pkg-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => activatePackageTab(btn.dataset.pkgTab));
 });
-
+const initialPackageTab = document.querySelector('.pkg-tab-btn.active')?.dataset.pkgTab || '1688-member';
+activatePackageTab(initialPackageTab);
 // 修复套餐配置图片路径（适配嵌套iframe的相对路径问题）
 (function fixPkgImgPath() {
   const imgs = document.querySelectorAll('.pkg-screenshot');
