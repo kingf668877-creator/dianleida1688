@@ -511,7 +511,13 @@
   const GITHUB_OWNER = 'kingf668877-creator';
   const GITHUB_REPO = 'dianleida1688';
   const GITHUB_BRANCH = 'master';
-  const SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
+  const SPEC_FILE_PATHS = {
+    '创建图搜寻源': 'v6/v2.9.3/prototype-spec-create.json',
+    '任务列表': 'v6/v2.9.3/prototype-spec-list.json',
+    '寻源结果': 'v6/v2.9.3/prototype-spec-result.json',
+    '套餐配置': 'v6/v2.9.3/prototype-spec-package.json'
+  };
+  const LEGACY_SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
 
   // 页面名称映射
   const pageNames = {
@@ -566,17 +572,42 @@
     }, 2200);
   }
 
-  // ===== 加载/保存数据 =====
-  function loadSpecData() {
+  // ===== 加载/保存数据：每个模块独立 =====
+  function saveSpecData() {
+    localStorage.setItem('dianleida-spec-data', JSON.stringify(specData));
+  }
+
+  function decodeGithubContent(encoded) {
+    const binary = atob((encoded || '').replace(/\s/g, ''));
+    const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+
+  async function loadSpecRemote(pageName) {
+    const path = getSpecFilePath(pageName);
+    try {
+      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+        headers: { 'Accept': 'application/vnd.github+json' }
+      });
+      if (!resp.ok) return false;
+      const data = await resp.json();
+      const parsed = JSON.parse(decodeGithubContent(data.content));
+      if (parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.rows)) {
+        specData[pageName] = parsed;
+        specFileCache[pageName] = { sha: data.sha, path };
+        return true;
+      }
+    } catch (e) {
+      console.warn('加载独立原型说明失败', pageName, e);
+    }
+    return false;
+  }
+
+  async function loadSpecData() {
     const saved = localStorage.getItem('dianleida-spec-data');
     if (saved) {
-      try {
-        specData = JSON.parse(saved);
-      } catch(e) {
-        specData = {};
-      }
+      try { specData = JSON.parse(saved) || {}; } catch(e) { specData = {}; }
     }
-    // 确保每个页面都有数据
     Object.keys(pageNames).forEach(pageUrl => {
       const pageName = pageNames[pageUrl];
       if (!specData[pageName]) {
@@ -586,13 +617,10 @@
         };
       }
     });
+    await loadSpecRemote(currentPageKey);
     saveSpecData();
+    renderSpecTable();
   }
-
-  function saveSpecData() {
-    localStorage.setItem('dianleida-spec-data', JSON.stringify(specData));
-  }
-
   // ===== 渲染表格 =====
   function renderSpecTable() {
     const pageData = specData[currentPageKey];
@@ -766,9 +794,12 @@
   }
 
   // ===== 页面切换时更新原型说明 =====
-  function updateCurrentPageKey(pageUrl) {
+  async function updateCurrentPageKey(pageUrl) {
     let pageName = pageNames[pageUrl] || '创建图搜寻源';
     currentPageKey = pageName;
+    renderSpecTable();
+    await loadSpecRemote(pageName);
+    saveSpecData();
     renderSpecTable();
   }
 
@@ -780,6 +811,7 @@
     const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : `v2.9.3/search-agent.html?page=${page}`;
     currentPageKey = pageNames[pageUrl] || currentPageKey;
     renderSpecTable();
+    loadSpecRemote(currentPageKey).then(() => { saveSpecData(); renderSpecTable(); });
   });
 
   // ===== GitHub 部署 =====
@@ -863,65 +895,32 @@
   async function deployToGitHub(token, keepModalOpen) {
     deployBtn.textContent = '更新中...';
     deployBtn.disabled = true;
-    specToast('正在更新到 GitHub...', 'info');
-
+    specToast('正在更新当前模块到 GitHub...', 'info');
     try {
-      const content = JSON.stringify(specData, null, 2);
+      const content = JSON.stringify(specData[currentPageKey] || { columns: [...defaultColumns], rows: [] }, null, 2);
       const b64 = btoa(unescape(encodeURIComponent(content)));
-
-      let sha = null;
-      const getResp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}?ref=${GITHUB_BRANCH}`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
-      });
-      if (getResp.ok) {
-        const data = await getResp.json();
-        sha = data.sha;
-      } else if (getResp.status !== 404) {
-        const getErr = await getResp.json().catch(() => ({}));
-        throw new Error(getErr.message || `GitHub 验证失败（${getResp.status}）`);
+      const specPath = getSpecFilePath(currentPageKey);
+      let sha = specFileCache[currentPageKey]?.sha || null;
+      if (!sha) {
+        const getResp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${specPath}?ref=${GITHUB_BRANCH}`, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' } });
+        if (getResp.ok) sha = (await getResp.json()).sha;
+        else if (getResp.status !== 404) throw new Error(`GitHub 验证失败（${getResp.status}）`);
       }
-
-      const body = {
-        message: `docs: update prototype spec for ${currentPageKey}`,
-        content: b64,
-        branch: GITHUB_BRANCH
-      };
+      const body = { message: `docs: update prototype spec for ${currentPageKey}`, content: b64, branch: GITHUB_BRANCH };
       if (sha) body.sha = sha;
-
-      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.message || `GitHub 提交失败（${resp.status}）`);
-      }
-
-      specToast('更新成功，原型说明已同步到线上。', 'success');
+      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${specPath}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.message || `GitHub 提交失败（${resp.status}）`); }
+      const saved = await resp.json();
+      specFileCache[currentPageKey] = { sha: saved.content?.sha || saved.commit?.sha, path: specPath };
+      specToast(`“${currentPageKey}”原型说明更新成功。`, 'success');
       return { ok: true, message: '更新成功' };
     } catch(err) {
-      const message = err.message === 'Bad credentials'
-        ? 'Token 无效或已过期'
-        : err.message;
+      const message = err.message === 'Bad credentials' ? 'Token 无效或已过期' : err.message;
       specToast('更新失败：' + message, 'error');
-      if (!keepModalOpen) {
-        openTokenModal(message + '，请重新输入 Token。');
-        tokenStatus.className = 'token-modal-status error';
-        localStorage.removeItem('dianleida-github-token');
-      }
+      if (!keepModalOpen) { openTokenModal(message + '，请重新输入 Token。'); tokenStatus.className = 'token-modal-status error'; localStorage.removeItem('dianleida-github-token'); }
       return { ok: false, message };
-    } finally {
-      deployBtn.textContent = '↑ 更新';
-      deployBtn.disabled = false;
-    }
+    } finally { deployBtn.textContent = '↑ 更新'; deployBtn.disabled = false; }
   }
-
   // ===== 初始化 =====
   loadSpecData();
   renderSpecTable();
