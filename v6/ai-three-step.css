@@ -1223,6 +1223,11 @@ button {
   line-height: 1.65;
 }
 
+.purchase-notice-text .highlight-text {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .purchase-footer {
   display: flex;
   align-items: center;
