@@ -616,15 +616,48 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// 货源类型 TAB 切换
+// 货源类型 TAB 与组合筛选
 let resultSourceType = 'all';
+const resultFilters = { trade: [], company: '', member: [], weightMin: null, weightMax: null };
+
 document.querySelectorAll('.result-source-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.result-source-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
     resultSourceType = btn.dataset.sourceType;
+    resultPaginationState.currentPage = 1;
     renderResultCards();
   });
 });
+
+function syncResultFilters() {
+  resultFilters.trade = [...document.querySelectorAll('[data-filter="trade"]:checked')].map(el => el.value);
+  resultFilters.company = document.querySelector('[data-filter="company"]:checked')?.value || '';
+  resultFilters.member = [...document.querySelectorAll('[data-filter="member"]:checked')].map(el => el.value);
+  const minValue = document.getElementById('resultWeightMin')?.value;
+  const maxValue = document.getElementById('resultWeightMax')?.value;
+  resultFilters.weightMin = minValue === '' ? null : Number(minValue);
+  resultFilters.weightMax = maxValue === '' ? null : Number(maxValue);
+  resultPaginationState.currentPage = 1;
+  renderResultCards();
+}
+
+document.querySelectorAll('#resultFilterPanel input').forEach(input => {
+  input.addEventListener(input.type === 'number' ? 'input' : 'change', syncResultFilters);
+});
+
+function getFilteredResultItems() {
+  return sourcingResults.filter(product => {
+    if (resultSourceType === 'same' && product.similarity <= 0.5) return false;
+    if (resultFilters.trade.includes('one') && product.moq !== 1) return false;
+    if (resultFilters.trade.includes('free') && product.shippingFee !== '包邮') return false;
+    if (resultFilters.company === 'store' && product.isFactory) return false;
+    if (resultFilters.company === 'factory' && !product.isFactory) return false;
+    if (resultFilters.member.length && !resultFilters.member.every(type => product.memberTypes.includes(type))) return false;
+    if (resultFilters.weightMin !== null && product.weightMax < resultFilters.weightMin) return false;
+    if (resultFilters.weightMax !== null && product.weightMin > resultFilters.weightMax) return false;
+    return true;
+  });
+}
 
 // 商品列表横向滚动
 function scrollResultProducts(btn, direction) {
@@ -1335,9 +1368,9 @@ function generateSourcingResults(count) {
     const shippingFee = Math.random() > 0.2 ? parseFloat((Math.random() * 15 + 3).toFixed(1)) : 0;
     const shipText = shippingFee === 0 ? '包邮' : `${shippingFee}`;
     const memberTypes = [];
-    if (Math.random() > 0.5) memberTypes.push('实力商家');
-    if (Math.random() > 0.7) memberTypes.push('超级工厂');
-    if (Math.random() > 0.3) memberTypes.push('诚信通');
+    if (Math.random() > 0.55) memberTypes.push('flagship');
+    if (isFactory && Math.random() > 0.45) memberTypes.push('super-factory');
+    if (Math.random() > 0.25) memberTypes.push('诚信通');
 
     // 寻源状态：大部分成功，少量失败
     const searchStatus = Math.random() > 0.15 ? 'success' : 'fail';
@@ -1412,11 +1445,12 @@ function renderResultCards() {
   // 回退到每行4个商品，兼容性和视觉效果更稳妥
   const groupSize = 4;
 
-  document.getElementById('resultCount').textContent = sourcingResults.length;
-  document.getElementById('resultPaginationTotal').textContent = `共 ${sourcingResults.length} 条`;
+  const filteredCount = getFilteredResultItems().length;
+  document.getElementById('resultCount').textContent = filteredCount;
+  document.getElementById('resultPaginationTotal').textContent = `共 ${filteredCount} 条`;
 
   if (!rows) return;
-  if (sourcingResults.length === 0) {
+  if (filteredCount === 0) {
     rows.innerHTML = '';
     empty.style.display = 'block';
   } else {
@@ -1539,17 +1573,13 @@ document.getElementById('resultSelectAll')?.addEventListener('change', (e) => {
 // 分页
 function getResultPagedItems() {
   const { currentPage, pageSize } = resultPaginationState;
-  const filtered = resultSourceType === 'same'
-    ? sourcingResults.filter(p => p.similarity > 0.5)
-    : sourcingResults;
+  const filtered = getFilteredResultItems();
   const start = (currentPage - 1) * pageSize;
   return filtered.slice(start, start + pageSize);
 }
 
 function updateResultPaginationState() {
-  const filtered = resultSourceType === 'same'
-    ? sourcingResults.filter(p => p.similarity > 0.5)
-    : sourcingResults;
+  const filtered = getFilteredResultItems();
   resultPaginationState.totalItems = filtered.length;
   resultPaginationState.totalPages = Math.max(1, Math.ceil(filtered.length / resultPaginationState.pageSize));
   if (resultPaginationState.currentPage > resultPaginationState.totalPages) {

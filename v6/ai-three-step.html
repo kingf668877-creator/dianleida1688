@@ -334,6 +334,33 @@
       <button class="result-source-tab-btn active" data-source-type="all">全部货源</button>
       <button class="result-source-tab-btn" data-source-type="same">同款货源</button>
     </div>
+    <div class="result-filter-panel" id="resultFilterPanel">
+      <div class="result-filter-group">
+        <span class="result-filter-label">交易条件<span class="result-filter-mode">多选</span></span>
+        <label class="result-filter-option"><input type="checkbox" data-filter="trade" value="one">一件起订</label>
+        <label class="result-filter-option"><input type="checkbox" data-filter="trade" value="free">批发包邮</label>
+      </div>
+      <div class="result-filter-group">
+        <span class="result-filter-label">公司类型<span class="result-filter-mode">单选</span></span>
+        <label class="result-filter-option"><input type="radio" name="companyFilter" data-filter="company" value="store">店铺</label>
+        <label class="result-filter-option"><input type="radio" name="companyFilter" data-filter="company" value="factory">工厂</label>
+      </div>
+      <div class="result-filter-group">
+        <span class="result-filter-label">卖家会员类型<span class="result-filter-mode">多选</span></span>
+        <label class="result-filter-option"><input type="checkbox" data-filter="member" value="flagship">源头旗舰</label>
+        <label class="result-filter-option"><input type="checkbox" data-filter="member" value="super-factory">超级工厂</label>
+        <label class="result-filter-option"><input type="checkbox" data-filter="member" value="诚信通">仅诚信通</label>
+      </div>
+      <div class="result-filter-group result-filter-weight">
+        <span class="result-filter-label">重量</span>
+        <div class="result-weight-inputs">
+          <input class="result-filter-input" id="resultWeightMin" type="number" min="0" placeholder="最低">
+          <span>至</span>
+          <input class="result-filter-input" id="resultWeightMax" type="number" min="0" placeholder="最高">
+          <span class="result-weight-unit">g</span>
+        </div>
+      </div>
+    </div>
     <!-- 结果工具栏：左侧全选+操作，右侧结果数量 -->
     <div class="result-toolbar result-toolbar-reference">
       <div class="result-toolbar-left">
@@ -553,6 +580,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=notice-highlight-20260807"></script>
+<script src="ai-three-step.js?v=result-filters-20260807"></script>
 </body>
 </html>
