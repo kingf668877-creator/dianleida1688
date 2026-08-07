@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=weight-single-20260807">
+<link rel="stylesheet" href="ai-three-step.css?v=export-popover-20260807">
 </head>
 <body>
 
@@ -370,7 +370,7 @@
         <span class="result-selected-count">已选: <b id="resultSelectedCount">0</b></span>
         <div class="result-toolbar-actions">
           <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
-          <button class="btn btn-default btn-sm" onclick="openExportModal()">导出</button>
+          <button class="btn btn-default btn-sm" onclick="openExportModal(this, event)">导出</button>
         </div>
       </div>
       <div class="result-toolbar-right">
@@ -466,9 +466,8 @@
   </div>
 </div>
 
-<!-- 导出配置浮窗 -->
+<!-- 导出配置浮层 -->
 <div class="export-modal" id="exportModal">
-  <div class="export-backdrop" onclick="closeExportModal()"></div>
   <div class="export-content">
     <div class="export-header">
       <h3 class="export-title">导出寻源结果</h3>

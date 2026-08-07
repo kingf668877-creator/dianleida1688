@@ -659,16 +659,31 @@ function getFilteredResultItems() {
   });
 }
 
-// 导出配置浮窗
-function openExportModal() {
+// 导出按钮下方浮层
+function openExportModal(button, event) {
+  event?.stopPropagation();
   const modal = document.getElementById('exportModal');
-  if (modal) modal.classList.add('show');
+  if (!modal || !button) return;
+  const rect = button.getBoundingClientRect();
+  modal.classList.add('show');
+  const width = modal.querySelector('.export-content')?.offsetWidth || 360;
+  const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+  modal.style.top = `${rect.bottom + 6}px`;
+  modal.style.left = `${left}px`;
 }
 
 function closeExportModal() {
   const modal = document.getElementById('exportModal');
   if (modal) modal.classList.remove('show');
 }
+
+document.addEventListener('click', event => {
+  const modal = document.getElementById('exportModal');
+  if (modal?.classList.contains('show') && !modal.contains(event.target)) closeExportModal();
+});
+
+window.addEventListener('resize', closeExportModal);
+window.addEventListener('scroll', closeExportModal, true);
 
 function getExportResultItems() {
   const items = getFilteredResultItems();
