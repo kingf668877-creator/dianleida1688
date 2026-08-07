@@ -370,7 +370,7 @@
         <span class="result-selected-count">已选: <b id="resultSelectedCount">0</b></span>
         <div class="result-toolbar-actions">
           <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
-          <button class="btn btn-default btn-sm" onclick="showToast('导出中...')">导出</button>
+          <button class="btn btn-default btn-sm" onclick="openExportModal()">导出</button>
         </div>
       </div>
       <div class="result-toolbar-right">
@@ -462,6 +462,34 @@
     <div class="delete-float-actions">
       <button class="btn btn-default" onclick="cancelDelete()">取消</button>
       <button class="btn btn-danger" onclick="confirmDeleteAction()">确定删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导出配置浮窗 -->
+<div class="export-modal" id="exportModal">
+  <div class="export-backdrop" onclick="closeExportModal()"></div>
+  <div class="export-content">
+    <div class="export-header">
+      <h3 class="export-title">导出寻源结果</h3>
+      <button class="export-close" onclick="closeExportModal()">✕</button>
+    </div>
+    <div class="export-body">
+      <div class="export-option-group">
+        <div class="export-option-title">寻源结果数量</div>
+        <label class="export-radio-option"><input type="radio" name="exportCount" value="1" checked><span>1个</span></label>
+        <label class="export-radio-option"><input type="radio" name="exportCount" value="2"><span>2个</span></label>
+        <label class="export-radio-option"><input type="radio" name="exportCount" value="3"><span>3个</span></label>
+      </div>
+      <div class="export-option-group">
+        <div class="export-option-title">寻源结果优先级</div>
+        <label class="export-radio-option"><input type="radio" name="exportPriority" value="price" checked><span>低价优先</span></label>
+        <label class="export-radio-option"><input type="radio" name="exportPriority" value="sales"><span>高销量优先</span></label>
+      </div>
+    </div>
+    <div class="export-footer">
+      <button class="btn btn-default" onclick="closeExportModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmExport()">确认导出</button>
     </div>
   </div>
 </div>
@@ -579,6 +607,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="ai-three-step.js?v=result-filters-20260807"></script>
+<script src="ai-three-step.js?v=export-modal-20260807"></script>
 </body>
 </html>

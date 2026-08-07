@@ -659,6 +659,50 @@ function getFilteredResultItems() {
   });
 }
 
+// 导出配置浮窗
+function openExportModal() {
+  const modal = document.getElementById('exportModal');
+  if (modal) modal.classList.add('show');
+}
+
+function closeExportModal() {
+  const modal = document.getElementById('exportModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function getExportResultItems() {
+  const items = getFilteredResultItems();
+  const count = Number(document.querySelector('input[name="exportCount"]:checked')?.value || 1);
+  const priority = document.querySelector('input[name="exportPriority"]:checked')?.value || 'price';
+  const sorted = [...items].sort((a, b) => priority === 'sales'
+    ? b.monthlyPieces - a.monthlyPieces
+    : a.price - b.price);
+  return sorted.slice(0, count);
+}
+
+function confirmExport() {
+  const items = getExportResultItems();
+  if (!items.length) {
+    closeExportModal();
+    showToast('当前没有可导出的寻源结果');
+    return;
+  }
+  const rows = [
+    ['商品名称', '类目', '价格', '起批量', '运费', '重量(g)', '月销量', '公司类型', '店铺名称', '发货地'],
+    ...items.map(p => [p.title, p.category, p.price, p.moq, p.shippingFee === '包邮' ? '包邮' : `¥${p.shippingFee}`, p.weightMin, p.monthlyPieces, p.isFactory ? '工厂' : '店铺', p.storeName, p.city])
+  ];
+  const csv = rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([`\\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `寻源结果-${items.length}个-${document.querySelector('input[name="exportPriority"]:checked')?.value === 'sales' ? '高销量优先' : '低价优先'}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  closeExportModal();
+  showToast(`已导出${items.length}个寻源结果`);
+}
+
 // 商品列表横向滚动
 function scrollResultProducts(btn, direction) {
   const wrapper = btn.closest('.result-scroll-wrapper');
