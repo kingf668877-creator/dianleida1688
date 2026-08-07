@@ -3060,3 +3060,6 @@ body.edit-mode [data-editable]:hover {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
 }
+
+.pkg-side-nav-panel { display: grid; gap: 18px; }
+.pkg-side-nav-panel .pkg-screenshot { width: 100%; max-width: 420px; margin: 0 auto; object-fit: contain; }
