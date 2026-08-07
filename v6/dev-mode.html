@@ -435,7 +435,7 @@
     });
   });
   // ===== 页面切换 =====
-  const INNER_PAGE_VERSION = 'subscription-expired-20260807';
+  const INNER_PAGE_VERSION = 'module-spec-isolated-20260807';
   function withVersion(url) {
     if (!url.includes('v2.9.3/search-agent.html')) return url;
     return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
@@ -558,7 +558,8 @@
   };
 
   let currentPageKey = '创建图搜寻源';
-  let specData = {}; // { 页面名: { columns: [], rows: [] } }
+  let activeSpecData = null;
+  let specLoadToken = 0;
 
   // ===== Toast =====
   const specToastEl = document.getElementById('specToast');
@@ -573,8 +574,10 @@
   }
 
   // ===== 加载/保存数据：每个模块独立 =====
+  function getSpecStorageKey(pageName = currentPageKey) { return "dianleida-spec-data-" + encodeURIComponent(pageName); }
   function saveSpecData() {
-    localStorage.setItem('dianleida-spec-data', JSON.stringify(specData));
+    if (!activeSpecData) return;
+    localStorage.setItem(getSpecStorageKey(), JSON.stringify(activeSpecData));
   }
 
   function decodeGithubContent(encoded) {
@@ -584,46 +587,38 @@
   }
 
   async function loadSpecRemote(pageName) {
+    const token = ++specLoadToken;
     const path = getSpecFilePath(pageName);
     try {
-      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
-        headers: { 'Accept': 'application/vnd.github+json' }
-      });
+      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, { headers: { "Accept": "application/vnd.github+json" } });
       if (!resp.ok) return false;
       const data = await resp.json();
       const parsed = JSON.parse(decodeGithubContent(data.content));
+      if (token !== specLoadToken || pageName !== currentPageKey) return false;
       if (parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.rows)) {
-        specData[pageName] = parsed;
+        activeSpecData = parsed;
         specFileCache[pageName] = { sha: data.sha, path };
         return true;
       }
-    } catch (e) {
-      console.warn('加载独立原型说明失败', pageName, e);
-    }
+    } catch (e) { console.warn("加载独立原型说明失败", pageName, e); }
     return false;
   }
 
   async function loadSpecData() {
-    const saved = localStorage.getItem('dianleida-spec-data');
+    const pageName = currentPageKey;
+    const saved = localStorage.getItem(getSpecStorageKey(pageName));
     if (saved) {
-      try { specData = JSON.parse(saved) || {}; } catch(e) { specData = {}; }
+      try { activeSpecData = JSON.parse(saved) || null; } catch(e) { activeSpecData = null; }
     }
-    Object.keys(pageNames).forEach(pageUrl => {
-      const pageName = pageNames[pageUrl];
-      if (!specData[pageName]) {
-        specData[pageName] = {
-          columns: [...defaultColumns],
-          rows: defaultPageData[pageName] ? [...defaultPageData[pageName]] : []
-        };
-      }
-    });
-    await loadSpecRemote(currentPageKey);
-    saveSpecData();
+    if (!activeSpecData) {
+      activeSpecData = { columns: [...defaultColumns], rows: defaultPageData[pageName] ? [...defaultPageData[pageName]] : [] };
+    }
     renderSpecTable();
-  }
-  // ===== 渲染表格 =====
+    await loadSpecRemote(pageName);
+    if (pageName === currentPageKey) { saveSpecData(); renderSpecTable(); }
+  }  // ===== 渲染表格 =====
   function renderSpecTable() {
-    const pageData = specData[currentPageKey];
+    const pageData = activeSpecData;
     if (!pageData) return;
     const head = document.getElementById('specTableHead');
     const body = document.getElementById('specTableBody');
@@ -673,9 +668,9 @@
       cell.addEventListener('blur', () => {
         const ri = parseInt(cell.dataset.row);
         const ci = parseInt(cell.dataset.col);
-        const colName = specData[currentPageKey].columns[ci];
-        if (!specData[currentPageKey].rows[ri]) return;
-        specData[currentPageKey].rows[ri][colName] = cell.textContent;
+        const colName = activeSpecData.columns[ci];
+        if (!activeSpecData.rows[ri]) return;
+        activeSpecData.rows[ri][colName] = cell.textContent;
         saveSpecData();
       });
       cell.addEventListener('keydown', e => {
@@ -690,12 +685,12 @@
     document.querySelectorAll('.th-text').forEach(th => {
       th.addEventListener('blur', () => {
         const ci = parseInt(th.dataset.col);
-        const oldName = specData[currentPageKey].columns[ci];
+        const oldName = activeSpecData.columns[ci];
         const newName = th.textContent.trim() || oldName;
         if (newName !== oldName) {
           // 更新列名，同步所有行数据
-          specData[currentPageKey].columns[ci] = newName;
-          specData[currentPageKey].rows.forEach(row => {
+          activeSpecData.columns[ci] = newName;
+          activeSpecData.rows.forEach(row => {
             if (oldName in row) {
               row[newName] = row[oldName];
               delete row[oldName];
@@ -714,10 +709,10 @@
     document.querySelectorAll('.th-del').forEach(btn => {
       btn.addEventListener('click', () => {
         const ci = parseInt(btn.dataset.col);
-        const colName = specData[currentPageKey].columns[ci];
+        const colName = activeSpecData.columns[ci];
         if (!confirm(`确认删除列"${colName}"？`)) return;
-        specData[currentPageKey].columns.splice(ci, 1);
-        specData[currentPageKey].rows.forEach(row => { delete row[colName]; });
+        activeSpecData.columns.splice(ci, 1);
+        activeSpecData.rows.forEach(row => { delete row[colName]; });
         saveSpecData();
         renderSpecTable();
       });
@@ -727,7 +722,7 @@
     document.querySelectorAll('.row-del').forEach(btn => {
       btn.addEventListener('click', () => {
         const ri = parseInt(btn.dataset.row);
-        specData[currentPageKey].rows.splice(ri, 1);
+        activeSpecData.rows.splice(ri, 1);
         saveSpecData();
         renderSpecTable();
       });
@@ -736,7 +731,7 @@
 
   // ===== 添加行/列 =====
   document.getElementById('addRowBtn').addEventListener('click', () => {
-    const pageData = specData[currentPageKey];
+    const pageData = activeSpecData;
     const newRow = {};
     pageData.columns.forEach(col => { newRow[col] = ''; });
     pageData.rows.push(newRow);
@@ -756,7 +751,7 @@
   });
 
   document.getElementById('addColBtn').addEventListener('click', () => {
-    const pageData = specData[currentPageKey];
+    const pageData = activeSpecData;
     const colName = '新列' + (pageData.columns.length + 1);
     pageData.columns.push(colName);
     pageData.rows.forEach(row => { row[colName] = ''; });
@@ -795,25 +790,21 @@
 
   // ===== 页面切换时更新原型说明 =====
   async function updateCurrentPageKey(pageUrl) {
-    let pageName = pageNames[pageUrl] || '创建图搜寻源';
+    const pageName = pageNames[pageUrl] || '创建图搜寻源';
     currentPageKey = pageName;
-    renderSpecTable();
-    await loadSpecRemote(pageName);
-    saveSpecData();
-    renderSpecTable();
+    activeSpecData = null;
+    await loadSpecData();
   }
 
-  // postMessage监听：iframe内部切换板块时同步原型说明
-  window.addEventListener('message', (e) => {
-    if (!e.data || e.data.type !== 'pageChange') return;
-    const page = e.data.page;
-    if (!page) return;
-    const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : `v2.9.3/search-agent.html?page=${page}`;
-    currentPageKey = pageNames[pageUrl] || currentPageKey;
-    renderSpecTable();
-    loadSpecRemote(currentPageKey).then(() => { saveSpecData(); renderSpecTable(); });
+  // 左侧导航切换时同步当前模块，所有数据只属于当前模块
+  document.querySelectorAll('.page-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      if (!page) return;
+      const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : `v2.9.3/search-agent.html?page=${page}`;
+      updateCurrentPageKey(pageUrl);
+    });
   });
-
   // ===== GitHub 部署 =====
   const deployBtn = document.getElementById('deployBtn');
   const tokenModal = document.getElementById('tokenModal');
@@ -897,7 +888,7 @@
     deployBtn.disabled = true;
     specToast('正在更新当前模块到 GitHub...', 'info');
     try {
-      const content = JSON.stringify(specData[currentPageKey] || { columns: [...defaultColumns], rows: [] }, null, 2);
+      const content = JSON.stringify(activeSpecData || { columns: [...defaultColumns], rows: [] }, null, 2);
       const b64 = btoa(unescape(encodeURIComponent(content)));
       const specPath = getSpecFilePath(currentPageKey);
       let sha = specFileCache[currentPageKey]?.sha || null;
