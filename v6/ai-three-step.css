@@ -2259,10 +2259,10 @@ button {
 }
 
 .result-card-ship-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
   font-size: 10px;
   color: #8c8fa6;
   line-height: 1.3;
@@ -2271,14 +2271,23 @@ button {
 }
 
 .result-ship-item {
-  min-width: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
   white-space: nowrap;
-  text-overflow: ellipsis;
+}
+
+.result-ship-item.free-shipping {
+  color: #ff5a00;
+  font-weight: 800;
+}
+
+.result-packaging-item {
+  min-width: 0;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .result-ship-item:last-child {
-  text-align: right;
+  text-align: left;
 }
 
 .result-ship-item.free-shipping {
