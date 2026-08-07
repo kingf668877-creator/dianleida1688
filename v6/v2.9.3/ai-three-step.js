@@ -659,6 +659,27 @@ document.querySelectorAll('.pkg-tab-btn').forEach(btn => {
   });
 });
 
+// 修复套餐配置图片路径（适配嵌套iframe的相对路径问题）
+(function fixPkgImgPath() {
+  const imgs = document.querySelectorAll('.pkg-screenshot');
+  if (!imgs.length) return;
+  // 检测当前 HTML 所在目录深度，动态修正图片路径
+  const testImg = imgs[0];
+  if (testImg.naturalWidth > 0) return; // 已加载成功，无需修复
+  imgs.forEach(img => {
+    const src = img.getAttribute('src') || '';
+    // 如果路径以 v2.9.3/assets/ 开头，说明已经修正过，不重复处理
+    if (src.includes('/v2.9.3/assets/') || src.startsWith('v2.9.3/assets/')) return;
+    // 原始文件名
+    const fileName = src.split('/').pop();
+    // 尝试两种路径：相对于 v6/ 和相对于 v6/v2.9.3/
+    const path1 = 'v2.9.3/assets/' + fileName;
+    const path2 = 'assets/' + fileName;
+    // 先尝试 v2.9.3/assets/（相对于 v6/ 目录）
+    img.src = path1;
+  });
+})();
+
 // 支付方式切换
 
 // 确认支付
