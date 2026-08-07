@@ -348,7 +348,7 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html?v=notice-highlight-20260807" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html?v=result-filters-20260807" title="设计页面预览"></iframe></div>
     <!-- 原型说明面板 -->
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
@@ -435,7 +435,7 @@
     });
   });
   // ===== 页面切换 =====
-  const INNER_PAGE_VERSION = 'notice-highlight-20260807';
+  const INNER_PAGE_VERSION = 'result-filters-20260807';
   function withVersion(url) {
     if (!url.includes('v2.9.3/search-agent.html')) return url;
     return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
