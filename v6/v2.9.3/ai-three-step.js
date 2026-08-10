@@ -131,12 +131,8 @@ let resultPaginationState = { currentPage: 1, pageSize: 20, totalItems: 0, total
     switchPage('list');
   } else if (page === 'result') {
     switchPage('result');
+    // 等商品名称、店铺名称等结果数据常量声明完成后，再由文件末尾统一初始化
     window._initResultPage = true;
-    // 直接进入结果页时，自动填充示例数据并渲染，避免出现空页面
-    if (sourcingResults.length === 0) {
-      generateSourcingResults(20);
-    }
-    renderResultCards();
   } else if (page === 'package') {
     switchPage('package');
   } else {
