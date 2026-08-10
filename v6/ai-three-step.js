@@ -1013,7 +1013,7 @@ function goListPage() {
 // ===== 详情弹窗（只读） =====
 const detailModal = document.getElementById('detailModal');
 
-// 详情弹窗假数据（按图搜方式生成图源 / 统计指标）
+// 详情弹窗假数据（按图搜方式生成图源）
 function getDetailMockData(task) {
   const iconMap = { link: '🔗', file: '📄', image: '🖼️' };
   const sourceTotal = Math.max(1, Math.min(task.count || 1, 6));
@@ -1027,13 +1027,7 @@ function getDetailMockData(task) {
       status: isOk ? '成功' : '失败'
     });
   }
-  const stats = [
-    { label: '图源数',     value: sourceTotal,                   accent: true  },
-    { label: '扣除张数',   value: task.count || 0,                accent: false },
-    { label: '成功结果',   value: Math.floor((task.finished || 0) * 12.4), accent: false },
-    { label: '失败结果',   value: Math.floor((task.count || 0) * 0.6),     accent: false }
-  ];
-  return { sources, stats };
+  return { sources };
 }
 
 function showDetail(id) {
@@ -1069,17 +1063,6 @@ function showDetail(id) {
         <div class="detail-source-thumb">${s.icon}</div>
         <span class="detail-source-name" title="${s.name}">${s.name}</span>
         <span class="detail-info-value" style="font-size:11px;color:${s.status === '成功' ? '#00b894' : '#e74c3c'};">${s.status}</span>
-      </div>
-    `).join('');
-  }
-
-  // 8. 数据统计
-  const statGrid = document.getElementById('detailStatGrid');
-  if (statGrid) {
-    statGrid.innerHTML = mock.stats.map(st => `
-      <div class="detail-stat-card">
-        <div class="detail-stat-label">${st.label}</div>
-        <div class="detail-stat-value ${st.accent ? 'accent' : ''}">${st.value.toLocaleString('zh-CN')}</div>
       </div>
     `).join('');
   }
