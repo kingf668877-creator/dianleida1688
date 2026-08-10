@@ -818,7 +818,7 @@
     item.addEventListener('click', () => {
       const page = item.dataset.page;
       if (!page) return;
-      const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : page === 'version-plan.html' ? 'version-plan.html' : `v2.9.3/search-agent.html?page=`;
+      const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : page === 'version-plan.html' ? 'version-plan.html' : `v2.9.3/search-agent.html?page=${page}`;
       updateCurrentPageKey(pageUrl);
     });
   });
