@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    图搜批量寻源 - 单页布局
    设计风格：现代极简 + 橙色品牌色
    ============================================ */
@@ -977,6 +977,12 @@ button {
   font-weight: 500;
 }
 
+.credits-expire {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
 .credits-purchase-btn {
   height: 40px;
   padding: 0 20px;
@@ -1771,6 +1777,42 @@ button {
 .export-radio-option input { accent-color: var(--primary); }
 
 /* ===== 货源类型 TAB ===== */
+.result-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.result-back-btn {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all .15s;
+}
+
+.result-back-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.result-page-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
 .result-source-tabs {
   display: flex;
   gap: 0;

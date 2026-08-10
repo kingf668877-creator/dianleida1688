@@ -219,6 +219,7 @@
         <div class="credits-detail">
           <span class="credits-label">剩余寻源张数</span>
           <span class="credits-value" id="userCreditsDisplay">2 <span class="credits-unit">张</span></span>
+          <span class="credits-expire">鏈夋晥鏈熻嚦锛?027-08-10</span>
         </div>
       </div>
       <button class="btn btn-primary credits-purchase-btn" id="purchaseBtn">
@@ -288,7 +289,6 @@
           <tr>
             <th style="width: 20%;">任务名称</th>
             <th style="width: 12%;">图搜方式</th>
-            <th style="width: 8%;">数量</th>
             <th style="width: 12%;">任务状态</th>
             <th style="width: 14%;">已寻源 / 总数</th>
             <th style="width: 10%;">扣除张数</th>
@@ -336,11 +336,12 @@
 
   <!-- ===== 寻源结果 ===== -->
   <section class="page-panel" id="page-result">
-    <!-- 货源类型 TAB -->
-    <div class="result-source-tabs">
-      <button class="result-source-tab-btn active" data-source-type="all">全部货源</button>
-      <button class="result-source-tab-btn" data-source-type="same">同款货源</button>
+    <!-- 寻源结果页头 -->
+    <div class="result-page-header" id="resultPageHeader">
+      <button class="result-back-btn" onclick="goListPage()">‹ 返回</button>
+      <h2 class="result-page-title">寻源结果</h2>
     </div>
+
     <div class="result-filter-panel" id="resultFilterPanel">
       <div class="result-filter-group">
         <span class="result-filter-label">交易条件<span class="result-filter-mode">多选</span></span>

@@ -594,7 +594,6 @@ function closePaymentModal() {
 
 // 任务列表按钮事件委托
 document.addEventListener('click', (e) => {
-  const buyBtn = e.target.closest('.action-link.buy');
   if (buyBtn) {
     const taskId = Number(buyBtn.dataset.taskId);
     openPaymentModal(taskId);
@@ -617,17 +616,7 @@ document.addEventListener('click', (e) => {
 });
 
 // 货源类型 TAB 与组合筛选
-let resultSourceType = 'all';
 const resultFilters = { trade: [], company: '', member: [], weightMin: null, weightMax: null };
-
-document.querySelectorAll('.result-source-tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.result-source-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-    resultSourceType = btn.dataset.sourceType;
-    resultPaginationState.currentPage = 1;
-    renderResultCards();
-  });
-});
 
 function syncResultFilters() {
   resultFilters.trade = [...document.querySelectorAll('[data-filter="trade"]:checked')].map(el => el.value);
@@ -647,7 +636,6 @@ document.querySelectorAll('#resultFilterPanel input').forEach(input => {
 
 function getFilteredResultItems() {
   return sourcingResults.filter(product => {
-    if (resultSourceType === 'same' && product.similarity <= 0.5) return false;
     if (resultFilters.trade.includes('one') && product.moq !== 1) return false;
     if (resultFilters.trade.includes('free') && product.shippingFee !== '包邮') return false;
     if (resultFilters.company === 'store' && product.isFactory) return false;
@@ -812,15 +800,10 @@ function updateTotalBadge() {
 function getTaskActions(task) {
   const actions = [];
   const sep = '<span class="action-sep">|</span>';
-  const buyBtn = `<button type="button" class="action-link buy" data-task-id="${task.id}" onclick="openPaymentModal(${task.id})">立即购买</button>`;
 
   if (task.status === 'running' || task.status === 'waiting') {
-    actions.push(buyBtn);
-    actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="stopTask(${task.id})">终止任务</span>`);
   } else if (task.status === 'done') {
-    actions.push(buyBtn);
-    actions.push(sep);
     actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
@@ -829,8 +812,6 @@ function getTaskActions(task) {
     actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   } else if (task.status === 'stopped' || task.status === 'pending') {
-    actions.push(buyBtn);
-    actions.push(sep);
     actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
@@ -867,8 +848,7 @@ function renderTaskTable() {
           <div class="task-name-cell" onclick="showDetail(${task.id})" title="${task.name}">${task.name}</div>
         </td>
         <td><span class="type-tag ${task.type}">${task.typeText}</span></td>
-        <td>${task.count} 条</td>
-        <td>
+                <td>
           <span class="status-tag ${task.status}">
             <span class="status-dot"></span>
             ${task.statusText}
@@ -1702,6 +1682,11 @@ if (window._initResultPage) {
   const doneTask = mockTasks.find(t => t.status === 'done') || mockTasks[0];
   if (doneTask) {
     currentResultTask = doneTask;
+    var resultHeader = document.getElementById('resultPageHeader');
+    if (resultHeader) {
+      var titleEl = resultHeader.querySelector('.result-page-title');
+      if (titleEl) titleEl.textContent = doneTask.name + ' 瀵绘簮缁撴灉';
+    }
     generateSourcingResults(20);
     renderResultCards();
   }
