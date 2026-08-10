@@ -133,7 +133,7 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
-  const PREVIEW_VERSION = 'yuque-spec-20260810';
+  const PREVIEW_VERSION = 'yuque-title-link-20260810';
   let currentPage = 'create';
   let iframeSrc = `../ai-three-step.html?v=${PREVIEW_VERSION}`;
   if (pageParam === 'list') { currentPage = 'list'; iframeSrc = `../ai-three-step.html?page=list&v=${PREVIEW_VERSION}`; }

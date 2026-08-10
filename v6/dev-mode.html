@@ -130,6 +130,8 @@
   }
   .spec-header-left { display:flex; align-items:center; gap:8px; min-width:0; }
   .spec-header h3 { font-size:15px; font-weight:600; white-space:nowrap; }
+  .spec-title-link { color:inherit; text-decoration:none; cursor:pointer; }
+  .spec-title-link:hover { color:var(--blue); }
   .spec-page-tag {
     font-size:11px; padding:2px 8px; border-radius:4px;
     background:#e8f0ff; color:var(--blue); font-weight:500;
@@ -238,7 +240,7 @@
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
         <div class="spec-header-left">
-          <h3>原型说明</h3>
+          <h3><a class="spec-title-link" id="specYuqueTitleLink" href="https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#" target="_blank" rel="noopener" title="打开语雀原型说明">原型说明 ↗</a></h3>
           <span class="spec-page-tag" id="specPageTag">创建图搜寻源</span>
         </div>
         <div class="spec-header-actions">
@@ -416,11 +418,14 @@
 
   function updateSpecYuqueLink(pageName) {
     const link = document.getElementById("specYuqueLink");
+    const titleLink = document.getElementById("specYuqueTitleLink");
     const tag = document.getElementById("specPageTag");
-    if (!link || !tag) return;
+    if (!link || !titleLink || !tag) return;
     tag.textContent = pageName;
     const anchor = YUQUE_ANCHORS[pageName] || "";
-    link.href = YUQUE_BASE_URL + (anchor ? encodeURIComponent(anchor) : "");
+    const yuqueUrl = YUQUE_BASE_URL + (anchor ? encodeURIComponent(anchor) : "");
+    link.href = yuqueUrl;
+    titleLink.href = yuqueUrl;
   }
 
   // ===== 收起/展开面板 =====
