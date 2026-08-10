@@ -1543,13 +1543,15 @@ function renderResultCards() {
   const groupSize = 4;
 
   const filteredCount = getFilteredResultItems().length;
-  document.getElementById('resultCount').textContent = filteredCount;
-  document.getElementById('resultPaginationTotal').textContent = `共 ${filteredCount} 条`;
+  const resultCountEl = document.getElementById('resultCount');
+  const resultPaginationTotalEl = document.getElementById('resultPaginationTotal');
+  if (resultCountEl) resultCountEl.textContent = filteredCount;
+  if (resultPaginationTotalEl) resultPaginationTotalEl.textContent = `共 ${filteredCount} 条`;
 
   if (!rows) return;
   if (filteredCount === 0) {
     rows.innerHTML = '';
-    empty.style.display = 'block';
+    if (empty) empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
     const groups = [];
