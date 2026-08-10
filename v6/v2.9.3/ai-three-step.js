@@ -814,7 +814,15 @@ function getTaskActions(task) {
     actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
-  } else if (task.status === 'stopped' || task.status === 'pending') {
+  } else if (task.status === 'stopped') {
+    actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
+    actions.push(sep);
+    actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
+    actions.push(sep);
+    actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
+    actions.push(sep);
+    actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
+  } else if (task.status === 'pending') {
     actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
@@ -866,7 +874,7 @@ function renderTaskTable() {
             </div>
           </div>
         </td>
-        <td class="deduct-count-cell"><b>${task.finished}</b> 张</td>
+        <td class="deduct-count-cell"><b>${task.status === 'done' ? task.finished : 0}</b> 张</td>
         <td style="color: var(--text-secondary); font-size: 12px;">${task.createTime}</td>
         <td>
           <div class="action-cell">
