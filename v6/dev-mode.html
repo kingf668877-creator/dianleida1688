@@ -321,6 +321,15 @@
       <input class="search-input" id="layerSearch" type="search" placeholder="搜索版本或页面">
     </div>
     <nav class="layer-list">
+            <!-- 版本规划 -->
+      <div class="version-folder open" data-version="version-plan">
+        <span class="folder-arrow">▶</span>
+        <span>版本规划</span>
+        <span class="version-badge" style="background:#f59e0b;">规划</span>
+      </div>
+      <div class="version-pages open" data-version="version-plan">
+        <button class="layer-item" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
+      </div>
       <!-- V2.9.3 版本（最新） -->
       <div class="version-folder open" data-version="v2.9.3">
         <span class="folder-arrow">▶</span>
@@ -487,7 +496,7 @@
         pages.classList.add('open');
       } else {
         // 非搜索状态下，V2.9.3 默认展开
-        if (version === 'v2.9.3') {
+        if (version === 'v2.9.3' || version === 'version-plan') {
           folder.classList.add('open');
           pages.classList.add('open');
         } else {
@@ -516,6 +525,7 @@
     '任务列表': 'v6/v2.9.3/prototype-spec-list.json',
     '寻源结果': 'v6/v2.9.3/prototype-spec-result.json',
     '套餐配置': 'v6/v2.9.3/prototype-spec-package.json'
+    '版本规划': 'v6/v2.9.3/prototype-spec-version-plan.json'
   };
   const LEGACY_SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
 
@@ -524,7 +534,8 @@
     'v2.9.3/search-agent.html': '创建图搜寻源',
     'v2.9.3/search-agent.html?page=list': '任务列表',
     'v2.9.3/search-agent.html?page=result': '寻源结果',
-    'v2.9.3/search-agent.html?page=package': '套餐配置'
+    'v2.9.3/search-agent.html?page=package': '套餐配置',
+    'version-plan.html': '版本规划'
   };
 
   // 默认列
@@ -554,6 +565,12 @@
       { '功能模块': '筛选条件', '功能描述': '价格/销量/揽收率等', '交互说明': '可收起展开', '数据来源': '用户输入', '备注': '' },
       { '功能模块': '结果卡片', '功能描述': '垂直卡片展示商品', '交互说明': '图片+状态+相似度+价格+数据', '数据来源': '1688API', '备注': '4列响应式' },
       { '功能模块': '批量操作', '功能描述': '监控/关注/导出/铺货', '交互说明': '全选后批量操作', '数据来源': '系统', '备注': '' }
+        ],
+    '版本规划': [
+      { '功能模块': 'V2.9.3', '功能描述': '图搜寻源产品迭代', '交互说明': '创建图搜寻源/任务列表/寻源结果/套餐配置', '数据来源': '产品功能规划', '备注': '已完成' },
+      { '功能模块': 'V3.0.0', '功能描述': '多平台', '交互说明': '支持1688/Ozon/TEMU等多平台图搜', '数据来源': '产品功能规划', '备注': '规划中' },
+      { '功能模块': 'V3.1.0', '功能描述': 'AI智能选品', '交互说明': '基于寻源结果AI推荐优质商品', '数据来源': '产品功能规划', '备注': '规划中' },
+      { '功能模块': 'V3.2.0', '功能描述': '批量铺货管理', '交互说明': '一键多平台', '数据来源': '产品功能规划', '备注': '规划中' }
     ]
   };
 
@@ -801,7 +818,7 @@
     item.addEventListener('click', () => {
       const page = item.dataset.page;
       if (!page) return;
-      const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : `v2.9.3/search-agent.html?page=${page}`;
+      const pageUrl = page === 'create' ? 'v2.9.3/search-agent.html' : page === 'version-plan.html' ? 'version-plan.html' : `v2.9.3/search-agent.html?page=`;
       updateCurrentPageKey(pageUrl);
     });
   });
