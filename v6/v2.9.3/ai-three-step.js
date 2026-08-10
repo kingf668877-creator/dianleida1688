@@ -706,30 +706,6 @@ function confirmExport() {
   showToast(`已导出${items.length}个寻源结果`);
 }
 
-// 商品列表横向滚动
-function scrollResultProducts(btn, direction) {
-  const wrapper = btn.closest('.result-scroll-wrapper');
-  if (!wrapper) return;
-  const container = wrapper.querySelector('.result-source-products');
-  if (!container) return;
-  const cardWidth = container.querySelector('.result-product-card')?.offsetWidth || 240;
-  const gap = 12;
-  const scrollAmount = (cardWidth + gap) * 3;
-  container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
-}
-
-function updateScrollButtonStates() {
-  document.querySelectorAll('.result-scroll-wrapper').forEach(wrapper => {
-    const container = wrapper.querySelector('.result-source-products');
-    if (!container) return;
-    const leftBtn = wrapper.querySelector('.result-scroll-left');
-    const rightBtn = wrapper.querySelector('.result-scroll-right');
-    const maxScroll = container.scrollWidth - container.clientWidth;
-    if (leftBtn) leftBtn.classList.toggle('disabled', container.scrollLeft <= 2);
-    if (rightBtn) rightBtn.classList.toggle('disabled', container.scrollLeft >= maxScroll - 2);
-  });
-}
-
 // 套餐配置 Tab 切换
 function activatePackageTab(tab) {
   document.querySelectorAll('.pkg-tab-btn').forEach(b => {
@@ -1526,7 +1502,7 @@ function renderResultCards() {
             <div class="result-card-info">
               <div class="result-product-title" title="${p.title}">${p.isNew ? '<span class="result-tag new">新品</span>' : ''}<span class="result-title-text">${p.title}</span></div>
               <div class="result-card-price-row"><span class="result-card-price">¥${p.price.toFixed(2)}</span><span class="result-card-moq">起批量 ${p.moq}件</span></div>
-              <div class="result-card-ship-row"><span class="result-ship-item ${p.shippingFee === 0 ? 'free-shipping' : ''}">运费：${p.shippingFee === 0 ? '包邮' : `¥${p.shippingFee}`}</span><span class="result-ship-item result-packaging-item">包装：仅披露重量(${p.weightMin}g)</span></div>
+              <div class="result-card-ship-row"><span class="result-ship-item ${p.shippingFee === 0 ? 'free-shipping' : ''}">运费：${p.shippingFee === 0 ? '包邮' : `¥${p.shippingFee}`}</span><span class="result-ship-item result-packaging-item">重量：206g</span></div>
               <div class="result-card-data-grid">
                 <div class="result-data-cell"><span class="result-data-label">月件数</span><span class="result-data-value emphasis">${p.monthlyPieces}</span></div>
                 <div class="result-data-cell"><span class="result-data-label">月销</span><span class="result-data-value">¥${p.monthlySales.toFixed(0)}</span></div>
@@ -1547,11 +1523,7 @@ function renderResultCards() {
             <div class="result-source-count">${products.length * 12} 个结果</div>
             <button class="result-source-search-btn" onclick="showToast('全网图搜已触发')">全网图搜</button>
           </aside>
-          <div class="result-scroll-wrapper">
-            <button class="result-scroll-btn result-scroll-left" onclick="scrollResultProducts(this, -1)" aria-label="向左滚动">&#8249;</button>
-            <div class="result-source-products">${cards}</div>
-            <button class="result-scroll-btn result-scroll-right" onclick="scrollResultProducts(this, 1)" aria-label="向右滚动">&#8250;</button>
-          </div>
+          <div class="result-source-products">${cards}</div>
         </section>
       `;
     }).join('');
@@ -1559,10 +1531,7 @@ function renderResultCards() {
 
   updateResultSelectedCount();
   renderResultPagination();
-  updateScrollButtonStates();
-  document.querySelectorAll('.result-source-products').forEach(c => {
-    c.addEventListener('scroll', updateScrollButtonStates, { passive: true });
-  });
+
 }
 
 // 切换选中
