@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    图搜批量寻源 - 单页布局
    设计风格：现代极简 + 橙色品牌色
    ============================================ */
@@ -958,7 +958,8 @@ button {
 .credits-detail {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  min-width: 0;
 }
 
 .credits-label {
@@ -978,9 +979,10 @@ button {
 }
 
 .credits-expire {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
+  font-size: 11px;
+  color: #7a8899;
+  margin-top: 0;
+  line-height: 1.2;
 }
 
 .credits-purchase-btn {

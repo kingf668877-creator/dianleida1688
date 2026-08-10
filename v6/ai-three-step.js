@@ -985,7 +985,7 @@ function copyTask(id) {
   if (!task) return;
 
   // 填充任务名称到创建表单
-  taskNameInput.value = task.name + ' - 副本';
+  taskNameInput.value = task.name + ' 寻源结果';
 
   // 根据任务类型填充对应的数据
   if (task.type === 'link') {
@@ -1685,7 +1685,7 @@ if (window._initResultPage) {
     var resultHeader = document.getElementById('resultPageHeader');
     if (resultHeader) {
       var titleEl = resultHeader.querySelector('.result-page-title');
-      if (titleEl) titleEl.textContent = doneTask.name + ' 瀵绘簮缁撴灉';
+      if (titleEl) titleEl.textContent = doneTask.name + ' 寻源结果';
     }
     generateSourcingResults(20);
     renderResultCards();
