@@ -115,6 +115,15 @@ function goCreatePage() {
   switchPage('create');
 }
 
+// 寻源结果数据（必须先于 initPage 声明，否则直接进入结果页时会因 TDZ 报错）
+let currentResultTask = null;
+let sourcingResults = [];
+let allSourcingResults = []; // 原始全量数据（不受状态筛选影响）
+let resultSelectedIds = new Set();
+let resultStatusFilter = 'all'; // all | success | fail
+let resultSort = 'match'; // match | price | sales
+let resultPaginationState = { currentPage: 1, pageSize: 20, totalItems: 0, totalPages: 1 };
+
 // 页面加载时根据 URL 参数切换面板
 (function initPage() {
   const page = getUrlParam('page');
@@ -1360,13 +1369,7 @@ updateUserCreditsDisplay();
 tasks.filter(t => t.status === 'running').forEach(t => simulateTaskProgress(t.id));
 
 // ===== 寻源结果数据 =====
-let currentResultTask = null;
-let sourcingResults = [];
-let allSourcingResults = []; // 原始全量数据（不受状态筛选影响）
-let resultSelectedIds = new Set();
-let resultStatusFilter = 'all'; // all | success | fail
-let resultSort = 'match'; // match | price | sales
-let resultPaginationState = { currentPage: 1, pageSize: 20, totalItems: 0, totalPages: 1 };
+// （变量声明已提前至 initPage 之前，避免 TDZ 报错）
 
 // 统一排序比较器（导出 / 结果区 共用）
 function getResultComparator(sortKey) {
