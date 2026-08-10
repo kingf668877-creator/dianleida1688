@@ -215,10 +215,10 @@
         <span class="version-badge">最新</span>
       </div>
       <div class="version-pages open" data-version="v2.9.3">
-        <button class="layer-item active" data-page="v2.9.3/search-agent.html" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">C</span>创建图搜寻源</button>
-        <button class="layer-item" data-page="v2.9.3/search-agent.html?page=list" data-search="V2.9.3 任务列表 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#ffa502;">L</span>任务列表</button>
-        <button class="layer-item" data-page="v2.9.3/search-agent.html?page=result" data-search="V2.9.3 寻源结果 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#00b894;">R</span>寻源结果</button>
-        <button class="layer-item" data-page="v2.9.3/search-agent.html?page=package" data-search="V2.9.3 套餐配置 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3742fa;">P</span>套餐配置</button>
+        <button class="layer-item active" data-page="v2.9.3/search-agent-yuque.html" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">C</span>创建图搜寻源</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=list" data-search="V2.9.3 任务列表 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#ffa502;">L</span>任务列表</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=result" data-search="V2.9.3 寻源结果 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#00b894;">R</span>寻源结果</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=package" data-search="V2.9.3 套餐配置 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3742fa;">P</span>套餐配置</button>
       </div>
       <!-- V2.8.9 版本 -->
       <div class="version-folder" data-version="v2.8.9">
@@ -235,7 +235,7 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent-yuque.html" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent-yuque.html?v=cf-proxy-20260810" title="设计页面预览"></iframe></div>
     <!-- 原型说明面板 -->
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
@@ -317,7 +317,7 @@
   // ===== 页面切换 =====
   const INNER_PAGE_VERSION = 'module-spec-nav-fixed-20260807';
   function withVersion(url) {
-    if (!url.includes('v2.9.3/search-agent.html')) return url;
+    if (!url.includes('v2.9.3/search-agent-yuque.html')) return url;
     return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
   }
   items.forEach(item => item.addEventListener('click', () => {
@@ -328,7 +328,7 @@
     }
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
-    frame.src = target === 'v2.9.3/search-agent.html' ? 'v2.9.3/search-agent-yuque.html' : withVersion(target);
+    frame.src = target === 'v2.9.3/search-agent-yuque.html' ? 'v2.9.3/search-agent-yuque.html' : withVersion(target);
     if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
   }));
   // ===== 监听 iframe 内部板块切换（postMessage）=====
@@ -341,7 +341,7 @@
     // 在 V2.9.3 版本组中查找匹配的导航项
     const v293Items = items.filter(item => {
       const dp = item.dataset.page || '';
-      return dp.includes('v2.9.3/search-agent.html');
+      return dp.includes('v2.9.3/search-agent-yuque.html');
     });
     let targetItem = null;
     v293Items.forEach(item => {
@@ -404,10 +404,10 @@
   };
 
   const pageNames = {
-    "v2.9.3/search-agent.html": "创建图搜寻源",
-    "v2.9.3/search-agent.html?page=list": "任务列表",
-    "v2.9.3/search-agent.html?page=result": "寻源结果",
-    "v2.9.3/search-agent.html?page=package": "套餐配置",
+    "v2.9.3/search-agent-yuque.html": "创建图搜寻源",
+    "v2.9.3/search-agent-yuque.html?page=list": "任务列表",
+    "v2.9.3/search-agent-yuque.html?page=result": "寻源结果",
+    "v2.9.3/search-agent-yuque.html?page=package": "套餐配置",
     "v2.9.3/search-agent-fix.html": "创建图搜寻源",
     "v2.9.3/search-agent-fix.html?page=list": "任务列表",
     "v2.9.3/search-agent-fix.html?page=result": "寻源结果",
@@ -454,7 +454,7 @@
       const page = item.dataset.page;
       if (!page) return;
       if (page.startsWith("http")) { window.location.href = page; return; }
-      const pageUrl = page === "create" ? "v2.9.3/search-agent.html" : page === "version-plan.html" ? "version-plan.html" : `v2.9.3/search-agent.html?page=${page}`;
+      const pageUrl = page === "create" ? "v2.9.3/search-agent-yuque.html" : page === "version-plan.html" ? "version-plan.html" : `v2.9.3/search-agent-yuque.html?page=${page}`;
       updateCurrentPageKey(pageUrl);
     });
   });
