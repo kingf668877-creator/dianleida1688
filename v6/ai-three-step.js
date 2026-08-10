@@ -1609,7 +1609,6 @@ function renderResultCards() {
             <label class="result-source-checkbox"><input type="checkbox" ${rowChecked} onchange="toggleResultRowSelect(${groupIndex}, this.checked)"></label>
             <div class="result-source-image-wrap"><img src="${sourceImage}" alt="上传图片 ${groupIndex + 1}"></div>
             <div class="result-source-label">url_${String(groupIndex + 1).padStart(4, '0')}.jpg</div>
-            <div class="result-source-count">${products.length * 12} 个结果</div>
             <button class="result-source-search-btn" onclick="showToast('全网图搜已触发')">全网图搜</button>
           </aside>
           <div class="result-source-products">${cards}</div>
