@@ -2400,10 +2400,27 @@ button {
   border-radius: 4px;
   font-weight: 500;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.6;
 }
 
 .result-store-type.factory { background: #fff4e6; color: #e55d00; }
 .result-store-type.store { background: var(--info-bg); color: var(--info); }
+
+.result-store-type-text { font-weight: 600; }
+.result-store-years {
+  font-size: 9px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  color: inherit;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
 
 .result-store-name {
   font-size: 12px;

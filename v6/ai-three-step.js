@@ -1431,6 +1431,8 @@ function generateSourcingResults(count) {
 
     // 寻源状态：大部分成功，少量失败
     const searchStatus = Math.random() > 0.15 ? 'success' : 'fail';
+    // 店铺开店年限（1-15 年）
+    const storeYears = Math.floor(Math.random() * 14) + 1;
 
     sourcingResults.push({
       id: i + 1,
@@ -1457,6 +1459,7 @@ function generateSourcingResults(count) {
       responseRate: parseFloat(responseRate),
       isFactory,
       storeName: isFactory ? factoryNames[i % factoryNames.length] : storeNames[i % storeNames.length],
+      storeYears,
       memberTypes,
       similarity,
       searchStatus
@@ -1514,8 +1517,8 @@ function renderResultCards() {
   const rows = document.getElementById('resultRows');
   const empty = document.getElementById('resultEmpty');
   const paged = getResultPagedItems();
-  // 回退到每行4个商品，兼容性和视觉效果更稳妥
-  const groupSize = 4;
+  // 每个图源最多展示 3 个商品
+  const groupSize = 3;
 
   const filteredCount = getFilteredResultItems().length;
   document.getElementById('resultCount').textContent = filteredCount;
@@ -1557,7 +1560,14 @@ function renderResultCards() {
                 <div class="result-data-cell"><span class="result-data-label">48H</span><span class="result-data-value">${p.collect48h}%</span></div>
               </div>
             </div>
-            <div class="result-card-store"><span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">${p.isFactory ? '工厂' : '店铺'}</span><span class="result-store-name" title="${p.storeName}">${p.storeName}</span><span class="result-store-location">${p.city}</span></div>
+            <div class="result-card-store">
+              <span class="result-store-type ${p.isFactory ? 'factory' : 'store'}">
+                <span class="result-store-type-text">${p.isFactory ? '工厂' : '店铺'}</span>
+                <span class="result-store-years">${p.storeYears || 1}年</span>
+              </span>
+              <span class="result-store-name" title="${p.storeName}">${p.storeName}</span>
+              <span class="result-store-location">${p.city}</span>
+            </div>
           </div>
         `;
       }).join('');
