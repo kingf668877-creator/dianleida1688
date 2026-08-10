@@ -1021,9 +1021,13 @@ function getDetailMockData(task) {
   const sources = [];
   for (let i = 0; i < sourceTotal; i++) {
     const isOk = Math.random() > 0.18;
+    const sizeKb = Math.floor(Math.random() * 800 + 80);
+    const ratio = (Math.random() * 0.4 + 0.8).toFixed(2);
     sources.push({
       icon: typeIcon,
       name: `${task.type || 'image'}_${String(i + 1).padStart(3, '0')}.${task.type === 'file' ? 'xlsx' : 'jpg'}`,
+      size: `${sizeKb} KB`,
+      ratio: ratio + ':1',
       status: isOk ? '成功' : '失败'
     });
   }
@@ -1054,15 +1058,22 @@ function showDetail(id) {
   document.getElementById('detailTime').textContent = task.createTime || '—';
   document.getElementById('detailFinishTime').textContent = task.finishTime || '—';
 
-  // 7. 图源列表（只读视图，假数据填充）
+  // 7. 图源列表（横向卡片：左侧大缩略图 + 名称/大小/比例 + 右侧状态标签）
   const mock = getDetailMockData(task);
   const sourceGrid = document.getElementById('detailSourceGrid');
   if (sourceGrid) {
     sourceGrid.innerHTML = mock.sources.map((s, i) => `
       <div class="detail-source-item">
         <div class="detail-source-thumb">${s.icon}</div>
-        <span class="detail-source-name" title="${s.name}">${s.name}</span>
-        <span class="detail-info-value" style="font-size:11px;color:${s.status === '成功' ? '#00b894' : '#e74c3c'};">${s.status}</span>
+        <div class="detail-source-body">
+          <div class="detail-source-name" title="${s.name}">${s.name}</div>
+          <div class="detail-source-meta">
+            <span class="detail-source-meta-item">📦 ${s.size}</span>
+            <span class="detail-source-meta-item">📐 ${s.ratio}</span>
+            <span class="detail-source-meta-item">#${String(i + 1).padStart(2, '0')}</span>
+          </div>
+        </div>
+        <span class="detail-source-status ${s.status === '成功' ? 'ok' : 'fail'}">${s.status}</span>
       </div>
     `).join('');
   }
