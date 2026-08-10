@@ -123,6 +123,11 @@ function goCreatePage() {
   } else if (page === 'result') {
     switchPage('result');
     window._initResultPage = true;
+    // 直接进入结果页时，自动填充示例数据并渲染，避免出现空页面
+    if (sourcingResults.length === 0) {
+      generateSourcingResults(20);
+    }
+    renderResultCards();
   } else if (page === 'package') {
     switchPage('package');
   } else {
