@@ -359,14 +359,6 @@
         <label class="result-filter-option"><input type="checkbox" data-filter="member" value="super-factory">超级工厂</label>
         <label class="result-filter-option"><input type="checkbox" data-filter="member" value="诚信通">仅诚信通</label>
       </div>
-      <div class="result-filter-group result-filter-weight">
-        <span class="result-filter-label">重量(g)</span>
-        <div class="result-weight-inputs">
-          <input class="result-filter-input" id="resultWeightMin" type="number" min="0" placeholder="最低">
-          <span>至</span>
-          <input class="result-filter-input" id="resultWeightMax" type="number" min="0" placeholder="最高">
-        </div>
-      </div>
     </div>
 
     <!-- 排序方式 -->
@@ -392,7 +384,7 @@
         </div>
       </div>
       <div class="result-toolbar-right">
-        <span class="result-count">结果数量: <b id="resultCount">0</b></span>
+        <span class="result-count">搜索图片数量：20</span>
       </div>
     </div>
 
@@ -403,9 +395,11 @@
 
     <!-- 空状态 -->
     <div class="result-empty" id="resultEmpty" style="display:none;">
-      <div class="result-empty-icon">🔍</div>
-      <div class="result-empty-text">暂无寻源结果</div>
-      <div class="result-empty-desc">请调整筛选条件后重新查询</div>
+      <div class="result-empty-icon">📭</div>
+      <div class="result-empty-title">暂未找到匹配的货源商品</div>
+      <div class="result-empty-desc">
+        您可以点击右侧【<b class="result-empty-action">全网图搜</b>】继续查找；若您有同款图片，请联系客服为您查找匹配失败原因。
+      </div>
     </div>
 
     <!-- 分页 -->
@@ -502,6 +496,13 @@
         <label class="export-radio-option"><input type="radio" name="exportCount" value="1" checked><span>1个</span></label>
         <label class="export-radio-option"><input type="radio" name="exportCount" value="2"><span>2个</span></label>
         <label class="export-radio-option"><input type="radio" name="exportCount" value="3"><span>3个</span></label>
+      </div>
+      <div class="export-option-group">
+        <div class="export-option-title">导出筛选项</div>
+        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="price" checked><span>价格</span></label>
+        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="moq" checked><span>起批量</span></label>
+        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="shipping" checked><span>运费</span></label>
+        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="store" checked><span>店铺/工厂</span></label>
       </div>
     </div>
     <div class="export-footer">

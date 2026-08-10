@@ -616,22 +616,18 @@ document.addEventListener('click', (e) => {
 });
 
 // 货源类型 TAB 与组合筛选
-const resultFilters = { trade: [], company: '', member: [], weightMin: null, weightMax: null };
+const resultFilters = { trade: [], company: '', member: [] };
 
 function syncResultFilters() {
   resultFilters.trade = [...document.querySelectorAll('[data-filter="trade"]:checked')].map(el => el.value);
   resultFilters.company = document.querySelector('[data-filter="company"]:checked')?.value || '';
   resultFilters.member = [...document.querySelectorAll('[data-filter="member"]:checked')].map(el => el.value);
-  const minValue = document.getElementById('resultWeightMin')?.value;
-  const maxValue = document.getElementById('resultWeightMax')?.value;
-  resultFilters.weightMin = minValue === '' ? null : Number(minValue);
-  resultFilters.weightMax = maxValue === '' ? null : Number(maxValue);
   resultPaginationState.currentPage = 1;
   renderResultCards();
 }
 
 document.querySelectorAll('#resultFilterPanel input').forEach(input => {
-  input.addEventListener(input.type === 'number' ? 'input' : 'change', syncResultFilters);
+  input.addEventListener('change', syncResultFilters);
 });
 
 function getFilteredResultItems() {
@@ -641,8 +637,6 @@ function getFilteredResultItems() {
     if (resultFilters.company === 'store' && product.isFactory) return false;
     if (resultFilters.company === 'factory' && !product.isFactory) return false;
     if (resultFilters.member.length && !resultFilters.member.every(type => product.memberTypes.includes(type))) return false;
-    if (resultFilters.weightMin !== null && product.weightMax < resultFilters.weightMin) return false;
-    if (resultFilters.weightMax !== null && product.weightMin > resultFilters.weightMax) return false;
     return true;
   });
 }
@@ -691,9 +685,33 @@ function confirmExport() {
   }
   const sortKey = resultSort;
   const sortLabelMap = { match: '匹配度优先', price: '低价优先', sales: '高销量优先' };
+  // 读取导出筛选项（按勾选状态决定列是否输出）
+  const exportFields = new Set(
+    [...document.querySelectorAll('input[name="exportFilter"]:checked')].map(el => el.value)
+  );
+  // 始终包含基础字段；筛选项 4 个为可选列
+  const headerMap = {
+    base: ['商品名称', '类目'],
+    price: ['价格'],
+    moq: ['起批量'],
+    shipping: ['运费'],
+    store: ['公司类型', '店铺名称', '发货地']
+  };
+  const header = [...headerMap.base];
+  if (exportFields.has('price'))    header.push(...headerMap.price);
+  if (exportFields.has('moq'))      header.push(...headerMap.moq);
+  if (exportFields.has('shipping')) header.push(...headerMap.shipping);
+  if (exportFields.has('store'))    header.push(...headerMap.store);
   const rows = [
-    ['商品名称', '类目', '价格', '起批量', '运费', '重量(g)', '月销量', '公司类型', '店铺名称', '发货地'],
-    ...items.map(p => [p.title, p.category, p.price, p.moq, p.shippingFee === '包邮' ? '包邮' : `¥${p.shippingFee}`, p.weightMin, p.monthlyPieces, p.isFactory ? '工厂' : '店铺', p.storeName, p.city])
+    header,
+    ...items.map(p => {
+      const row = [p.title, p.category];
+      if (exportFields.has('price'))    row.push(p.price);
+      if (exportFields.has('moq'))      row.push(p.moq);
+      if (exportFields.has('shipping')) row.push(p.shippingFee === '包邮' ? '包邮' : `¥${p.shippingFee}`);
+      if (exportFields.has('store'))    row.push(p.isFactory ? '工厂' : '店铺', p.storeName, p.city);
+      return row;
+    })
   ];
   const csv = rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([`\\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
@@ -1517,8 +1535,8 @@ function renderResultCards() {
   const rows = document.getElementById('resultRows');
   const empty = document.getElementById('resultEmpty');
   const paged = getResultPagedItems();
-  // 每个图源最多展示 3 个商品
-  const groupSize = 3;
+  // 每个图源最多展示 4 个商品
+  const groupSize = 4;
 
   const filteredCount = getFilteredResultItems().length;
   document.getElementById('resultCount').textContent = filteredCount;

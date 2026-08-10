@@ -1778,6 +1778,11 @@ button {
 .export-radio-option { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; cursor: pointer; }
 .export-radio-option input { accent-color: var(--primary); }
 
+.export-checkbox-option { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; cursor: pointer; user-select: none; padding: 4px 10px; background: var(--bg-secondary); border-radius: 6px; transition: all .15s ease; }
+.export-checkbox-option input { accent-color: var(--primary); margin: 0; }
+.export-checkbox-option:hover { color: var(--primary); background: var(--primary-bg); }
+.export-checkbox-option:has(input:checked) { color: var(--primary); background: var(--primary-bg); border-color: var(--primary-light); }
+
 /* ===== 货源类型 TAB ===== */
 .result-page-header {
   display: flex;
@@ -2471,26 +2476,48 @@ button {
 
 /* ===== 寻源结果 - 空状态 ===== */
 .result-empty {
-  padding: 60px 20px;
+  padding: 80px 24px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .result-empty-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-  opacity: .4;
+  font-size: 64px;
+  line-height: 1;
+  margin-bottom: 18px;
+  opacity: .55;
+  filter: grayscale(.2);
 }
 
-.result-empty-text {
-  font-size: 16px;
+.result-empty-title {
+  font-size: 17px;
   font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+  color: var(--text-primary);
+  margin-bottom: 10px;
 }
 
 .result-empty-desc {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  line-height: 1.9;
+  max-width: 480px;
+  background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+  border: 1px dashed var(--border-light);
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-top: 6px;
+}
+
+.result-empty-action {
+  color: var(--primary);
+  font-weight: 700;
+  padding: 1px 6px;
+  background: var(--primary-bg);
+  border-radius: 4px;
+  margin: 0 2px;
 }
 
 /* ===== 分页 ===== */
