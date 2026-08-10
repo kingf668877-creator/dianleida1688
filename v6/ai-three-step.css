@@ -3493,3 +3493,54 @@ body.edit-mode [data-editable]:hover {
   .detail-info-wide { grid-column: span 2; }
   .detail-content { width: 100vw; max-width: 100vw; max-height: 100vh; border-radius: 0; }
 }
+
+/* ===== 寻源结果排序方式 ===== */
+.result-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(180deg, #f7faff 0%, #fff 100%);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+}
+.result-sort-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+.result-sort-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.result-sort-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s ease;
+  user-select: none;
+}
+.result-sort-option input { display: none; }
+.result-sort-option:hover {
+  color: var(--primary);
+  border-color: var(--primary-light);
+  background: var(--primary-bg);
+}
+.result-sort-option.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(255, 106, 0, .25);
+}

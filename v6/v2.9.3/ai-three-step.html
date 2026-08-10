@@ -368,6 +368,16 @@
         </div>
       </div>
     </div>
+
+    <!-- 排序方式 -->
+    <div class="result-sort-bar">
+      <span class="result-sort-label">排序方式：</span>
+      <div class="result-sort-options" id="resultSortOptions">
+        <label class="result-sort-option active"><input type="radio" name="resultSort" value="match" checked><span>匹配度优先</span></label>
+        <label class="result-sort-option"><input type="radio" name="resultSort" value="price"><span>低价优先</span></label>
+        <label class="result-sort-option"><input type="radio" name="resultSort" value="sales"><span>高销量优先</span></label>
+      </div>
+    </div>
     <!-- 结果工具栏：左侧全选+操作，右侧结果数量 -->
     <div class="result-toolbar result-toolbar-reference">
       <div class="result-toolbar-left">
@@ -492,11 +502,6 @@
         <label class="export-radio-option"><input type="radio" name="exportCount" value="1" checked><span>1个</span></label>
         <label class="export-radio-option"><input type="radio" name="exportCount" value="2"><span>2个</span></label>
         <label class="export-radio-option"><input type="radio" name="exportCount" value="3"><span>3个</span></label>
-      </div>
-      <div class="export-option-group">
-        <div class="export-option-title">寻源结果优先级</div>
-        <label class="export-radio-option"><input type="radio" name="exportPriority" value="price" checked><span>低价优先</span></label>
-        <label class="export-radio-option"><input type="radio" name="exportPriority" value="sales"><span>高销量优先</span></label>
       </div>
     </div>
     <div class="export-footer">

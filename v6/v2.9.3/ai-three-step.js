@@ -676,10 +676,9 @@ window.addEventListener('scroll', closeExportModal, true);
 function getExportResultItems() {
   const items = getFilteredResultItems();
   const count = Number(document.querySelector('input[name="exportCount"]:checked')?.value || 1);
-  const priority = document.querySelector('input[name="exportPriority"]:checked')?.value || 'price';
-  const sorted = [...items].sort((a, b) => priority === 'sales'
-    ? b.monthlyPieces - a.monthlyPieces
-    : a.price - b.price);
+  // 导出时按当前选中的排序方式（来自结果区）
+  const sortKey = resultSort;
+  const sorted = [...items].sort(getResultComparator(sortKey));
   return sorted.slice(0, count);
 }
 
@@ -690,6 +689,8 @@ function confirmExport() {
     showToast('当前没有可导出的寻源结果');
     return;
   }
+  const sortKey = resultSort;
+  const sortLabelMap = { match: '匹配度优先', price: '低价优先', sales: '高销量优先' };
   const rows = [
     ['商品名称', '类目', '价格', '起批量', '运费', '重量(g)', '月销量', '公司类型', '店铺名称', '发货地'],
     ...items.map(p => [p.title, p.category, p.price, p.moq, p.shippingFee === '包邮' ? '包邮' : `¥${p.shippingFee}`, p.weightMin, p.monthlyPieces, p.isFactory ? '工厂' : '店铺', p.storeName, p.city])
@@ -699,7 +700,7 @@ function confirmExport() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `寻源结果-${items.length}个-${document.querySelector('input[name="exportPriority"]:checked')?.value === 'sales' ? '高销量优先' : '低价优先'}.csv`;
+  link.download = `寻源结果-${items.length}个-${sortLabelMap[sortKey] || '匹配度优先'}.csv`;
   link.click();
   URL.revokeObjectURL(url);
   closeExportModal();
@@ -1341,7 +1342,22 @@ let sourcingResults = [];
 let allSourcingResults = []; // 原始全量数据（不受状态筛选影响）
 let resultSelectedIds = new Set();
 let resultStatusFilter = 'all'; // all | success | fail
+let resultSort = 'match'; // match | price | sales
 let resultPaginationState = { currentPage: 1, pageSize: 20, totalItems: 0, totalPages: 1 };
+
+// 统一排序比较器（导出 / 结果区 共用）
+function getResultComparator(sortKey) {
+  switch (sortKey) {
+    case 'price':
+      return (a, b) => a.price - b.price;
+    case 'sales':
+      return (a, b) => b.monthlyPieces - a.monthlyPieces;
+    case 'match':
+    default:
+      // 匹配度 = similarity 字段，降序
+      return (a, b) => (b.similarity || 0) - (a.similarity || 0);
+  }
+}
 
 // 商品名模板
 const productNames = [
@@ -1478,6 +1494,21 @@ function applyStatusFilter(status) {
   renderResultCards();
 }
 
+// 应用排序方式
+function applyResultSort(sortKey) {
+  resultSort = sortKey;
+  document.querySelectorAll('.result-sort-option').forEach(opt => {
+    const input = opt.querySelector('input');
+    const isActive = input && input.value === sortKey;
+    opt.classList.toggle('active', isActive);
+  });
+  resultPaginationState.currentPage = 1;
+  renderResultCards();
+}
+document.querySelectorAll('input[name="resultSort"]').forEach(input => {
+  input.addEventListener('change', () => applyResultSort(input.value));
+});
+
 // 渲染寻源结果：每一行对应一个上传图源，右侧展示该图源的商品信息
 function renderResultCards() {
   const rows = document.getElementById('resultRows');
@@ -1607,7 +1638,7 @@ document.getElementById('resultSelectAll')?.addEventListener('change', (e) => {
 // 分页
 function getResultPagedItems() {
   const { currentPage, pageSize } = resultPaginationState;
-  const filtered = getFilteredResultItems();
+  const filtered = getFilteredResultItems().slice().sort(getResultComparator(resultSort));
   const start = (currentPage - 1) * pageSize;
   return filtered.slice(start, start + pageSize);
 }
