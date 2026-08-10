@@ -1010,25 +1010,85 @@ function goListPage() {
   switchPage('list');
 }
 
-// ===== 详情弹窗 =====
+// ===== 详情弹窗（只读） =====
 const detailModal = document.getElementById('detailModal');
+
+// 详情弹窗假数据（按图搜方式生成图源 / 统计指标）
+function getDetailMockData(task) {
+  const iconMap = { link: '🔗', file: '📄', image: '🖼️' };
+  const sourceTotal = Math.max(1, Math.min(task.count || 1, 6));
+  const typeIcon = iconMap[task.type] || '📦';
+  const sources = [];
+  for (let i = 0; i < sourceTotal; i++) {
+    const isOk = Math.random() > 0.18;
+    sources.push({
+      icon: typeIcon,
+      name: `${task.type || 'image'}_${String(i + 1).padStart(3, '0')}.${task.type === 'file' ? 'xlsx' : 'jpg'}`,
+      status: isOk ? '成功' : '失败'
+    });
+  }
+  const stats = [
+    { label: '图源数',     value: sourceTotal,                   accent: true  },
+    { label: '扣除张数',   value: task.count || 0,                accent: false },
+    { label: '成功结果',   value: Math.floor((task.finished || 0) * 12.4), accent: false },
+    { label: '失败结果',   value: Math.floor((task.count || 0) * 0.6),     accent: false }
+  ];
+  return { sources, stats };
+}
 
 function showDetail(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
-  if (detailModal) {
-    document.getElementById('detailName').textContent = task.name;
-    document.getElementById('detailType').textContent = task.typeText;
-    document.getElementById('detailStatus').innerHTML = `<span class="status-tag ${task.status}"><span class="status-dot"></span>${task.statusText}</span>`;
-    document.getElementById('detailCount').textContent = `${task.count} 条`;
-    document.getElementById('detailTime').textContent = task.createTime;
-    document.getElementById('detailFinishTime').textContent = task.finishTime;
-    document.getElementById('detailProgressText').textContent = `${task.progress}%（${task.finished} / ${task.count}）`;
-    document.getElementById('detailProgressBar').style.width = task.progress + '%';
-    detailModal.style.display = 'flex';
-  } else {
+  if (!detailModal) {
     showToast(`查看任务: ${task.name}`);
+    return;
   }
+  // 1. 任务名称（图搜方式都不可编辑）
+  document.getElementById('detailName').textContent = task.name;
+  // 2. 图搜方式（图搜方式只读：显示类型文本 + 对应图标）
+  const typeIconMap = { link: '🔗', file: '📄', image: '🖼️' };
+  const typeIcon = typeIconMap[task.type] || '📦';
+  document.getElementById('detailType').innerHTML = `<span style="margin-right:6px;">${typeIcon}</span>${task.typeText || task.type}`;
+  // 3. 任务状态
+  document.getElementById('detailStatus').innerHTML = `<span class="status-tag ${task.status}"><span class="status-dot"></span>${task.statusText}</span>`;
+  // 4. 张数统计
+  document.getElementById('detailCount').textContent = `${task.finished} / ${task.count} 条`;
+  // 5. 执行进度
+  document.getElementById('detailProgressText').textContent = `${task.progress}%（${task.finished} / ${task.count}）`;
+  document.getElementById('detailProgressBar').style.width = task.progress + '%';
+  // 6. 时间
+  document.getElementById('detailTime').textContent = task.createTime || '—';
+  document.getElementById('detailFinishTime').textContent = task.finishTime || '—';
+
+  // 7. 图源列表（只读视图，假数据填充）
+  const mock = getDetailMockData(task);
+  const sourceGrid = document.getElementById('detailSourceGrid');
+  if (sourceGrid) {
+    sourceGrid.innerHTML = mock.sources.map((s, i) => `
+      <div class="detail-source-item">
+        <div class="detail-source-thumb">${s.icon}</div>
+        <span class="detail-source-name" title="${s.name}">${s.name}</span>
+        <span class="detail-info-value" style="font-size:11px;color:${s.status === '成功' ? '#00b894' : '#e74c3c'};">${s.status}</span>
+      </div>
+    `).join('');
+  }
+
+  // 8. 数据统计
+  const statGrid = document.getElementById('detailStatGrid');
+  if (statGrid) {
+    statGrid.innerHTML = mock.stats.map(st => `
+      <div class="detail-stat-card">
+        <div class="detail-stat-label">${st.label}</div>
+        <div class="detail-stat-value ${st.accent ? 'accent' : ''}">${st.value.toLocaleString('zh-CN')}</div>
+      </div>
+    `).join('');
+  }
+
+  detailModal.classList.add('show');
+}
+
+function closeDetailModal() {
+  if (detailModal) detailModal.classList.remove('show');
 }
 
 // ===== 筛选 =====
