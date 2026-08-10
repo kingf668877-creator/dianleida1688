@@ -38,14 +38,7 @@
   .spec-link-btn.primary:hover { background: #2455d9; color: #fff; }
   .spec-iframe-wrap { flex: 1; position: relative; background: #fafbfc; }
   .spec-iframe { width: 100%; height: 100%; border: 0; display: block; }
-  .spec-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; color: #86909c; font-size: 13px; background: #fafbfc; }
-  .spec-loading .spinner { width: 28px; height: 28px; border: 3px solid #e5e6eb; border-top-color: #3370ff; border-radius: 50%; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .spec-fallback { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; background: #fafbfc; }
-  .spec-fallback.show { display: flex; }
-  .spec-fallback-icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
-  .spec-fallback-title { font-size: 16px; font-weight: 600; color: #1d2129; margin-bottom: 8px; }
-  .spec-fallback-desc { font-size: 13px; color: #86909c; line-height: 1.6; margin-bottom: 20px; max-width: 400px; }
   .code-panel { padding: 20px; }
   .code-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .code-header small { color: #86909c; font: 12px Consolas, monospace; }
@@ -60,7 +53,7 @@
 <body>
   <div class="tabs-wrap" role="tablist">
     <button class="tab-btn tab-preview active" data-tab="preview" role="tab"><span class="tab-dot"></span>效果图</button>
-    <button class="tab-btn tab-spec" data-tab="spec" role="tab"><span class="tab-dot"></span>原型说明</button>
+    <a class="tab-btn tab-spec" id="yuqueTabLink" href="https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#" target="_blank" rel="noopener" role="tab"><span class="tab-dot"></span>原型说明 ↗</a>
     <button class="tab-btn tab-html" data-tab="html" role="tab"><span class="tab-dot"></span>HTML</button>
     <button class="tab-btn tab-css" data-tab="css" role="tab"><span class="tab-dot"></span>CSS</button>
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
@@ -70,24 +63,12 @@
     <section class="panel spec-panel-page" id="panel-spec">
       <article class="spec-doc">
         <header class="spec-head">
-          <div class="spec-head-left">
-            <h1 class="spec-title">原型说明 <span class="section-tag" id="specSectionTag">创建图搜寻源</span></h1>
-            <div class="spec-sub">查看《店雷达原型说明》语雀文档，对应当前页面模块</div>
-          </div>
-          <div class="spec-actions">
-            <a class="spec-link-btn" id="specExternalLink" href="https://yuque-proxy.dianleida-yuque.workers.dev/yuque/u26544515/sldqp9/xlf8hgmqhski5mfe#" target="_blank" rel="noopener">新窗口打开 ↗</a>
-            <button class="spec-link-btn primary" id="specReloadBtn">重新加载</button>
-          </div>
+          <h1 class="spec-title">原型说明</h1>
+          <div class="spec-sub">点击下方按钮在新标签页打开语雀《店雷达原型说明》文档</div>
         </header>
-        <div class="spec-iframe-wrap">
-          <iframe id="specIframe" class="spec-iframe" src="about:blank" referrerpolicy="no-referrer"></iframe>
-          <div class="spec-loading" id="specLoading"><div class="spinner"></div><div>正在加载语雀文档…</div></div>
-          <div class="spec-fallback" id="specFallback">
-            <div class="spec-fallback-icon">��</div>
-            <div class="spec-fallback-title">文档加载失败</div>
-            <div class="spec-fallback-desc">当前页面无法内嵌语雀文档（可能因为浏览器的安全策略或网络问题）。你可以点击下方按钮在新窗口打开，或者查看备用的本地文档。</div>
-            <a class="spec-link-btn primary" id="specFallbackOpen" href="https://yuque-proxy.dianleida-yuque.workers.dev/yuque/u26544515/sldqp9/xlf8hgmqhski5mfe#" target="_blank" rel="noopener">新窗口打开文档 ↗</a>
-          </div>
+        <div class="spec-actions" style="padding:24px 32px;display:flex;flex-direction:column;align-items:flex-start;gap:16px;">
+          <a class="spec-link-btn" id="specExternalLink" href="https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#" target="_blank" rel="noopener" style="height:38px;padding:0 18px;font-size:14px;background:#3370ff;border-color:#3370ff;color:#fff;">新标签页打开语雀 ↗</a>
+          <div class="spec-sub" id="specHint" style="font-size:12px;color:#86909c;">点击后会在新标签页显示语雀文档。当前模块：<span id="specPageLabel" style="color:#6236ff;font-weight:600;">创建图搜寻源</span></div>
         </div>
       </article>
     </section>
@@ -108,7 +89,7 @@
 
   const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果', package: '套餐配置' };
   const yuqueAnchors = { create: '', list: '任务列表', result: '寻源结果', package: '套餐配置' };
-  const YUQUE_BASE = 'https://yuque-proxy.dianleida-yuque.workers.dev/yuque/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#';
+  const YUQUE_BASE = 'https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#';
 
   function getYuqueUrl(page) {
     const anchor = yuqueAnchors[page] || '';
@@ -120,37 +101,13 @@
     document.getElementById('htmlFileName').innerHTML = `ai-three-step.html <span class="section-tag">${label}</span>`;
     document.getElementById('cssFileName').innerHTML = `ai-three-step.css <span class="section-tag">${label}</span>`;
     document.getElementById('jsFileName').innerHTML = `ai-three-step.js <span class="section-tag">${label}</span>`;
-    document.getElementById('specSectionTag').textContent = label;
     const url = getYuqueUrl(page);
+    const yuqueLink = document.getElementById('yuqueTabLink');
+    if (yuqueLink) yuqueLink.href = url;
     document.getElementById('specExternalLink').href = url;
-    document.getElementById('specFallbackOpen').href = url;
+    document.getElementById('specPageLabel').textContent = label;
     document.title = label;
   }
-
-  function loadSpecDoc() {
-    const iframe = document.getElementById('specIframe');
-    const loading = document.getElementById('specLoading');
-    const fallback = document.getElementById('specFallback');
-    const url = getYuqueUrl(currentPage);
-    loading.style.display = 'flex';
-    fallback.classList.remove('show');
-    iframe.src = 'about:blank';
-    iframe.src = url;
-  }
-
-  let specLoadTimer = null;
-  document.getElementById('specIframe').addEventListener('load', () => {
-    clearTimeout(specLoadTimer);
-    document.getElementById('specLoading').style.display = 'none';
-    try {
-      const iframe = document.getElementById('specIframe');
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      if (!doc || doc.location.href === 'about:blank') return;
-    } catch (e) {
-      document.getElementById('specFallback').classList.add('show');
-    }
-  });
-  document.getElementById('specReloadBtn').addEventListener('click', loadSpecDoc);
 
   updateCodeHeaders(currentPage);
 
@@ -160,7 +117,6 @@
     const tab = btn.dataset.tab;
     tabs.forEach(b => b.classList.toggle('active', b === btn));
     panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
-    if (tab === 'spec') loadSpecDoc();
   }));
 
   const codeCache = { html: '', css: '', js: '' };
@@ -225,9 +181,6 @@
       window.history.replaceState({}, '', newUrl);
       updateCodeHeaders(page);
       reloadAllCode();
-      const activeTab = document.querySelector('.tab-btn.active');
-      if (activeTab && activeTab.dataset.tab === 'spec') loadSpecDoc();
-      try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'pageChange', page: page }, '*'); } catch(err) {}
     }
   });
 </script>
