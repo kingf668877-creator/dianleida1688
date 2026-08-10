@@ -782,8 +782,6 @@ function getTaskActions(task) {
   } else if (task.status === 'done') {
     actions.push(`<span class="action-link" onclick="showDetail(${task.id})">任务详情</span>`);
     actions.push(sep);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
-    actions.push(sep);
     actions.push(`<span class="action-link" onclick="viewResult(${task.id})">寻源结果</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
@@ -791,8 +789,6 @@ function getTaskActions(task) {
     actions.push(`<span class="action-link" onclick="editTask(${task.id})">编辑任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link primary" onclick="retryTask(${task.id})">重新执行</span>`);
-    actions.push(sep);
-    actions.push(`<span class="action-link" onclick="copyTask(${task.id})">复制任务</span>`);
     actions.push(sep);
     actions.push(`<span class="action-link danger" onclick="confirmDelete(${task.id})">删除任务</span>`);
   }
@@ -953,40 +949,6 @@ function editTask(id) {
 
   switchPage('create');
   showToast('已加载任务信息到编辑表单');
-}
-
-// 复制任务
-function copyTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-
-  // 填充任务名称到创建表单
-  taskNameInput.value = task.name + ' 寻源结果';
-
-  // 根据任务类型填充对应的数据
-  if (task.type === 'link') {
-    // 切换到图片链接tab
-    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'link'));
-    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-link'));
-    // 模拟填充链接数据
-    showToast('已复制任务信息到创建表单');
-  } else if (task.type === 'file') {
-    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'file'));
-    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-file'));
-    // 模拟文件已上传状态
-    fileUploadEmpty.style.display = 'none';
-    fileUploaded.style.display = 'block';
-    selectedFileName.textContent = task.name + '.xlsx';
-    selectedFileMeta.textContent = `${task.count} 条数据`;
-    showToast('已复制任务信息到创建表单');
-  } else if (task.type === 'image') {
-    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'image'));
-    subPanels.forEach(p => p.classList.toggle('active', p.id === 'panel-image'));
-    showToast('已复制任务信息到创建表单');
-  }
-
-  // 切换到创建页面
-  switchPage('create');
 }
 
 // 删除确认浮窗
