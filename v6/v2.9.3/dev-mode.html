@@ -235,7 +235,7 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent.html" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="v2.9.3/search-agent-yuque.html" title="设计页面预览"></iframe></div>
     <!-- 原型说明面板 -->
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
@@ -328,7 +328,7 @@
     }
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
-    frame.src = withVersion(target);
+    frame.src = target === 'v2.9.3/search-agent.html' ? 'v2.9.3/search-agent-yuque.html' : withVersion(target);
     if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
   }));
   // ===== 监听 iframe 内部板块切换（postMessage）=====
