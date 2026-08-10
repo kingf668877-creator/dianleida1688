@@ -5,693 +5,406 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>创建图搜寻源</title>
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="ai-three-step.css?v=fix-init-result-20260810">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #1d2129; }
+  button, input, select { font-family: inherit; }
+  .tabs-wrap { height: 48px; display: flex; align-items: center; padding: 0 20px; background: #fff; border-bottom: 1px solid #e5e6eb; gap: 4px; position: sticky; top: 0; z-index: 10; }
+  .tab-btn { height: 32px; padding: 0 16px; border: 0; border-radius: 6px; background: transparent; color: #4e5969; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; }
+  .tab-btn:hover { background: #f2f3f5; color: #1d2129; }
+  .tab-btn.active { background: #f0ebff; color: #6236ff; font-weight: 600; }
+  .tab-btn .tab-dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+  .tab-preview .tab-dot { background: #ff6b6b; }
+  .tab-spec .tab-dot { background: #3370ff; }
+  .tab-html .tab-dot { background: #e34f26; }
+  .tab-css .tab-dot { background: #1572b6; }
+  .tab-js .tab-dot { background: #b58b00; }
+  .panels { height: calc(100vh - 48px); overflow: hidden; position: relative; }
+  .panel { position: absolute; inset: 0; display: none; overflow: auto; }
+  .panel.active { display: block; }
+  #panel-preview iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .code-panel { padding: 20px; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .code-header small { color: #86909c; font: 12px Consolas, monospace; }
+  .section-tag { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f0ebff; color: #6236ff; }
+  .copy-btn { height: 30px; padding: 0 14px; border: 1px solid #e5e6eb; border-radius: 6px; background: #fff; color: #4e5969; font-size: 12px; cursor: pointer; transition: .15s; }
+  .copy-btn:hover { border-color: #6236ff; color: #6236ff; }
+  .copy-btn.ok { background: #16a36a; border-color: #16a36a; color: #fff; }
+  pre.code { margin: 0; padding: 20px; overflow: auto; border: 1px solid #e5e6eb; border-radius: 10px; background: #fafbfc; color: #334155; font: 13px/1.7 Consolas, "Microsoft YaHei", monospace; white-space: pre; tab-size: 2; min-height: calc(100% - 50px); }
+
+  .spec-panel-page { background: #f7f8fa; padding: 18px; }
+  .spec-doc { max-width: 1500px; min-height: calc(100vh - 84px); margin: 0 auto; background: #fff; border: 1px solid #e5e6eb; border-radius: 10px; overflow: hidden; }
+  .spec-head { padding: 18px 20px 14px; border-bottom: 1px solid #eef0f2; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+  .spec-title { font-size: 19px; font-weight: 700; margin: 0 0 5px; }
+  .spec-sub { font-size: 13px; color: #86909c; }
+  .save-state { font-size: 12px; color: #00a870; display: flex; gap: 7px; align-items: center; white-space: nowrap; }
+  .dot { width: 7px; height: 7px; background: #00b87a; border-radius: 50%; box-shadow: 0 0 0 4px #e8faf3; }
+  .spec-toolbar { min-height: 50px; padding: 8px 12px; border-bottom: 1px solid #e5e6eb; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; background: #fbfcfd; position: sticky; top: 0; z-index: 8; }
+  .tool { height: 32px; padding: 0 10px; border: 1px solid #dfe3e8; border-radius: 6px; background: #fff; color: #4e5969; font-size: 12px; cursor: pointer; }
+  .tool:hover, .format-btn:hover { border-color: #3370ff; color: #3370ff; }
+  .tool.online { margin-left: auto; background: #00a870; border-color: #00a870; color: #fff; font-weight: 600; }
+  .size-select { height: 32px; width: 68px; border: 1px solid #dfe3e8; border-radius: 6px; padding: 0 7px; background: #fff; color: #4e5969; outline: none; }
+  .size-select:focus { border-color: #3370ff; }
+  .format-wrap { position: relative; }
+  .format-btn { width: 38px; height: 32px; border: 1px solid #dfe3e8; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 16px; color: #1f2329; }
+  .format-btn .underline { position: absolute; bottom: 4px; left: 10px; right: 10px; height: 3px; border-radius: 2px; }
+  .format-btn .caret { font-size: 8px; position: absolute; right: 3px; top: 3px; color: #86909c; }
+  .fill-icon { width: 15px; height: 12px; border: 2px solid #4e5969; transform: rotate(-35deg); border-radius: 2px; position: relative; }
+  .fill-icon:after { content: ""; position: absolute; width: 8px; height: 2px; background: #4e5969; right: -6px; bottom: -3px; transform: rotate(35deg); }
+  .palette { position: absolute; top: 38px; left: 0; width: 258px; padding: 12px; background: #fff; border: 1px solid #e5e6eb; border-radius: 8px; box-shadow: 0 8px 28px rgba(31,35,41,.18); display: none; z-index: 20; }
+  .palette.show { display: block; }
+  .palette-title { font-size: 12px; color: #4e5969; margin-bottom: 9px; }
+  .no-color { height: 30px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #4e5969; cursor: pointer; margin-bottom: 8px; }
+  .no-color-icon { width: 18px; height: 18px; border: 1px solid #dfe3e8; background: linear-gradient(135deg, transparent 46%, #f44 47%, #f44 53%, transparent 54%); }
+  .swatches { display: grid; grid-template-columns: repeat(10, 18px); gap: 6px; }
+  .swatch { width: 18px; height: 18px; border-radius: 2px; border: 1px solid rgba(0,0,0,.04); cursor: pointer; }
+  .swatch:hover { outline: 2px solid #3370ff; outline-offset: 1px; }
+  .palette-section { font-size: 12px; color: #4e5969; margin: 14px 0 7px; }
+  .recent-empty { font-size: 12px; color: #c9cdd4; margin-bottom: 10px; }
+  .more-color { border-top: 1px solid #eef0f2; margin: 10px -12px -12px; padding: 11px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #4e5969; cursor: pointer; }
+  .rainbow { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(#f33,#fc0,#2c5,#0cf,#55f,#c3f,#f33); }
+  .selection { font-size: 12px; color: #86909c; margin-left: 4px; }
+  .table-wrap { padding: 15px; overflow: auto; user-select: none; }
+  .sheet { width: 100%; min-width: 1120px; border-collapse: separate; border-spacing: 0; border: 1px solid #dfe3e8; border-radius: 8px; overflow: hidden; table-layout: fixed; }
+  .sheet th, .sheet td { border-right: 1px solid #e5e6eb; border-bottom: 1px solid #e5e6eb; }
+  .sheet tr:last-child td { border-bottom: 0; }
+  .sheet th:last-child, .sheet td:last-child { border-right: 0; }
+  .sheet th { height: 40px; background: #f4f6f8; padding: 0 10px; text-align: left; color: #4e5969; font-size: 12px; }
+  .sheet td { height: 54px; padding: 0; background: #fff; vertical-align: top; position: relative; }
+  .sheet td.selected { background: #eaf1ff !important; }
+  .sheet td.selected:after { content: ""; position: absolute; inset: -1px; border: 2px solid #3370ff; pointer-events: none; z-index: 2; }
+  .num { width: 42px; text-align: center !important; color: #86909c; background: #f7f8fa !important; }
+  .cell { min-height: 53px; padding: 10px; outline: none; line-height: 1.5; user-select: text; }
+  .cell:focus { box-shadow: inset 0 0 0 2px rgba(51,112,255,.2); }
+  .ctx-menu { position: fixed; background: #fff; border: 1px solid #e5e6eb; border-radius: 8px; box-shadow: 0 6px 24px rgba(31,35,41,.16); padding: 4px 0; min-width: 170px; z-index: 50; display: none; }
+  .ctx-menu.show { display: block; }
+  .ctx-item { height: 34px; padding: 0 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4e5969; cursor: pointer; white-space: nowrap; }
+  .ctx-item:hover { background: #eef3ff; color: #245bdb; }
+  .ctx-item.danger { color: #e54848; }
+  .ctx-item.danger:hover { background: #fef0f0; color: #e54848; }
+  .ctx-divider { height: 1px; background: #eef0f2; margin: 4px 0; }
+  .ctx-icon { width: 16px; text-align: center; font-size: 14px; }
+  .spec-note { margin: 0 15px 15px; padding: 10px 12px; border-radius: 7px; background: #f1f7ff; color: #245bdb; font-size: 12px; line-height: 1.6; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal.show { display: flex; }
+  .modal-card { width: 420px; background: #fff; border-radius: 12px; padding: 22px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  @media(max-width:1000px){ .spec-panel-page { padding: 9px; } }
+</style>
 </head>
 <body>
-
-<!-- ===== 页面主体 ===== -->
-<div class="page-container">
-
-  <!-- ===== 创建图搜寻源 ===== -->
-  <section class="page-panel active" id="page-create">
-    <div class="create-card">
-      <div class="card-header">
-        <h2 class="card-title" data-editable data-edit-label="创建卡片标题">创建图搜寻源</h2>
-        <p class="card-desc">填写任务信息，选择图搜方式，开始批量寻源</p>
-      </div>
-
-      <div class="card-body">
-        <!-- 任务名称 -->
-        <div class="form-item">
-          <div class="form-label">
-            <span class="required">*</span>
-            <span data-editable data-edit-label="任务名称标签">任务名称</span>
-          </div>
-          <input class="form-input" type="text" id="taskNameInput" placeholder="请输入任务名称，方便后续查找">
-        </div>
-
-        <!-- 图搜方式 -->
-        <div class="form-item">
-          <div class="form-label" data-editable data-edit-label="图搜方式标签">图搜方式</div>
-
-          <div class="search-tabs" role="tablist">
-            <button class="tab-btn active" data-tab="link" role="tab">
-              <span class="tab-icon">🔗</span>
-              <span>图片链接</span>
-            </button>
-            <button class="tab-btn" data-tab="file" role="tab">
-              <span class="tab-icon">📋</span>
-              <span>文件上传</span>
-            </button>
-            <button class="tab-btn" data-tab="image" role="tab">
-              <span class="tab-icon">🖼️</span>
-              <span>上传图片</span>
-            </button>
-          </div>
-
-          <!-- 图片链接 Tab -->
-          <div class="tab-panel active" id="panel-link">
-            <div class="link-upload-wrap">
-              <p class="panel-hint">每行粘贴一个图片URL地址，支持 http/https 链接，最多 1000 条</p>
-              <textarea id="linkTextarea" class="url-textarea" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.png&#10;https://example.com/img3.webp&#10;..." rows="8"></textarea>
-              <div class="link-actions">
-                <button class="btn btn-ghost" id="clearLinkBtn">
-                  <span>清空</span>
-                </button>
-                <button class="btn btn-outline" id="parseLinkBtn">
-                  <span>解析链接</span>
-                </button>
-              </div>
-              <!-- 链接预览网格 -->
-              <div class="link-preview" id="linkPreview" style="display: none;">
-                <div class="file-list-header">
-                  <span>链接预览</span>
-                  <span class="file-count" id="linkCount">0 条</span>
-                </div>
-                <div class="link-thumb-grid" id="linkThumbGrid"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 文件上传 Tab -->
-          <div class="tab-panel" id="panel-file">
-            <!-- 上传前状态 -->
-            <div id="fileUploadEmpty">
-              <div class="upload-area" id="fileDropZone">
-                <div class="upload-icon">
-                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M32 42V14M32 14L20 26M32 14L44 26" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 34v12a6 6 0 006 6h28a6 6 0 006-6V34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                  </svg>
-                </div>
-                <div class="upload-title">点击或将文件拖拽到此处<em>上传</em></div>
-                <div class="upload-desc">支持 xlsx、xls 格式，单个文件不超过 30M，最多 1000 条</div>
-                <input type="file" class="hidden-input" id="fileInput" accept=".xlsx,.xls">
-              </div>
-              <div class="file-actions">
-                <span></span>
-                <button class="btn-download-template">
-                  <span class="dl-icon">⬇</span>
-                  <span data-editable data-edit-label="下载模板按钮">下载模板</span>
-                </button>
-              </div>
-              <div class="tip-box" data-editable data-edit-label="文件上传说明">
-                <strong>导入说明：</strong><br>
-                1. 本功能支持1000条图片链接批量寻源；<br>
-                2. 请先下载模板文件，按格式要求填写内容；<br>
-                3. 导入格式为xlsx/xls（手动修改文件后缀无效），行数不超过1000张，文件大小不超过30M。
-              </div>
-            </div>
-
-            <!-- 上传中状态 -->
-            <div id="fileUploading" style="display:none;">
-              <div class="upload-progress">
-                <div class="progress-head">
-                  <span id="uploadingFileName">正在上传...</span>
-                  <span id="uploadingPercent">0%</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" id="progressFill"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 上传成功状态 -->
-            <div id="fileUploaded" style="display:none;">
-              <div class="file-selected">
-                <div class="file-icon">XLS</div>
-                <div class="file-info">
-                  <div class="file-name" id="selectedFileName">店雷达 1688选品库-近30天 2026-08-03 174118.xls</div>
-                  <div class="file-meta" id="selectedFileMeta">2.4 MB · 328 条数据</div>
-                </div>
-                <div class="file-status">
-                  <span class="status-dot">✓</span>
-                  <span>已选择</span>
-                </div>
-                <button class="file-remove" id="removeFileBtn" title="移除">✕</button>
-              </div>
-            </div>
-
-            <!-- 上传失败状态 -->
-            <div id="fileUploadError" style="display:none;">
-              <div class="file-selected" style="background: var(--danger-bg); border-color: #ffd8d6;">
-                <div class="file-icon" style="background: linear-gradient(135deg, var(--danger), #ff7875);">XLS</div>
-                <div class="file-info">
-                  <div class="file-name" style="color: var(--danger);">店雷达 1688选品库-近30天 2026-08-03 174118.xls</div>
-                  <div class="file-meta" style="color: var(--danger);">模板格式异常，详细原因：图片链接校验失败</div>
-                </div>
-                <button class="file-remove" id="removeErrorFileBtn" title="移除">✕</button>
-              </div>
-              <div class="file-error-tip">
-                <span class="err-icon">⚠️</span>
-                <span data-editable data-edit-label="文件错误提示">模板格式异常，详细原因：图片链接校验失败，请检查模板格式后重新上传。</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 上传图片 Tab -->
-          <div class="tab-panel" id="panel-image">
-            <div class="image-upload-grid" id="imageGrid">
-              <div class="image-upload-item" id="imageUploadBtn" title="点击上传图片">
-                <span class="plus">+</span>
-                <span class="upload-text">上传图片</span>
-                <input type="file" class="hidden-input" id="imageInput" accept="image/*" multiple>
-              </div>
-            </div>
-            <div class="image-count-tip">
-              已上传 <span id="imageCount">0</span> / 1000 张
-            </div>
-          </div>
-        </div>
-
-        <!-- 实时张数统计 -->
-        <div class="credits-stats" id="creditsStats" style="display:none;">
-          <div class="stats-item">
-            <span class="stats-label">已上传</span>
-            <span class="stats-value" id="uploadedCount">0 张</span>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stats-item">
-            <span class="stats-label">预计扣除</span>
-            <span class="stats-value deduction" id="deductionCount">0 张</span>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stats-item">
-            <span class="stats-label">剩余张数</span>
-            <span class="stats-value remaining" id="remainingCredits">0 张</span>
-          </div>
-          <button class="stats-purchase-btn" id="statsPurchaseBtn" style="display:none;" onclick="openPurchaseModal()">
-            <span>💰</span>
-            <span>增购张数</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="card-footer">
-        <button class="btn btn-default" id="resetBtn">重置</button>
-        <button class="btn btn-primary" id="submitBtn">
-          <span class="btn-icon">🚀</span>
-          <span>开始寻源</span>
-        </button>
-      </div>
-    </div>
-
-  </section>
-
-  <!-- ===== 任务列表 ===== -->
-  <section class="page-panel" id="page-list">
-    <!-- 功能介绍横幅 -->
-    <div class="list-banner">
-      <div class="list-banner-content">
-        <h2 class="list-banner-title">1688图搜<span class="highlight">批量寻源任务</span></h2>
-        <p class="list-banner-desc">支持一次性上传1000条图片链接，自动搜索1688货源商品</p>
-      </div>
-      <button class="list-banner-btn" onclick="goCreatePage()">
-        <span class="banner-btn-icon">+</span>
-        <span>创建寻源需求</span>
-      </button>
-    </div>
-
-    <!-- 剩余张数信息条 -->
-    <div class="credits-bar">
-      <div class="credits-info">
-        <div class="credits-icon">🎫</div>
-        <div class="credits-detail">
-          <span class="credits-label">剩余寻源张数</span>
-          <span class="credits-value" id="userCreditsDisplay">2 <span class="credits-unit">张</span></span>
-          <span class="credits-expire">有效期至: 2027-08-10</span>
-        </div>
-      </div>
-      <button class="btn btn-primary credits-purchase-btn" id="purchaseBtn">
-        <span>💰</span>
-        <span>增购张数</span>
-      </button>
-    </div>
-
-    <!-- 套餐到期提醒 -->
-    <div class="subscription-expired-notice" id="subscriptionExpiredNotice">
-      <span class="subscription-expired-icon">!</span>
-      <span class="subscription-expired-text">当前套餐已到期，寻源列表结果将在7天后删除；请尽快续费</span>
-      <a class="subscription-renew-link" href="https://www.dianleida.net/1688/competeShop/monitorBuy" target="_blank" rel="noopener noreferrer">立即续费</a>
-    </div>
-
-    <!-- 筛选区 -->
-    <div class="filter-card">
-      <div class="filter-row">
-        <div class="filter-item">
-          <label class="filter-label">任务名称</label>
-          <input class="form-input filter-input" type="text" id="filterTaskName" placeholder="请输入任务名称">
-        </div>
-        <div class="filter-item">
-          <label class="filter-label">图搜方式</label>
-          <select class="form-input filter-input" id="filterType">
-            <option value="">全部</option>
-            <option value="link">图片链接</option>
-            <option value="file">文件上传</option>
-            <option value="image">上传图片</option>
-          </select>
-        </div>
-        <div class="filter-item">
-          <label class="filter-label">任务状态</label>
-          <select class="form-input filter-input" id="filterStatus">
-            <option value="">全部状态</option>
-            <option value="running">执行中</option>
-            <option value="waiting">待执行</option>
-            <option value="pending">未执行</option>
-            <option value="stopped">已终止</option>
-            <option value="done">已完成</option>
-          </select>
-        </div>
-        <div class="filter-item filter-date">
-          <label class="filter-label">创建时间</label>
-          <input class="form-input filter-input" type="date" id="filterDateStart">
-          <span class="date-sep">至</span>
-          <input class="form-input filter-input" type="date" id="filterDateEnd">
-        </div>
-      </div>
-      <div class="filter-actions">
-        <button class="btn btn-primary" id="searchBtn">🔍 查询</button>
-        <button class="btn btn-default" id="resetFilterBtn">重置</button>
-      </div>
-    </div>
-
-    <!-- 任务列表标题 -->
-    <div class="section-header">
-      <h2 class="section-title">任务列表</h2>
-      <span class="section-badge" id="totalCountBadge">共 0 条任务</span>
-      <button class="btn btn-default refresh-inline" id="refreshBtn">🔄 刷新</button>
-    </div>
-
-    <!-- 任务列表表格 -->
-    <div class="table-card">
-      <table class="task-table">
-        <thead>
-          <tr>
-            <th style="width: 20%;">任务名称</th>
-            <th style="width: 12%;">图搜方式</th>
-            <th style="width: 12%;">任务状态</th>
-            <th style="width: 14%;">已寻源 / 总数</th>
-            <th style="width: 10%;">扣除张数</th>
-            <th style="width: 12%;">创建时间</th>
-            <th style="width: 22%;">操作</th>
-          </tr>
-        </thead>
-        <tbody id="taskTableBody">
-          <!-- JS 渲染 -->
-        </tbody>
-      </table>
-      <!-- 空状态 -->
-      <div class="empty-state" id="emptyState" style="display:none;">
-        <div class="empty-icon">📭</div>
-        <div class="empty-text">暂无任务数据</div>
-        <div class="empty-desc">创建你的第一个图搜寻源任务</div>
-      </div>
-    </div>
-
-    <!-- 分页 -->
-    <div class="pagination-wrap" id="paginationWrap">
-      <span class="pagination-total">共 5 条</span>
-      <div class="pagination-center">
-        <select class="form-input page-size-select" id="pageSize">
-          <option value="10">10条/页</option>
-          <option value="20" selected>20条/页</option>
-          <option value="50">50条/页</option>
-        </select>
-        <div class="pagination-nav" id="paginationNav">
-          <button class="page-nav-btn prev" disabled>&lt;</button>
-          <button class="page-nav-btn active">1</button>
-          <button class="page-nav-btn">2</button>
-          <button class="page-nav-btn">3</button>
-          <button class="page-nav-btn next">&gt;</button>
-        </div>
-      </div>
-      <div class="pagination-goto">
-        <span>前往</span>
-        <input type="number" class="goto-input" id="gotoPageInput" min="1" value="1">
-        <span>页</span>
-        <button class="goto-btn" id="gotoPageBtn">GO</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== 寻源结果 ===== -->
-  <section class="page-panel" id="page-result">
-    <!-- 寻源结果页头 -->
-    <div class="result-page-header" id="resultPageHeader">
-      <button class="result-back-btn" onclick="goListPage()">‹ 返回</button>
-      <h2 class="result-page-title">寻源结果</h2>
-    </div>
-
-    <div class="result-filter-panel" id="resultFilterPanel">
-      <div class="result-filter-group">
-        <span class="result-filter-label">交易条件<span class="result-filter-mode">多选</span></span>
-        <label class="result-filter-option"><input type="checkbox" data-filter="trade" value="one">一件起订</label>
-        <label class="result-filter-option"><input type="checkbox" data-filter="trade" value="free">批发包邮</label>
-      </div>
-      <div class="result-filter-group">
-        <span class="result-filter-label">公司类型<span class="result-filter-mode">单选</span></span>
-        <label class="result-filter-option"><input type="radio" name="companyFilter" data-filter="company" value="store">店铺</label>
-        <label class="result-filter-option"><input type="radio" name="companyFilter" data-filter="company" value="factory">工厂</label>
-      </div>
-      <div class="result-filter-group">
-        <span class="result-filter-label">卖家会员类型<span class="result-filter-mode">多选</span></span>
-        <label class="result-filter-option"><input type="checkbox" data-filter="member" value="flagship">源头旗舰</label>
-        <label class="result-filter-option"><input type="checkbox" data-filter="member" value="super-factory">超级工厂</label>
-        <label class="result-filter-option"><input type="checkbox" data-filter="member" value="诚信通">仅诚信通</label>
-      </div>
-    </div>
-
-    <!-- 排序方式 -->
-    <div class="result-sort-bar">
-      <span class="result-sort-label">排序方式：</span>
-      <div class="result-sort-options" id="resultSortOptions">
-        <label class="result-sort-option active"><input type="radio" name="resultSort" value="match" checked><span>匹配度优先</span></label>
-        <label class="result-sort-option"><input type="radio" name="resultSort" value="price"><span>低价优先</span></label>
-        <label class="result-sort-option"><input type="radio" name="resultSort" value="sales"><span>高销量优先</span></label>
-      </div>
-    </div>
-    <!-- 结果工具栏：左侧全选+操作，右侧结果数量 -->
-    <div class="result-toolbar result-toolbar-reference">
-      <div class="result-toolbar-left">
-        <label class="result-select-all">
-          <input type="checkbox" id="resultSelectAll">
-          <span>全选全部</span>
-        </label>
-        <span class="result-selected-count">已选: <b id="resultSelectedCount">0</b></span>
-        <div class="result-toolbar-actions">
-          <button class="btn btn-default btn-sm" onclick="showToast('已关注选中商品')">关注商品</button>
-          <button class="btn btn-default btn-sm" onclick="openExportModal(this, event)">导出</button>
-        </div>
-      </div>
-      <div class="result-toolbar-right">
-        <span class="result-count">搜索图片数量：20</span>
-      </div>
-    </div>
-
-    <!-- 结果布局：每行左侧上传图源 + 右侧该图片的商品网格 -->
-    <div class="result-layout-wrapper" id="resultLayoutWrapper">
-      <div class="result-rows" id="resultRows"></div>
-    </div>
-
-    <!-- 空状态 -->
-    <div class="result-empty" id="resultEmpty" style="display:none;">
-      <div class="result-empty-icon">📭</div>
-      <div class="result-empty-title">暂未找到匹配的货源商品</div>
-      <div class="result-empty-desc">
-        您可以点击右侧【<b class="result-empty-action">全网图搜</b>】继续查找；若您有同款图片，请联系客服为您查找匹配失败原因。
-      </div>
-    </div>
-
-    <!-- 分页 -->
-    <div class="pagination-wrap" id="resultPaginationWrap">
-      <span class="pagination-total" id="resultPaginationTotal">共 0 条</span>
-      <div class="pagination-center">
-        <select class="form-input page-size-select" id="resultPageSize">
-          <option value="10">10条/页</option>
-          <option value="20" selected>20条/页</option>
-          <option value="50">50条/页</option>
-        </select>
-        <div class="pagination-nav" id="resultPaginationNav"></div>
-      </div>
-      <div class="pagination-goto">
-        <span>前往</span>
-        <input type="number" class="goto-input" id="resultGotoPageInput" min="1" value="1">
-        <span>页</span>
-        <button class="goto-btn" id="resultGotoPageBtn">GO</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 套餐配置 -->
-  <section class="page-panel" id="page-package">
-    <div class="section-header">
-      <h2 class="section-title">套餐配置</h2>
-    </div>
-    <div class="package-config-section">
-      <div class="package-config-tabs">
-        <button class="pkg-tab-btn active" data-pkg-tab="1688-member">1688会员购买</button>
-        <button class="pkg-tab-btn" data-pkg-tab="ozon-member">OZON会员购买</button>
-        <button class="pkg-tab-btn" data-pkg-tab="backend-create">后台创建图搜寻源套餐</button>
-        <button class="pkg-tab-btn" data-pkg-tab="1688-manage">1688套餐管理</button>
-        <button class="pkg-tab-btn" data-pkg-tab="ozon-manage">OZON套餐管理</button>
-        <button class="pkg-tab-btn" data-pkg-tab="side-nav">店雷达左侧导航</button>
-      </div>
-      <div class="package-config-body">
-        <div class="pkg-tab-panel active" data-pkg-panel="1688-member">
-          <img src="v2.9.3/assets/tab-1688-member.png?v=img-fix-20260807" alt="1688会员购买" class="pkg-screenshot">
-        </div>
-        <div class="pkg-tab-panel" data-pkg-panel="ozon-member">
-          <img src="v2.9.3/assets/tab-ozon-member.png?v=img-fix-20260807" alt="OZON会员购买" class="pkg-screenshot">
-        </div>
-        <div class="pkg-tab-panel" data-pkg-panel="backend-create">
-          <img src="v2.9.3/assets/tab-backend-create.png?v=img-fix-20260807" alt="后台创建图搜寻源套餐" class="pkg-screenshot">
-        </div>
-        <div class="pkg-tab-panel" data-pkg-panel="1688-manage">
-          <img src="v2.9.3/assets/tab-1688-manage.png?v=img-fix-20260807" alt="1688套餐管理" class="pkg-screenshot">
-        </div>
-        <div class="pkg-tab-panel" data-pkg-panel="ozon-manage">
-          <img src="v2.9.3/assets/tab-ozon-manage.png?v=img-fix-20260807" alt="OZON套餐管理" class="pkg-screenshot">
-        </div>
-        <div class="pkg-tab-panel pkg-side-nav-panel" data-pkg-panel="side-nav">
-          <img src="v2.9.3/assets/side-nav-ozon.png?v=side-nav-20260807" alt="店雷达左侧导航-OZON版本" class="pkg-screenshot">
-          <img src="v2.9.3/assets/side-nav-cross-border.png?v=side-nav-20260807" alt="店雷达左侧导航-跨境卖家版本" class="pkg-screenshot">
-        </div>
-      </div>
-    </div>
-  </section>
-
-</div>
-
-<!-- 编辑工具栏 -->
-<div class="edit-toolbar">
-  <button class="edit-btn primary" id="editModeBtn">编辑模式</button>
-  <button class="edit-btn" id="resetEditBtn" disabled>重置修改</button>
-</div>
-
-<!-- 删除确认浮窗 -->
-<div class="delete-float-modal" id="deleteFloatModal">
-  <div class="delete-float-backdrop" onclick="cancelDelete()"></div>
-  <div class="delete-float-content">
-    <div class="delete-float-body">
-      <div class="delete-float-icon">⚠️</div>
-      <div class="delete-float-text">确定要删除此任务吗？</div>
-    </div>
-    <div class="delete-float-actions">
-      <button class="btn btn-default" onclick="cancelDelete()">取消</button>
-      <button class="btn btn-danger" onclick="confirmDeleteAction()">确定删除</button>
-    </div>
+  <div class="tabs-wrap" role="tablist">
+    <button class="tab-btn tab-preview active" data-tab="preview" role="tab"><span class="tab-dot"></span>效果图</button>
+    <button class="tab-btn tab-spec" data-tab="spec" role="tab"><span class="tab-dot"></span>原型说明</button>
+    <button class="tab-btn tab-html" data-tab="html" role="tab"><span class="tab-dot"></span>HTML</button>
+    <button class="tab-btn tab-css" data-tab="css" role="tab"><span class="tab-dot"></span>CSS</button>
+    <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
-</div>
-
-<!-- 导出配置浮层 -->
-<div class="export-modal" id="exportModal">
-  <div class="export-content">
-    <div class="export-header">
-      <h3 class="export-title">导出寻源结果</h3>
-      <button class="export-close" onclick="closeExportModal()">✕</button>
-    </div>
-    <div class="export-body">
-      <div class="export-option-group">
-        <div class="export-option-title">寻源结果数量</div>
-        <label class="export-radio-option"><input type="radio" name="exportCount" value="1" checked><span>1个</span></label>
-        <label class="export-radio-option"><input type="radio" name="exportCount" value="2"><span>2个</span></label>
-        <label class="export-radio-option"><input type="radio" name="exportCount" value="3"><span>3个</span></label>
-      </div>
-      <div class="export-option-group">
-        <div class="export-option-title">导出筛选项</div>
-        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="price" checked><span>价格</span></label>
-        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="moq" checked><span>起批量</span></label>
-        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="shipping" checked><span>运费</span></label>
-        <label class="export-checkbox-option"><input type="checkbox" name="exportFilter" value="store" checked><span>店铺/工厂</span></label>
-      </div>
-    </div>
-    <div class="export-footer">
-      <button class="btn btn-default" onclick="closeExportModal()">取消</button>
-      <button class="btn btn-primary" onclick="confirmExport()">确认导出</button>
-    </div>
+  <div class="panels">
+    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="../ai-three-step.html" title="效果图"></iframe></section>
+    <section class="panel spec-panel-page" id="panel-spec">
+      <article class="spec-doc">
+        <header class="spec-head">
+          <div><h1 class="spec-title" id="specTitle">创建图搜寻源 · 原型说明</h1><div class="spec-sub">拖选连续单元格后，可批量设置合并、字体和背景格式</div></div>
+          <div class="save-state"><span class="dot"></span><span id="saveText">已自动保存到当前浏览器</span></div>
+        </header>
+        <div class="spec-toolbar">
+          <button class="tool" id="boldBtn"><b>B</b></button>
+          <select class="size-select" id="fontSize" title="字体大小"><option value="12">12</option><option value="13" selected>13</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option><option value="32">32</option></select>
+          <div class="format-wrap"><button class="format-btn" id="fontColorBtn" title="字体颜色"><b>A</b><span class="underline" id="fontUnderline" style="background:#1f2329"></span><span class="caret">▼</span></button><div class="palette" id="fontPalette"><div class="palette-title">字体颜色</div><div class="no-color" data-color="#1f2329" data-type="font"><span style="width:18px;height:18px;background:#1f2329;border-radius:2px"></span>默认</div><div class="swatches" data-type="font"></div><div class="palette-section">最近使用自定义颜色</div><div class="recent-empty">暂无</div><div class="more-color"><span class="rainbow"></span>更多颜色<input type="color" id="moreFont" hidden></div></div></div>
+          <div class="format-wrap"><button class="format-btn" id="bgColorBtn" title="背景颜色"><span class="fill-icon"></span><span class="underline" id="bgUnderline" style="background:#fff1a8"></span><span class="caret">▼</span></button><div class="palette" id="bgPalette"><div class="palette-title">背景颜色</div><div class="no-color" data-color="transparent" data-type="bg"><span class="no-color-icon"></span>无填充色</div><div class="swatches" data-type="bg"></div><div class="palette-section">最近使用自定义颜色</div><div class="recent-empty">暂无</div><div class="more-color"><span class="rainbow"></span>更多颜色<input type="color" id="moreBg" hidden></div></div></div>
+          <span class="selection" id="selectionText">右键单元格可操作行列</span>
+          <button class="tool" id="pullOnline" title="从 GitHub 拉取线上最新数据覆盖本地">↻ 从线上恢复</button>
+          <button class="tool online" id="submitOnline">提交到线上</button>
+        </div>
+        <div class="table-wrap"><table class="sheet"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+        <div class="spec-note">右键单元格可添加/删除行列、合并/拆分单元格；编辑、字体大小、字体颜色、背景颜色和加粗信息均自动保存到当前浏览器；不会自动同步线上。只有点击“提交到线上”并确认后才更新 GitHub。</div>
+      </article>
+    </section>
+    <section class="panel code-panel" id="panel-html"><div class="code-header"><small id="htmlFileName">ai-three-step.html</small><button class="copy-btn" data-copy="html">复制 HTML</button></div><pre class="code" id="codeHtml">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-css"><div class="code-header"><small id="cssFileName">ai-three-step.css</small><button class="copy-btn" data-copy="css">复制 CSS</button></div><pre class="code" id="codeCss">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-js"><div class="code-header"><small id="jsFileName">ai-three-step.js</small><button class="copy-btn" data-copy="js">复制 JS</button></div><pre class="code" id="codeJs">正在加载…</pre></section>
   </div>
-</div>
+  <div class="ctx-menu" id="ctxMenu"></div>
+  <div class="modal" id="modal"><div class="modal-card"><h3>提交原型说明到线上？</h3><p>确认后会将当前原型说明表格数据提交到 GitHub，同步到线上。</p><div class="modal-actions"><button class="tool" id="cancel">取消</button><button class="tool online" id="confirm">确认提交</button></div></div></div>
+  <div class="modal" id="tokenModal"><div class="modal-card"><h3>输入 GitHub Token</h3><p>需要 GitHub Personal Access Token 才能提交到线上，Token 会保存在浏览器本地。</p><input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:8px 12px;border:1px solid #d9d9d9;border-radius:6px;margin:8px 0;font-size:13px"><div class="modal-actions"><button class="tool" id="tokenCancel">取消</button><button class="tool online" id="tokenConfirm">确认并提交</button></div></div></div>
+</section></main></div>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const pageParam = urlParams.get('page');
+  const PREVIEW_VERSION = 'fix-result-tdz-20260810c';
+  let currentPage = 'create';
+  let iframeSrc = `../ai-three-step.html?v=${PREVIEW_VERSION}`;
+  if (pageParam === 'list') { currentPage = 'list'; iframeSrc = `../ai-three-step.html?page=list&v=${PREVIEW_VERSION}`; }
+  else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = `../ai-three-step.html?page=result&v=${PREVIEW_VERSION}`; }
+  else if (pageParam === 'package') { currentPage = 'package'; iframeSrc = `../ai-three-step.html?page=package&v=${PREVIEW_VERSION}`; }
+  document.getElementById('previewFrame').src = iframeSrc;
 
-<!-- 支付页面弹窗 -->
-<div class="payment-modal" id="paymentModal">
-  <div class="payment-backdrop" onclick="closePaymentModal()"></div>
-  <div class="payment-content">
-    <div class="payment-header">
-      <h3 class="payment-title">确认支付</h3>
-      <button class="payment-close" onclick="closePaymentModal()">✕</button>
-    </div>
-    <div class="payment-body">
-      <div class="payment-order">
-        <div class="payment-order-row"><span class="payment-label">订单编号</span><span class="payment-value" id="payOrderId">DLDD202608060001</span></div>
-        <div class="payment-order-row"><span class="payment-label">任务名称</span><span class="payment-value" id="payTaskName">-</span></div>
-        <div class="payment-order-row"><span class="payment-label">商品数量</span><span class="payment-value" id="payItemCount">0 件</span></div>
-        <div class="payment-order-row"><span class="payment-label">单价</span><span class="payment-value">¥0.02 / 件</span></div>
-      </div>
-      <div class="payment-amount-box">
-        <span class="payment-amount-label">应付金额</span>
-        <span class="payment-amount" id="payAmount">¥0.00</span>
-      </div>
-      <div class="payment-methods">
-        <div class="payment-method-title">支付方式</div>
-        <div class="payment-method-list">
-          <label class="payment-method-item active">
-            <input type="radio" name="payMethod" value="alipay" checked>
-            <span class="method-icon alipay">支</span>
-            <span class="method-name">支付宝</span>
-          </label>
-          <label class="payment-method-item">
-            <input type="radio" name="payMethod" value="wechat">
-            <span class="method-icon wechat">微</span>
-            <span class="method-name">微信支付</span>
-          </label>
-          <label class="payment-method-item">
-            <input type="radio" name="payMethod" value="bank">
-            <span class="method-icon bank">银</span>
-            <span class="method-name">银行卡</span>
-          </label>
-          <label class="payment-method-item">
-            <input type="radio" name="payMethod" value="card">
-            <span class="method-icon bank">卡</span>
-            <span class="method-name">信用卡</span>
-          </label>
-        </div>
-      </div>
-      <div class="payment-qr" id="paymentQr">
-        <div class="qr-placeholder" id="qrPlaceholder">扫码支付</div>
-        <div class="qr-tips">请使用 <b id="qrMethodName">支付宝</b> 扫描二维码完成支付</div>
-      </div>
-    </div>
-    <div class="payment-footer">
-      <button class="btn btn-default" onclick="closePaymentModal()">取消</button>
-      <button class="btn btn-primary" id="confirmPayBtn">确认支付</button>
-    </div>
-  </div>
-</div>
+  const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果', package: '套餐配置' };
+  function updateCodeHeaders(page) {
+    const label = sectionLabels[page] || '';
+    document.getElementById('htmlFileName').innerHTML = `ai-three-step.html <span class="section-tag">${label}</span>`;
+    document.getElementById('cssFileName').innerHTML = `ai-three-step.css <span class="section-tag">${label}</span>`;
+    document.getElementById('jsFileName').innerHTML = `ai-three-step.js <span class="section-tag">${label}</span>`;
+    document.getElementById('specTitle').textContent = label + ' · 原型说明';
+    document.title = label;
+  }
+  updateCodeHeaders(currentPage);
 
-<!-- 增购张数弹窗 -->
-<div class="purchase-modal" id="purchaseModal">
-  <div class="purchase-backdrop" onclick="closePurchaseModal()"></div>
-  <div class="purchase-content">
-    <div class="purchase-header">
-      <h3 class="purchase-title">增购寻源张数</h3>
-      <button class="purchase-close" onclick="closePurchaseModal()">✕</button>
-    </div>
-    <div class="purchase-body">
-      <div class="purchase-current">
-        当前剩余：<b id="purchaseCurrentCredits">2</b> 张
-      </div>
-      <div class="purchase-options">
-        <div class="purchase-option" data-count="1000" onclick="selectPurchaseOption(this, 1000)">
-          <div class="option-count">1,000 张</div>
-          <div class="option-price">¥20.00</div>
-        </div>
-        <div class="purchase-option" data-count="5000" onclick="selectPurchaseOption(this, 5000)">
-          <div class="option-count">5,000 张</div>
-          <div class="option-price">¥100.00</div>
-        </div>
-        <div class="purchase-option" data-count="10000" onclick="selectPurchaseOption(this, 10000)">
-          <div class="option-count">10,000 张</div>
-          <div class="option-price">¥200.00</div>
-        </div>
-        <div class="purchase-option" data-count="50000" onclick="selectPurchaseOption(this, 50000)">
-          <div class="option-count">50,000 张</div>
-          <div class="option-price">¥1,000.00</div>
-        </div>
-        <div class="purchase-option" data-count="100000" onclick="selectPurchaseOption(this, 100000)">
-          <div class="option-count">100,000 张</div>
-          <div class="option-price">¥2,000.00</div>
-        </div>
-        <div class="purchase-option" data-count="200000" onclick="selectPurchaseOption(this, 200000)">
-          <div class="option-count">200,000 张</div>
-          <div class="option-price">¥4,000.00</div>
-        </div>
-      </div>
-      <div class="purchase-notice">
-        <div class="purchase-notice-title">增购说明</div>
-        <div class="purchase-notice-text">增购寻源张数有效期为 <span class="highlight-text">1 年【仅支持1688或OZON会员有效期内使用】</span>到期后可不使用剩余张数；不支持退款、兑换套餐、转赠或提现！</div>
-      </div>
-    </div>
-    <div class="purchase-footer">
-      <div class="purchase-summary">
-        <span>购买数量：<b id="purchaseSelectedCount">0</b> 张</span>
-        <span>应付金额：<b class="purchase-amount" id="purchaseTotalAmount">¥0.00</b></span>
-      </div>
-      <button class="btn btn-default" onclick="closePurchaseModal()">取消</button>
-      <button class="btn btn-primary" id="confirmPurchaseBtn" disabled>立即购买</button>
-    </div>
-  </div>
-</div>
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  const codeCache = { html: '', css: '', js: '' };
+  tabs.forEach(btn => btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    tabs.forEach(b => b.classList.toggle('active', b === btn));
+    panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  }));
 
-<!-- 任务详情弹窗（只读） -->
-<div class="detail-modal" id="detailModal">
-  <div class="detail-backdrop" onclick="closeDetailModal()"></div>
-  <div class="detail-content">
-    <div class="detail-header">
-      <div class="detail-header-left">
-        <h3 class="detail-title">任务详情</h3>
-        <span class="detail-sub">只读视图，所有字段不可编辑</span>
-      </div>
-      <button class="detail-close" onclick="closeDetailModal()" aria-label="关闭">✕</button>
-    </div>
-    <div class="detail-body">
-      <!-- 基本信息 -->
-      <section class="detail-section">
-        <div class="detail-section-title">基本信息</div>
-        <div class="detail-info-grid">
-          <div class="detail-info-item">
-            <span class="detail-info-label">任务名称</span>
-            <span class="detail-info-value" id="detailName">—</span>
-          </div>
-          <div class="detail-info-item">
-            <span class="detail-info-label">图搜方式</span>
-            <span class="detail-info-value" id="detailType">—</span>
-          </div>
-          <div class="detail-info-item">
-            <span class="detail-info-label">任务状态</span>
-            <span class="detail-info-value" id="detailStatus">—</span>
-          </div>
-          <div class="detail-info-item">
-            <span class="detail-info-label">张数统计</span>
-            <span class="detail-info-value" id="detailCount">—</span>
-          </div>
-          <div class="detail-info-item detail-info-wide">
-            <span class="detail-info-label">创建时间</span>
-            <span class="detail-info-value" id="detailTime">—</span>
-          </div>
-          <div class="detail-info-item detail-info-wide">
-            <span class="detail-info-label">完成时间</span>
-            <span class="detail-info-value" id="detailFinishTime">—</span>
-          </div>
-          <div class="detail-info-item detail-info-wide">
-            <span class="detail-info-label">执行进度</span>
-            <div class="detail-progress-wrap">
-              <div class="detail-progress"><div class="detail-progress-fill" id="detailProgressBar" style="width:0%"></div></div>
-              <span class="detail-progress-text" id="detailProgressText">—</span>
-            </div>
-          </div>
-        </div>
-      </section>
+  function extractHtmlSection(text, section) {
+    const sectionIds = { create: 'page-create', list: 'page-list', result: 'page-result', package: 'page-package' };
+    const id = sectionIds[section];
+    if (!id) return text;
+    const regex = new RegExp('<section[^>]*id="' + id + '"[^>]*>[\\s\\S]*?<\\/section>', 'g');
+    const match = text.match(regex);
+    return match ? match[0].trim() : text;
+  }
+  function extractCssSection(text, section) {
+    const sectionMap = {
+      create: [['/* ===== CSS 变量 ===== */', '/* ===== 任务列表功能横幅 ===== */'], ['/* ===== 创建卡片 ===== */', '/* ===== 筛选卡片 ===== */'], ['/* ===== 编辑模式 ===== */', '/* ===== 滚动条美化 ===== */']],
+      list: [['/* ===== 任务列表功能横幅 ===== */', '/* ===== 创建卡片 ===== */'], ['/* ===== 张数统计 ===== */', '/* ===== 筛选卡片 ===== */'], ['/* ===== 筛选卡片 ===== */', '/* ===== 寻源结果 - 搜索图源信息条 ===== */'], ['/* ===== 分页 ===== */', '/* ===== 编辑模式 ===== */']],
+      result: [['/* ===== 寻源结果 - 搜索图源信息条 ===== */', '/* ===== 分页 ===== */']]
+    };
+    const ranges = sectionMap[section];
+    if (!ranges) return text;
+    const parts = [];
+    for (const [start, end] of ranges) {
+      const startIdx = text.indexOf(start), endIdx = text.indexOf(end);
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) parts.push(text.substring(startIdx, endIdx).trim());
+    }
+    return parts.length > 0 ? parts.join('\n\n') : text;
+  }
+  function extractJsSection(text, section) {
+    const sectionMap = { create: [['// ===== 模拟任务数据 =====', '// ===== 任务列表 =====']], list: [['// ===== 张数管理 =====', '// ===== 任务列表 ====='], ['// ===== 任务列表 =====', '// ===== 寻源结果数据 =====']], result: [['// ===== 寻源结果数据 =====', null]] };
+    const ranges = sectionMap[section];
+    if (!ranges) return text;
+    const parts = [];
+    for (const [start, end] of ranges) {
+      const startIdx = text.indexOf(start), endIdx = end ? text.indexOf(end) : text.length;
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) parts.push(text.substring(startIdx, endIdx).trim());
+    }
+    return parts.length > 0 ? parts.join('\n\n') : text;
+  }
+  function loadCode(type, url, targetId, extractFn) {
+    fetch(url).then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
+      .then(text => { const extracted = extractFn(text, currentPage); codeCache[type] = extracted; document.getElementById(targetId).textContent = extracted; })
+      .catch(() => { document.getElementById(targetId).textContent = '加载失败：' + url; });
+  }
+  function reloadAllCode() {
+    loadCode('html', '../ai-three-step.html', 'codeHtml', extractHtmlSection);
+    loadCode('css', '../ai-three-step.css', 'codeCss', extractCssSection);
+    loadCode('js', '../ai-three-step.js', 'codeJs', extractJsSection);
+  }
+  reloadAllCode();
+  document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', async () => {
+    const type = btn.dataset.copy, text = codeCache[type];
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); const old = btn.textContent; btn.textContent = '已复制'; btn.classList.add('ok'); setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1600); }
+    catch (e) { btn.textContent = '复制失败'; }
+  }));
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'pageChange') {
+      const page = e.data.page;
+      if (!page || !sectionLabels[page]) return;
+      currentPage = page;
+      const newUrl = new URL(window.location);
+      if (page === 'create') newUrl.searchParams.delete('page'); else newUrl.searchParams.set('page', page);
+      window.history.replaceState({}, '', newUrl);
+      updateCodeHeaders(page);
+      loadSpecState();
+      reloadAllCode();
+      try { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'pageChange', page: page }, '*'); } catch(err) {}
+    }
+  });
 
-      <!-- 图源列表 -->
-      <section class="detail-section">
-        <div class="detail-section-title">
-          图源列表
-          <span class="detail-readonly-tag">只读</span>
-        </div>
-        <div class="detail-source-list" id="detailSourceGrid">
-          <!-- JS 动态填充 -->
-        </div>
-      </section>
-    </div>
-    <div class="detail-footer">
-      <button class="btn btn-default" onclick="closeDetailModal()">关闭</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<script src="ai-three-step.js?v=fix-result-tdz-20260810b"></script>
+  const defaultCols = ['功能模块','功能描述','交互说明','数据来源','验收标准','状态'];
+  const defaults = {
+    create: [['任务名称','输入并标识本次图搜任务','必填；最多50字；失焦时校验','用户输入','未填写时不能提交','已确认'],['图搜方式','图片链接、文件上传、上传图片','默认选中图片链接；切换保留数据','用户选择','三种方式均可创建任务','已确认'],['图片链接','批量粘贴图片URL','过滤无效链接；最多1000条','用户输入','数量准确，可删除和清空','已确认'],['文件上传','上传Excel模板','显示上传前、中、成功、失败状态','本地文件','仅xlsx/xls，30M以内','已确认'],['上传图片','直接上传图片','点击上传，最多1000张','本地文件','支持多选和数量校验','已确认'],['开始寻源','校验并创建任务','校验通过后进入任务列表','系统处理','反馈明确，状态正确','已确认']],
+    list: [['功能横幅','展示任务统计和创建入口','点击创建跳转到创建页','系统数据','入口明确','已确认'],['剩余张数','显示当前剩余张数','点击增购弹窗','系统数据','张数准确','已确认'],['筛选区','按名称、方式、状态、时间筛选','多条件组合查询','用户输入','筛选结果准确','已确认'],['任务表格','展示任务列表','状态对应操作按钮','系统数据','分页展示','已确认']],
+    result: [['图源信息','展示搜索图源','显示任务名、方式、数量','系统数据','信息完整','已确认'],['状态筛选','全部、成功、失败','Tab 切换筛选','系统计算','数量和卡片同步','已确认'],['筛选条件','价格、销量、揽收率等','可收起展开','用户输入','筛选准确','已确认'],['结果卡片','垂直商品卡片展示','图片、状态、相似度、价格和数据','1688 API','响应式网格','已确认']]
+  };
+  let cols = [...defaultCols], state, drag = false, start = null, end = null;
+  const body = document.getElementById('tbody'), saveText = document.getElementById('saveText');
+  const storageKey = () => 'dianleida-spec-editor-v4-' + currentPage;
+  function loadSpecState(){
+    const saved = JSON.parse(localStorage.getItem(storageKey()) || 'null');
+    state = saved && Array.isArray(saved.rows) && saved.rows.length > 0 ? saved : { rows: defaults[currentPage].map(r => [...r]), styles: {}, merges: [], cols: [...defaultCols] };
+    cols = state.cols || [...defaultCols];
+    state.cols = cols;
+    start = end = null;
+    render();
+  }
+  const RAW_SPEC_URL = 'https://raw.githubusercontent.com/kingf668877-creator/dianleida1688/master/v6/v2.9.3/prototype-spec.json';
+  async function pullFromGitHub(){
+    const btn = document.getElementById('pullOnline');
+    if(!btn) return;
+    btn.textContent = '↻ 加载中...'; btn.disabled = true;
+    try {
+      const resp = await fetch(RAW_SPEC_URL + '?t=' + Date.now());
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      if(!data || !Array.isArray(data.rows) || data.rows.length === 0) throw new Error('数据为空');
+      state = data;
+      cols = state.cols || [...defaultCols];
+      state.cols = cols;
+      localStorage.setItem(storageKey(), JSON.stringify(state));
+      start = end = null;
+      render();
+      alert('已从线上恢复最新数据。');
+    } catch(err){
+      alert('从线上恢复失败: ' + err.message);
+    } finally {
+      btn.textContent = '↻ 从线上恢复'; btn.disabled = false;
+    }
+  }
+  document.getElementById('pullOnline').onclick = () => { if(confirm('确定从 GitHub 拉取线上最新数据？这将覆盖当前本地编辑的内容。')) pullFromGitHub(); };
+  async function autoPullIfNoLocal(){
+    const saved = localStorage.getItem(storageKey());
+    if(saved) return;
+    try {
+      const resp = await fetch(RAW_SPEC_URL + '?t=' + Date.now());
+      if(!resp.ok) return;
+      const data = await resp.json();
+      if(!data || !Array.isArray(data.rows) || data.rows.length === 0) return;
+      state = data;
+      cols = state.cols || [...defaultCols];
+      state.cols = cols;
+      start = end = null;
+      render();
+    } catch(e){}
+  }
+  autoPullIfNoLocal();
+  const colors = ['#000000','#333333','#555555','#777777','#9b9b9b','#d9d9d9','#e8e8e8','#f3f3f3','#fafafa','#ffffff','#e84545','#f06b20','#f4a000','#ffd51b','#60b817','#00afa8','#00a6d6','#3155d9','#6d36d9','#d22b92','#f8dfe2','#fde8d4','#fff1c9','#fff7cc','#e7f3d4','#d6f5ef','#d8f2f7','#dde5fc','#e8ddfb','#f7dded','#ee9ba6','#f5ba7a','#f8ce74','#ffe76f','#b9df7a','#77dacf','#70cfe4','#91a9ef','#ad93e6','#e88bc5','#dd5366','#ed9036','#f2b21a','#e4ca00','#73c90d','#00b8a9','#009db3','#3261df','#7543db','#db329d','#b8192d','#c65a00','#c68400','#947f00','#398400','#007c74','#00667e','#173b9b','#45219a','#901467','#770715','#823800','#815900','#5e5100','#255600','#00534e','#004355','#0c2465','#2e1367','#5d0a43'];
+  function buildPalettes(){ document.querySelectorAll('.swatches').forEach(g => { colors.forEach(c => { const s = document.createElement('span'); s.className = 'swatch'; s.style.background = c; s.dataset.color = c; s.dataset.type = g.dataset.type; g.appendChild(s); }); }); }
+  buildPalettes();
+  loadSpecState();
+  function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function key(r,c){ return r + '-' + c; }
+  function range(){ if(!start || !end) return null; return { r1: Math.min(start.r,end.r), r2: Math.max(start.r,end.r), c1: Math.min(start.c,end.c), c2: Math.max(start.c,end.c) }; }
+  function covered(r,c){ return state.merges.some(m => r>=m.r1 && r<=m.r2 && c>=m.c1 && c<=m.c2 && !(r===m.r1 && c===m.c1)); }
+  function rootMerge(r,c){ return state.merges.find(m => m.r1===r && m.c1===c); }
+  function render(){
+    document.getElementById('thead').innerHTML = '<tr><th class="num">#</th>' + cols.map(c => '<th>' + escapeHtml(c) + '</th>').join('') + '</tr>';
+    body.innerHTML = '';
+    state.rows.forEach((row,r) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td class="num">' + (r+1) + '</td>';
+      for(let c=0;c<cols.length;c++){
+        if(covered(r,c)) continue;
+        const td = document.createElement('td');
+        td.dataset.r = r; td.dataset.c = c;
+        const m = rootMerge(r,c);
+        if(m){ td.rowSpan = m.r2-m.r1+1; td.colSpan = m.c2-m.c1+1; }
+        const st = state.styles[key(r,c)] || {};
+        td.style.background = st.bg || '#fff';
+        const d = document.createElement('div');
+        d.className = 'cell'; d.contentEditable = 'true'; d.textContent = row[c] || '';
+        d.style.fontWeight = st.bold ? '700' : '400'; d.style.color = st.color || '#1f2329'; d.style.fontSize = (st.size || 13) + 'px';
+        d.oninput = () => { state.rows[r][c] = d.textContent; autosave(); };
+        td.appendChild(d);
+        td.onmousedown = e => { if(e.button !== 0) return; if(e.target === d && document.activeElement === d) return; drag = true; start = {r,c}; end = {r,c}; paint(); };
+        td.onmouseenter = () => { if(drag){ end = {r,c}; paint(); } };
+        td.oncontextmenu = e => openContextMenu(e,r,c);
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    });
+    paint();
+  }
+  document.onmouseup = () => drag = false;
+  function paint(){
+    document.querySelectorAll('#tbody td[data-r]').forEach(td => td.classList.remove('selected'));
+    const q = range();
+    if(!q){ selectionText.textContent = '右键单元格可操作行列'; return; }
+    document.querySelectorAll('#tbody td[data-r]').forEach(td => { const r = +td.dataset.r, c = +td.dataset.c; if(r>=q.r1 && r<=q.r2 && c>=q.c1 && c<=q.c2) td.classList.add('selected'); });
+    selectionText.textContent = (q.r2-q.r1+1) + ' 行 × ' + (q.c2-q.c1+1) + ' 列';
+  }
+  let timer;
+  function autosave(){ saveText.textContent = '正在保存到当前浏览器...'; clearTimeout(timer); timer = setTimeout(() => { localStorage.setItem(storageKey(), JSON.stringify(state)); saveText.textContent = '已自动保存到当前浏览器 · ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}); }, 450); }
+  function applyStyle(prop,val){ const q = range(); if(!q) return; for(let r=q.r1;r<=q.r2;r++) for(let c=q.c1;c<=q.c2;c++){ state.styles[key(r,c)] = state.styles[key(r,c)] || {}; state.styles[key(r,c)][prop] = val; } render(); autosave(); }
+  boldBtn.onclick = () => { const q = range(); if(!q) return; for(let r=q.r1;r<=q.r2;r++) for(let c=q.c1;c<=q.c2;c++){ const s = state.styles[key(r,c)] = state.styles[key(r,c)] || {}; s.bold = !s.bold; } render(); autosave(); };
+  fontSize.onchange = e => applyStyle('size', +e.target.value);
+  function togglePalette(id){ document.querySelectorAll('.palette').forEach(p => p.id !== id && p.classList.remove('show')); document.getElementById(id).classList.toggle('show'); }
+  fontColorBtn.onclick = e => { e.stopPropagation(); togglePalette('fontPalette'); };
+  bgColorBtn.onclick = e => { e.stopPropagation(); togglePalette('bgPalette'); };
+  document.onclick = e => { if(!e.target.closest('.format-wrap')) document.querySelectorAll('.palette').forEach(p => p.classList.remove('show')); if(!e.target.closest('.ctx-menu')) ctxMenu.classList.remove('show'); };
+  document.querySelectorAll('.swatch,.no-color').forEach(s => s.onclick = e => { e.stopPropagation(); const c = s.dataset.color, type = s.dataset.type; applyStyle(type === 'font' ? 'color' : 'bg', c); if(type === 'font') fontUnderline.style.background = c; else bgUnderline.style.background = c; document.querySelectorAll('.palette').forEach(p => p.classList.remove('show')); });
+  document.querySelectorAll('.more-color').forEach((m,i) => m.onclick = () => document.getElementById(i === 0 ? 'moreFont' : 'moreBg').click());
+  moreFont.onchange = e => applyStyle('color', e.target.value);
+  moreBg.onchange = e => applyStyle('bg', e.target.value);
+  function remapStyles(mapper){ const next = {}; Object.entries(state.styles).forEach(([k,v]) => { const [r,c] = k.split('-').map(Number), p = mapper(r,c); if(p) next[key(p.r,p.c)] = v; }); state.styles = next; }
+  function mergeCells(){ const q = range(); if(!q || (q.r1===q.r2 && q.c1===q.c2)) return; state.merges = state.merges.filter(m => m.r2<q.r1 || m.r1>q.r2 || m.c2<q.c1 || m.c1>q.c2); const t = []; for(let r=q.r1;r<=q.r2;r++) for(let c=q.c1;c<=q.c2;c++) if(state.rows[r][c]) t.push(state.rows[r][c]); state.rows[q.r1][q.c1] = t.join(' / '); state.merges.push(q); start = end = {r:q.r1,c:q.c1}; render(); autosave(); }
+  function splitCells(){ const q = range(); if(!q) return; state.merges = state.merges.filter(m => !(q.r1<=m.r2 && q.r2>=m.r1 && q.c1<=m.c2 && q.c2>=m.c1)); render(); autosave(); }
+  function insertRow(at){ state.rows.splice(at,0,Array(cols.length).fill('')); remapStyles((r,c) => ({r:r>=at?r+1:r,c})); state.merges.forEach(m => { if(m.r1>=at){m.r1++;m.r2++;} else if(m.r2>=at) m.r2++; }); start = end = {r:at,c:Math.min((range()?.c1)||0,cols.length-1)}; render(); autosave(); }
+  function deleteRows(){ const q = range(); if(!q || state.rows.length-(q.r2-q.r1+1)<1) return; const n = q.r2-q.r1+1; state.rows.splice(q.r1,n); remapStyles((r,c) => r<q.r1 ? {r,c} : r>q.r2 ? {r:r-n,c} : null); state.merges = state.merges.filter(m => m.r2<q.r1 || m.r1>q.r2).map(m => m.r1>q.r2 ? {...m,r1:m.r1-n,r2:m.r2-n} : m); start = end = {r:Math.min(q.r1,state.rows.length-1),c:Math.min(q.c1,cols.length-1)}; render(); autosave(); }
+  function insertCol(at){ cols.splice(at,0,'新列 '+(cols.length+1)); state.cols = cols; state.rows.forEach(row => row.splice(at,0,'')); remapStyles((r,c) => ({r,c:c>=at?c+1:c})); state.merges.forEach(m => { if(m.c1>=at){m.c1++;m.c2++;} else if(m.c2>=at) m.c2++; }); start = end = {r:Math.min((range()?.r1)||0,state.rows.length-1),c:at}; render(); autosave(); }
+  function deleteCols(){ const q = range(); if(!q || cols.length-(q.c2-q.c1+1)<1) return; const n = q.c2-q.c1+1; cols.splice(q.c1,n); state.cols = cols; state.rows.forEach(row => row.splice(q.c1,n)); remapStyles((r,c) => c<q.c1 ? {r,c} : c>q.c2 ? {r,c:c-n} : null); state.merges = state.merges.filter(m => m.c2<q.c1 || m.c1>q.c2).map(m => m.c1>q.c2 ? {...m,c1:m.c1-n,c2:m.c2-n} : m); start = end = {r:Math.min(q.r1,state.rows.length-1),c:Math.min(q.c1,cols.length-1)}; render(); autosave(); }
+  const ctxMenu = document.getElementById('ctxMenu');
+  function openContextMenu(e,r,c){ e.preventDefault(); const q = range(); if(!q || r<q.r1 || r>q.r2 || c<q.c1 || c>q.c2){ start = end = {r,c}; paint(); } const s = range(), rowText = s.r1===s.r2 ? '第 '+(s.r1+1)+' 行' : '第 '+(s.r1+1)+'-'+(s.r2+1)+' 行', colText = s.c1===s.c2 ? '第 '+String.fromCharCode(65+s.c1)+' 列' : '第 '+String.fromCharCode(65+s.c1)+'-'+String.fromCharCode(65+s.c2)+' 列'; ctxMenu.innerHTML = '<div class="ctx-item" data-action="row-up"><span class="ctx-icon">↑</span>向上插入 1 行</div><div class="ctx-item" data-action="row-down"><span class="ctx-icon">↓</span>向下插入 1 行</div><div class="ctx-item" data-action="col-left"><span class="ctx-icon">←</span>向左插入 1 列</div><div class="ctx-item" data-action="col-right"><span class="ctx-icon">→</span>向右插入 1 列</div><div class="ctx-divider"></div><div class="ctx-item" data-action="merge"><span class="ctx-icon">▦</span>合并单元格</div><div class="ctx-item" data-action="split"><span class="ctx-icon">▥</span>拆分单元格</div><div class="ctx-divider"></div><div class="ctx-item danger" data-action="delete-row"><span class="ctx-icon">⌫</span>删除'+rowText+'</div><div class="ctx-item danger" data-action="delete-col"><span class="ctx-icon">⌫</span>删除'+colText+'</div>'; ctxMenu.style.left = Math.min(e.clientX,window.innerWidth-190)+'px'; ctxMenu.style.top = Math.min(e.clientY,window.innerHeight-320)+'px'; ctxMenu.classList.add('show'); }
+  ctxMenu.onclick = e => { const a = e.target.closest('[data-action]')?.dataset.action, q = range(); if(!a || !q) return; if(a==='row-up') insertRow(q.r1); if(a==='row-down') insertRow(q.r2+1); if(a==='col-left') insertCol(q.c1); if(a==='col-right') insertCol(q.c2+1); if(a==='merge') mergeCells(); if(a==='split') splitCells(); if(a==='delete-row') deleteRows(); if(a==='delete-col') deleteCols(); ctxMenu.classList.remove('show'); };
+  const modal = document.getElementById('modal');
+  const cancelSubmitBtn = document.getElementById('cancel');
+  const confirmSubmitBtn = document.getElementById('confirm');
+  const submitOnlineBtn = document.getElementById('submitOnline');
+  const tokenModal = document.getElementById('tokenModal');
+  const tokenInput = document.getElementById('tokenInput');
+  const GITHUB_OWNER = 'kingf668877-creator';
+  const GITHUB_REPO = 'dianleida1688';
+  const GITHUB_BRANCH = 'master';
+  const SPEC_FILE_PATH = 'v6/v2.9.3/prototype-spec.json';
+  submitOnlineBtn.onclick = () => modal.classList.add('show');
+  cancelSubmitBtn.onclick = () => modal.classList.remove('show');
+  confirmSubmitBtn.onclick = async () => {
+    confirmSubmitBtn.textContent = '处理中...';
+    confirmSubmitBtn.disabled = true;
+    modal.classList.remove('show');
+    const token = localStorage.getItem('dianleida-github-token');
+    if(!token){
+      tokenModal.classList.add('show');
+      tokenInput.focus();
+    } else {
+      await deployToGitHub(token);
+    }
+    confirmSubmitBtn.textContent = '确认提交';
+    confirmSubmitBtn.disabled = false;
+  };
+  document.getElementById('tokenCancel').onclick = () => tokenModal.classList.remove('show');
+  document.getElementById('tokenConfirm').onclick = async () => { const token = tokenInput.value.trim(); if(!token){ alert('请输入 Token'); return; } localStorage.setItem('dianleida-github-token', token); tokenModal.classList.remove('show'); tokenInput.value = ''; await deployToGitHub(token); };
+  async function deployToGitHub(token) {
+    submitOnlineBtn.textContent = '提交中...'; submitOnlineBtn.disabled = true;
+    try {
+      const content = JSON.stringify(state, null, 2);
+      const b64 = btoa(unescape(encodeURIComponent(content)));
+      let sha = null;
+      try { const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}?ref=${GITHUB_BRANCH}`, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' } }); if(r.ok){ const d = await r.json(); sha = d.sha; } } catch(e){}
+      const body = { message: `docs: update prototype spec for ${currentPage}`, content: b64, branch: GITHUB_BRANCH };
+      if(sha) body.sha = sha;
+      const resp = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${SPEC_FILE_PATH}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if(resp.ok){ alert('提交成功！原型说明已同步到 GitHub。'); }
+      else {
+        const err = await resp.json().catch(() => ({}));
+        const msg = err.message || ('HTTP ' + resp.status);
+        if(resp.status === 401 || resp.status === 403 || msg.includes('Resource not accessible') || msg.includes('Bad credentials')){
+          localStorage.removeItem('dianleida-github-token');
+          alert('Token 无效或缺少仓库权限（' + resp.status + '），请重新输入 Token。\n\n确保 Token 选中了 dianleida1688 仓库并勾选了 Contents: Read and write 权限。');
+          tokenModal.classList.add('show');
+          tokenInput.focus();
+        } else {
+          alert('提交失败: ' + msg);
+        }
+      }
+    } catch(err){ alert('网络错误: ' + err.message); } finally { submitOnlineBtn.textContent = '提交到线上'; submitOnlineBtn.disabled = false; }
+  }
+</script>
 </body>
 </html>
