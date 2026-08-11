@@ -12,26 +12,15 @@
     "2026": [
       {
         "module": "产品需求",
-        "version": "",
+        "version": "V2.9.3",
         "features": [
-          "3434"
+          "图搜批量寻源"
         ],
         "reviewAt": "",
         "plannedAt": "",
         "releasedAt": "",
-        "progress": "",
-        "completion": ""
-      },
-      {
-        "module": "用户需求",
-        "version": "2234",
-        "features": [],
-        "reviewAt": "",
-        "plannedAt": "",
-        "releasedAt": "",
         "progress": "0%",
-        "completion": "",
-        "owner": "郑桂锋"
+        "completion": ""
       }
     ]
   }
