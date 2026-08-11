@@ -11,6 +11,18 @@
   "店雷达": {
     "2026": [
       {
+        "module": "产品需求",
+        "version": "",
+        "features": [
+          "3434"
+        ],
+        "reviewAt": "",
+        "plannedAt": "",
+        "releasedAt": "",
+        "progress": "",
+        "completion": ""
+      },
+      {
         "module": "用户需求",
         "version": "2234",
         "features": [],
