@@ -315,7 +315,7 @@
     });
   });
   // ===== 页面切换 =====
-  const INNER_PAGE_VERSION = 'module-spec-nav-fixed-20260807';
+  const INNER_PAGE_VERSION = 'topnav-20260811';
   function withVersion(url) {
     if (!url.includes('v2.9.3/search-agent-yuque.html')) return url;
     return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
@@ -328,7 +328,7 @@
     }
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
-    frame.src = target === 'v2.9.3/search-agent-yuque.html' ? 'v2.9.3/search-agent-yuque.html' : withVersion(target);
+    frame.src = withVersion(target);
     if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
   }));
   // ===== 监听 iframe 内部板块切换（postMessage）=====
