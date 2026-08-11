@@ -754,6 +754,15 @@ document.querySelectorAll('.pkg-tab-btn').forEach(btn => {
 });
 const initialPackageTab = document.querySelector('.pkg-tab-btn.active')?.dataset.pkgTab || '1688-member';
 activatePackageTab(initialPackageTab);
+
+// 顶部导航栏子 Tab 切换（1688 / OZON）
+document.querySelectorAll('.pkg-top-nav-panel .pkg-sub-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sub = btn.dataset.pkgSub;
+    btn.parentElement.querySelectorAll('.pkg-sub-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    btn.parentElement.parentElement.querySelectorAll('.pkg-sub-panel').forEach(p => p.classList.toggle('active', p.dataset.pkgSubPanel === sub));
+  });
+});
 // 修复套餐配置图片路径（适配嵌套iframe的相对路径问题）
 (function fixPkgImgPath() {
   const imgs = document.querySelectorAll('.pkg-screenshot');
