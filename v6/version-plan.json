@@ -22,6 +22,19 @@
         "progress": "0%",
         "completion": "",
         "owner": "郑桂锋"
+      },
+      {
+        "module": "产品需求",
+        "version": "V2.8.9",
+        "features": [
+          "1688AI搜索词"
+        ],
+        "reviewAt": "2026-07-20",
+        "plannedAt": "2026-07-23",
+        "releasedAt": "2026-07-27",
+        "progress": "0%",
+        "completion": "完成度：100%\n（功能完整上线且前稳定运行）",
+        "owner": "郑桂锋"
       }
     ]
   }
