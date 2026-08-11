@@ -1,1 +1,11 @@
-{ "plans": [] }
+{
+  "plans": [
+    {
+      "version": "",
+      "title": "",
+      "status": "规划中",
+      "points": [],
+      "date": ""
+    }
+  ]
+}
