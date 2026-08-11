@@ -3035,7 +3035,7 @@ body.edit-mode [data-editable]:hover {
   gap: 0;
   border-bottom: 2px solid var(--border-light);
   padding: 16px 24px 0;
-  overflow-x: auto;
+  overflow-x: auto; flex-wrap: wrap;
 }
 
 .pkg-tab-btn {
