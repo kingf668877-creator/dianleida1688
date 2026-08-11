@@ -162,14 +162,14 @@ function renderTable(){
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr'); tr.dataset.index=String(i);
     tr.innerHTML = `
-      <td>${getModuleOptions(r.module||'产品需求')}</td>
+      <td>${comboHTML('module', MODULE_OPTIONS, r.module||'产品需求')}</td>
       <td><input data-field="version" value="${escapeAttr(r.version||'')}" placeholder="V2.10.2"></td>
       <td><textarea data-field="features" placeholder="每行一个功能，如：1.OZON插件">${escapeText((r.features||[]).join('\n'))}</textarea></td>
-      <td>${getOwnerOptions(r.owner||'')}</td>
+      <td>${comboHTML('owner', OWNERS, r.owner||'')}</td>
       <td><input data-field="reviewAt" type="date" value="${escapeAttr(r.reviewAt||'')}"></td>
       <td><input data-field="plannedAt" type="date" value="${escapeAttr(r.plannedAt||'')}"></td>
       <td><input data-field="releasedAt" type="date" value="${escapeAttr(r.releasedAt||'')}"></td>
-      <td>${getProgressOptions(r.progress||'')}</td>
+      <td>${comboHTML('progress', PROGRESS_OPTIONS, r.progress||'')}</td>
       <td><textarea data-field="completion" placeholder="例：完成度：100%（功能完整上线且新稳定运行）">${escapeText(r.completion||'')}</textarea></td>
       <td class="row-actions">
         <button class="icon-btn" data-act="up" title="上移">↑</button>
