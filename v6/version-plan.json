@@ -9,6 +9,18 @@
     }
   ],
   "店雷达": {
-    "2026": []
+    "2026": [
+      {
+        "module": "用户需求",
+        "version": "",
+        "features": [],
+        "reviewAt": "",
+        "plannedAt": "",
+        "releasedAt": "",
+        "progress": "0%",
+        "completion": "",
+        "owner": "郑桂锋"
+      }
+    ]
   }
 }
