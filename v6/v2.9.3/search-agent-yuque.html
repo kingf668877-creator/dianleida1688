@@ -59,7 +59,7 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="../ai-three-step.html?v=reorder-20260811" title="效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="../ai-three-step.html?v=topnav-final-20260811" title="效果图"></iframe></section>
     <section class="panel spec-panel-page" id="panel-spec">
       <article class="spec-doc">
         <header class="spec-head">
@@ -79,7 +79,7 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
-  const PREVIEW_VERSION = 'reorder-20260811';
+  const PREVIEW_VERSION = 'topnav-final-20260811';
   let currentPage = 'create';
   let iframeSrc = `../ai-three-step.html?v=${PREVIEW_VERSION}`;
   if (pageParam === 'list') { currentPage = 'list'; iframeSrc = `../ai-three-step.html?page=list&v=${PREVIEW_VERSION}`; }
