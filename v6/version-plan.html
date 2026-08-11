@@ -95,7 +95,7 @@
         <th style="width:120px;">评审时间</th>
         <th style="width:120px;">预估上线时间</th>
         <th style="width:120px;">上线时间</th>
-        <th style="width:160px;">功能迭代进度（可跳过一次重测）</th>
+        <th style="width:160px;">功能迭代准时率</th>
         <th style="width:200px;">功能迭代完成率（即期完成情况）</th>
         <th style="width:90px;">操作</th>
       </tr>
@@ -118,8 +118,8 @@ const PAT_KEY='dianleida_version_plan_pat_v3';
 const OWNERS=['郑桂锋','卢佳兴'];
 const YEARS=['2026','2025','2024','2023'];
 const BIZ_LIST=['店雷达','海外分销','阿里国际站'];
-const MODULE_OPTIONS=['产品需求','产品设计','技术开发','运营需求'];
-const PROGRESS_OPTIONS=['0%','25%','50%','75%','90%','95%','100%'];
+const MODULE_OPTIONS=['产品需求','用户需求','运营需求','研发需求'];
+const PROGRESS_OPTIONS=['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'];
 
 let data = {};
 let currentBiz = '店雷达';
@@ -130,11 +130,13 @@ function escapeAttr(s){return String(s??'').replace(/"/g,'&quot;');}
 function escapeText(s){return String(s??'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function setStatus(t,k){const el=document.getElementById('status'); el.textContent=t; el.className=k||'';}
 
-function comboHTML(field, list, cur){
-  const opts = list.map(v=>`<option value="${v}"></option>`).join('');
-  const id = field + '-list';
-  return `<input list="${id}" data-field="${field}" value="${escapeAttr(cur||'')}" placeholder="选择或输入"><datalist id="${id}">${opts}</datalist>`;
+function selectHTML(field, list, cur, withEmpty){
+  const opts = (withEmpty?'<option value=""></option>':'') + list.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${v}</option>`).join('');
+  return `<select data-field="${field}">${opts}</select>`;
 }
+function moduleSelect(cur){ return selectHTML('module', MODULE_OPTIONS, cur||'产品需求', false); }
+function ownerSelect(cur){ return selectHTML('owner', OWNERS, cur||'', true); }
+function progressSelect(cur){ return selectHTML('progress', PROGRESS_OPTIONS, cur||'', true); }
 
 function ensureBucket(){
   if(!data[currentBiz]) data[currentBiz] = {};
@@ -162,14 +164,14 @@ function renderTable(){
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr'); tr.dataset.index=String(i);
     tr.innerHTML = `
-      <td>${comboHTML('module', MODULE_OPTIONS, r.module||'产品需求')}</td>
+      <td>${moduleSelect(r.module||'产品需求')}</td>
       <td><input data-field="version" value="${escapeAttr(r.version||'')}" placeholder="V2.10.2"></td>
       <td><textarea data-field="features" placeholder="每行一个功能，如：1.OZON插件">${escapeText((r.features||[]).join('\n'))}</textarea></td>
-      <td>${comboHTML('owner', OWNERS, r.owner||'')}</td>
+      <td>${ownerSelect(r.owner||'')}</td>
       <td><input data-field="reviewAt" type="date" value="${escapeAttr(r.reviewAt||'')}"></td>
       <td><input data-field="plannedAt" type="date" value="${escapeAttr(r.plannedAt||'')}"></td>
       <td><input data-field="releasedAt" type="date" value="${escapeAttr(r.releasedAt||'')}"></td>
-      <td>${comboHTML('progress', PROGRESS_OPTIONS, r.progress||'')}</td>
+      <td>${progressSelect(r.progress||'')}</td>
       <td><textarea data-field="completion" placeholder="例：完成度：100%（功能完整上线且新稳定运行）">${escapeText(r.completion||'')}</textarea></td>
       <td class="row-actions">
         <button class="icon-btn" data-act="up" title="上移">↑</button>
