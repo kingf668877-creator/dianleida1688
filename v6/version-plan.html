@@ -15,6 +15,8 @@
   .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px; border-radius: 8px; background: #fafbfc; border: 1px solid #eef0f3; margin-bottom: 10px; }
   .toolbar input, .toolbar select { height: 28px; padding: 0 8px; border: 1px solid #e5e6eb; border-radius: 6px; font: 12px "PingFang SC"; }
   .toolbar .grow { flex: 1; }
+  .pat-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pat-row input { width: 280px; }
   .btn { height: 28px; padding: 0 12px; border-radius: 6px; border: 1px solid #e5e6eb; background: #fff; color: #4e5969; font: 12px "PingFang SC"; cursor: pointer; }
   .btn:hover { border-color: #1652f0; color: #1652f0; }
   .btn.primary { background: #1652f0; border-color: #1652f0; color: #fff; }
@@ -74,7 +76,10 @@
     <button class="btn" id="uploadBtn">导入 JSON 文件</button>
     <input type="file" id="uploadInput" accept="application/json,.json" hidden>
     <span class="grow"></span>
-    <button class="btn primary" id="commitBtn">提交到 Git</button>
+    <div class="pat-row">
+      <input id="patInput" type="password" placeholder="GitHub PAT (repo 权限)">
+      <button class="btn primary" id="commitBtn">提交到 Git</button>
+    </div>
   </div>
   
 
@@ -203,7 +208,7 @@ function onAction(e){
   saveDraft();
 }
 
-function getPat(){ return (localStorage.getItem(PAT_KEY)||'').trim(); }
+function getPat(){return (document.getElementById('patInput').value||'').trim();}
 function savePat(){const v=getPat(); if(v) localStorage.setItem(PAT_KEY,v); else localStorage.removeItem(PAT_KEY);}
 function saveDraft(){ localStorage.setItem(DRAFT_KEY, JSON.stringify({data, currentBiz, currentYear})); }
 function loadDraft(){
@@ -229,7 +234,8 @@ async function loadFromGithub(){
     const obj=JSON.parse(decoded);
     if(obj && typeof obj==='object'){ data = obj; }
     ensureBucket();
-    syncBizActive(); renderYearTabs(); renderTable(); saveDraft();
+    document.getElementById('patInput').value = localStorage.getItem(PAT_KEY)||'';
+syncBizActive(); renderYearTabs(); renderTable(); saveDraft();
     setStatus('已加载 GitHub 数据','ok');
   }catch(err){
     try{
@@ -237,7 +243,8 @@ async function loadFromGithub(){
       if(r2.ok){
         const obj=await r2.json();
         if(obj && typeof obj==='object') data = obj;
-        ensureBucket(); syncBizActive(); renderYearTabs(); renderTable(); saveDraft();
+        ensureBucket(); document.getElementById('patInput').value = localStorage.getItem(PAT_KEY)||'';
+syncBizActive(); renderYearTabs(); renderTable(); saveDraft();
         setStatus('已加载 CDN 数据（GitHub API 失败：'+err.message+'）','err');
         return;
       }
@@ -281,7 +288,8 @@ function uploadDraft(file){
     try{
       const obj=JSON.parse(reader.result);
       if(obj && typeof obj==='object') data=obj;
-      ensureBucket(); syncBizActive(); renderYearTabs(); renderTable(); saveDraft();
+      ensureBucket(); document.getElementById('patInput').value = localStorage.getItem(PAT_KEY)||'';
+syncBizActive(); renderYearTabs(); renderTable(); saveDraft();
       setStatus('已导入 JSON 文件','ok');
     }catch(e){ setStatus('JSON 解析失败：'+e.message,'err'); }
   };
@@ -320,11 +328,13 @@ document.getElementById('uploadBtn').addEventListener('click', ()=> document.get
 document.getElementById('uploadInput').addEventListener('change', e=>{ const f=e.target.files&&e.target.files[0]; if(f) uploadDraft(f); });
 
 
-document.querySelectorAll('.biz-tab').forEach(t=>{ t.addEventListener('click', ()=>{ currentBiz=t.dataset.biz; syncBizActive(); renderYearTabs(); renderTable(); saveDraft(); }); });
+document.querySelectorAll('.biz-tab').forEach(t=>{ t.addEventListener('click', ()=>{ currentBiz=t.dataset.biz; document.getElementById('patInput').value = localStorage.getItem(PAT_KEY)||'';
+syncBizActive(); renderYearTabs(); renderTable(); saveDraft(); }); });
 
 
 const hadDraft = loadDraft();
 if(!hadDraft){ data = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+document.getElementById('patInput').value = localStorage.getItem(PAT_KEY)||'';
 syncBizActive(); renderYearTabs(); renderTable();
 loadFromGithub();
 </script>
