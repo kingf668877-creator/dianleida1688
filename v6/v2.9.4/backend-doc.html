@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OZON 搜索词跨语言匹配规则（后端技术规范）</title>
+<style>
+:root{--bg:#0f1117;--surface:#181b24;--surface2:#1f2330;--border:#2a2e3d;--text:#e4e6ed;--text2:#9ba1b5;--accent:#6c8cff;--accent2:#4ecdc4;--red:#ff6b6b;--orange:#ffa94d;--green:#51cf66;--purple:#b197fc;--yellow:#ffd43b;--mono:'SF Mono','Cascadia Code','Fira Code',Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans SC',sans-serif}*,*::before,*::after{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1100px;margin:0 auto;padding:0 24px}header.hero{padding:56px 0 40px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#151825 0%,var(--bg) 100%)}.hero .tag{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);background:rgba(78,205,196,.1);border:1px solid rgba(78,205,196,.25);padding:4px 12px;border-radius:4px;margin-bottom:16px}.hero h1{font-size:32px;margin:0 0 12px;font-weight:700;letter-spacing:-.02em}.hero p{color:var(--text2);font-size:15px;max-width:680px;margin:0}.meta-row{display:flex;gap:24px;margin-top:20px;flex-wrap:wrap}.meta-item{font-size:13px;color:var(--text2)}.meta-item strong{color:var(--text);font-weight:600}nav.toc{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 0}nav.toc ul{list-style:none;margin:0;padding:0;display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap}nav.toc a{display:inline-block;padding:6px 14px;font-size:13px;color:var(--text2);border-radius:6px;white-space:nowrap}nav.toc a:hover{background:var(--surface2);color:var(--text);text-decoration:none}main{padding:40px 0 80px}section{margin-bottom:48px}h2{font-size:22px;font-weight:700;margin:0 0 20px;padding-bottom:10px;border-bottom:1px solid var(--border);letter-spacing:-.01em}h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--text)}h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text2)}p{margin:0 0 14px}.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:20px}.card-accent{border-left:3px solid var(--accent)}.layer{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:16px;position:relative}.layer::before{content:attr(data-layer);position:absolute;top:-10px;left:20px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em}.layer.l1::before{background:var(--green)}.layer.l2::before{background:var(--accent)}.layer.l3::before{background:var(--purple)}.layer.l4::before{background:var(--orange)}.layer.l5::before{background:var(--red)}.layer h3{margin-top:8px}.rank-badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:4px;margin-left:8px}.formula{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin:12px 0;font-family:var(--mono);font-size:13px;color:var(--accent2);overflow-x:auto;white-space:pre}pre{background:#0d0f15;border:1px solid var(--border);border-radius:8px;padding:18px;overflow-x:auto;margin:14px 0;font-size:13px;line-height:1.6}code{font-family:var(--mono);font-size:.9em}p code,li code,td code{background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--accent2);font-size:.88em}pre code{color:var(--text)}.kw{color:var(--purple)}.str{color:var(--green)}.cm{color:var(--text2);font-style:italic}.fn{color:var(--accent)}.num{color:var(--orange)}.table-wrap{overflow-x:auto;margin:14px 0}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}th{background:var(--surface2);font-weight:600;color:var(--text2);font-size:13px;white-space:nowrap}td{vertical-align:top}tr:hover td{background:rgba(108,140,255,.04)}.tag-zh{display:inline-block;background:rgba(255,107,107,.15);color:#ff8a8a;font-size:11px;padding:1px 7px;border-radius:3px;font-weight:600}.tag-ru{display:inline-block;background:rgba(78,205,196,.15);color:var(--accent2);font-size:11px;padding:1px 7px;border-radius:3px;font-weight:600}.tag-en{display:inline-block;background:rgba(108,140,255,.15);color:var(--accent);font-size:11px;padding:1px 7px;border-radius:3px;font-weight:600}.note{border-radius:8px;padding:14px 18px;margin:16px 0;font-size:14px;border-left:3px solid}.note-info{background:rgba(108,140,255,.08);border-color:var(--accent)}.note-warn{background:rgba(255,169,77,.08);border-color:var(--orange)}.note-ok{background:rgba(81,207,102,.08);border-color:var(--green)}.note strong{display:block;margin-bottom:4px}.flow-diagram{display:flex;flex-direction:column;gap:0;margin:20px 0}.flow-row{display:flex;align-items:stretch;gap:0}.flow-label{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}.flow-content{flex:1;background:var(--surface);border:1px solid var(--border);padding:14px 20px;font-size:14px}.flow-row:first-child .flow-label{border-radius:8px 0 0 0}.flow-row:first-child .flow-content{border-radius:0 8px 0 0}.flow-row:last-child .flow-label{border-radius:0 0 0 8px}.flow-row:last-child .flow-content{border-radius:0 0 8px 0}.flow-row:not(:last-child) .flow-label,.flow-row:not(:last-child) .flow-content{border-bottom:none}.l1-bg{background:var(--green)}.l2-bg{background:var(--accent)}.l3-bg{background:var(--purple)}.l4-bg{background:var(--orange)}.l5-bg{background:var(--red)}.example{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:16px 0}.example-header{background:var(--surface2);padding:10px 18px;font-weight:600;font-size:14px;border-bottom:1px solid var(--border)}.example-body{padding:18px}.example-body pre{margin:0}.match-line{display:flex;align-items:baseline;gap:10px;padding:6px 0;font-size:14px;border-bottom:1px dashed var(--border)}.match-line:last-child{border-bottom:none}.match-icon{font-size:16px;flex-shrink:0}.match-title{flex:1}.match-layer{font-size:12px;font-weight:600;padding:2px 8px;border-radius:3px;white-space:nowrap}footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color:var(--text2);font-size:13px}@media(max-width:720px){.hero h1{font-size:24px}.wrap{padding:0 16px}.card,.layer{padding:16px}.flow-label{width:56px;font-size:11px}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap"><span class="tag">Backend Technical Spec</span><h1>OZON 搜索词跨语言匹配规则</h1><p>基于 AI 输出的三语搜索词分析结果（中/俄/英），对 OZON 商品标题进行五层分层匹配与排序。匹配逻辑由后端代码控制，AI 只负责输出分析结果。</p><div class="meta-row"><div class="meta-item"><strong>版本</strong> v1.0</div><div class="meta-item"><strong>日期</strong> 2026-08-13</div><div class="meta-item"><strong>适用平台</strong> OZON</div><div class="meta-item"><strong>语言支持</strong> 中文 / Русский / English</div></div></div></header>
+<nav class="toc"><div class="wrap"><ul><li><a href="#sec-overview">概述</a></li><li><a href="#sec-data">数据结构</a></li><li><a href="#sec-crosslang">跨语言匹配</a></li><li><a href="#sec-layers">五层规则</a></li><li><a href="#sec-normalize">文本归一化</a></li><li><a href="#sec-examples">匹配示例</a></li><li><a href="#sec-edgecases">边界情况</a></li><li><a href="#sec-pseudo">伪代码</a></li></ul></div></nav>
+<main class="wrap">
+<section id="sec-overview"><h2>一、核心思路</h2><div class="card card-accent"><p><strong>一句话概括：</strong>AI 把用户搜索词拆解为三语关键词结构，后端拿这个结构对商品标题做五层逐层宽松匹配，命中层级越高的排越前面，同一层内按命中语言数和修饰词命中数排序。</p></div><h3>设计原则</h3><ul><li><strong>结果最多、相关度高的排前面</strong>：从精准到兜底五层渐进，宁可多召回不错杀</li><li><strong>跨语言 OR 匹配</strong>：商品标题可能是俄文、中文、英文或三语混拼，任一语言命中即算匹配</li><li><strong>匹配排序由后端控制</strong>：AI 提示词不包含任何匹配规则，只输出三语分析 JSON</li><li><strong>同语言加权</strong>：标题中同一语言命中的关键词越多，相关度越高（可选加分项）</li></ul><div class="flow-diagram"><div class="flow-row"><div class="flow-label l1-bg">L1</div><div class="flow-content">必含词[0]（任意语言）<strong>＋全部修饰词</strong>（每个修饰词任意语言命中）→ 最精准，排最前</div></div><div class="flow-row"><div class="flow-label l2-bg">L2</div><div class="flow-content"><strong>某个扩展词完整命中</strong>（三语中任一完整短语出现在标题）→ 精准</div></div><div class="flow-row"><div class="flow-label l3-bg">L3</div><div class="flow-content">必含词[0]（任意语言）<strong>＋某个扩展词的全部拆词</strong>（每个拆词任意语言命中）→ 宽松</div></div><div class="flow-row"><div class="flow-label l4-bg">L4</div><div class="flow-content">必含词[0]（任意语言）<strong>＋部分修饰词</strong>（至少1个修饰词任意语言命中）→ 宽松</div></div><div class="flow-row"><div class="flow-label l5-bg">L5</div><div class="flow-content"><strong>仅必含词[0]</strong>（任意语言）命中 → 兜底召回，排最后</div></div></div><div class="note note-info"><strong>关键概念：跨语言 OR</strong>每个关键词在 AI 输出中都有 <code>{zh, ru, en}</code> 三个版本。匹配时，只要三个版本中任意一个出现在商品标题中，就算该关键词命中。</div></section>
+<section id="sec-data"><h2>二、AI 输出数据结构</h2><p>后端接收到的 AI 分析结果为以下 JSON 结构。每个关键词字段都是三语对象，匹配时对三语做 OR 判断。</p><pre><code>{
+  "coreProduct": {"zh":"外套", "ru":"пальто", "en":"coat"},
+  "modifiers": {
+    "style": [{"zh":"休闲", "ru":"повседневное", "en":"casual"}],
+    "material": [],
+    "crowd": [{"zh":"男士", "ru":"мужское", "en":"men's"}],
+    "scene": [],
+    "brand": []
+  },
+  "expandedKeywords": [
+    {"zh":"男士休闲外套", "ru":"мужское повседневное пальто", "en":"men's casual coat"}
+  ],
+  "expandedTokenGroups": [
+    {"zh":{"tokens":["男士","休闲","外套"]}, "ru":{"tokens":["мужское","повседневное","пальто"]}, "en":{"tokens":["men's","casual","coat"]}}
+  ],
+  "requiredKeywords": [{"zh":"外套", "ru":"пальто", "en":"coat"}]
+}</code></pre><div class="table-wrap"><table><thead><tr><th>字段</th><th>类型</th><th>匹配中的角色</th><th>说明</th></tr></thead><tbody><tr><td><code>coreProduct</code></td><td>Trilingual</td><td>参考</td><td>核心品类词，供理解用，实际匹配用 requiredKeywords[0]</td></tr><tr><td><code>modifiers</code></td><td>Trilingual[]</td><td>修饰词</td><td>style/material/crowd/scene/brand 合并参与匹配</td></tr><tr><td><code>expandedKeywords</code></td><td>Trilingual[]</td><td>L2 完整匹配</td><td>任一项的任一语言完整出现在标题即命中 L2</td></tr><tr><td><code>expandedTokenGroups</code></td><td>TokenGroup[]</td><td>L3 拆词匹配</td><td>任一语言的 tokens 全部命中即满足 L3 的扩展词条件</td></tr><tr><td><code>requiredKeywords</code></td><td>Trilingual[]</td><td><strong>必含词</strong></td><td>[0] 是核心必含词，五层匹配都离不开它</td></tr></tbody></table></div><div class="note note-warn"><strong>requiredKeywords[0] 铁律</strong>必含词第一个是纯核心品类词（如“外套”而非“男士外套”）。匹配从 L1 到 L5 都以 requiredKeywords[0] 为基础锚点。</div></section>
+<section id="sec-crosslang"><h2>三、跨语言匹配机制</h2><h3>3.1 三语 OR 匹配</h3><div class="formula">matchKeyword(title, kw):
+  return contains(title, normalize(kw.zh))
+      OR contains(title, normalize(kw.ru))
+      OR contains(title, normalize(kw.en))</div><p>只要三个语言版本中任意一个在标题中出现，该关键词即算命中。空字符串跳过。</p><h3>3.2 三语短语完整匹配（L2 用）</h3><div class="formula">matchExpandedKeyword(title, ek):
+  return contains(title, normalize(ek.zh))
+      OR contains(title, normalize(ek.ru))
+      OR contains(title, normalize(ek.en))</div><p>L2 是完整短语匹配，不是拆词匹配。</p><h3>3.3 三语拆词全部命中（L3 用）</h3><div class="formula">matchTokenGroup(title, group):
+  zh_all = ALL(group.zh.tokens, t => contains(title, normalize(t)))
+  ru_all = ALL(group.ru.tokens, t => contains(title, normalize(t)))
+  en_all = ALL(group.en.tokens, t => contains(title, normalize(t)))
+  return zh_all OR ru_all OR en_all</div><p>任一语言版本的所有拆词都出现在标题中（不需要连续），该 tokenGroup 即算命中。</p></section>
+<section id="sec-layers"><h2>四、五层匹配规则详解</h2><p>每个商品标题按 L1 → L2 → L3 → L4 → L5 顺序依次判断，命中最高层即停止。</p><div class="layer l1" data-layer="LAYER 1 · 最精准"><h3>必含词[0] + 全部修饰词 <span class="rank-badge" style="background:var(--green);color:#fff">排名最高</span></h3><div class="formula">matchKeyword(title, requiredKeywords[0])
+AND ALL(modifiers, m => matchKeyword(title, m))</div></div><div class="layer l2" data-layer="LAYER 2 · 精准"><h3>某个扩展词完整命中 <span class="rank-badge" style="background:var(--accent);color:#fff">排名第二</span></h3><div class="formula">ANY(expandedKeywords, ek => matchExpandedKeyword(title, ek))</div></div><div class="layer l3" data-layer="LAYER 3 · 宽松"><h3>必含词[0] + 某个扩展词全部拆词 <span class="rank-badge" style="background:var(--purple);color:#fff">排名第三</span></h3><div class="formula">matchKeyword(title, requiredKeywords[0])
+AND ANY(expandedTokenGroups, g => matchTokenGroup(title, g))</div></div><div class="layer l4" data-layer="LAYER 4 · 宽松"><h3>必含词[0] + 部分修饰词 <span class="rank-badge" style="background:var(--orange);color:#fff">排名第四</span></h3><div class="formula">matchKeyword(title, requiredKeywords[0])
+AND ANY(modifiers, m => matchKeyword(title, m))</div></div><div class="layer l5" data-layer="LAYER 5 · 兜底"><h3>仅必含词[0]命中 <span class="rank-badge" style="background:var(--red);color:#fff">排名最后</span></h3><div class="formula">matchKeyword(title, requiredKeywords[0])</div></div></section>
+<section id="sec-normalize"><h2>五、文本归一化规则</h2><div class="table-wrap"><table><thead><tr><th>处理项</th><th>适用语言</th><th>规则</th><th>示例</th></tr></thead><tbody><tr><td>大小写归一</td><td>EN/RU</td><td>统一转小写</td><td>Coat → coat</td></tr><tr><td>ё → е</td><td>RU</td><td>俄语字母 ё 统一替换为 е</td><td>ёж → еж</td></tr><tr><td>变音符去除</td><td>EN</td><td>NFKD 分解后去除组合变音符号</td><td>café → cafe</td></tr><tr><td>标点去除</td><td>全部</td><td>去除常见标点符号，替换为空格</td><td>men's → mens</td></tr><tr><td>多空格压缩</td><td>全部</td><td>连续空白字符合并</td><td>men's  casual → mens casual</td></tr></tbody></table></div><pre><code>def normalize_text(text: str) -> str:
+    if not text:
+        return ""
+    text = text.lower().replace("ё", "е")
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[^\w\s\u4e00-\u9fff]", " ", text, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", text).strip()</code></pre></section>
+<section id="sec-examples"><h2>六、完整匹配示例</h2><p>以搜索词“男士休闲外套”为例，展示不同商品标题命中的层级。</p><div class="example"><div class="example-header">模拟 OZON 商品标题</div><div class="example-body"><div class="match-line"><span class="match-icon">✓</span><span class="match-title"><strong>“Мужское повседневное пальто осеннее”</strong><br><small>命中 пальто + мужское + повседневное（全部修饰词）</small></span><span class="match-layer" style="background:var(--green);color:#fff">L1</span></div><div class="match-line"><span class="match-icon">✓</span><span class="match-title"><strong>“Men's casual coat autumn winter jacket”</strong><br><small>完整短语 mens casual coat 命中扩展词</small></span><span class="match-layer" style="background:var(--accent);color:#fff">L2</span></div><div class="match-line"><span class="match-icon">✓</span><span class="match-title"><strong>“男士外套 休闲 秋冬款”</strong><br><small>必含词“外套”命中，且 tokens 男士/休闲/外套 全中</small></span><span class="match-layer" style="background:var(--purple);color:#fff">L3</span></div><div class="match-line"><span class="match-icon">✓</span><span class="match-title"><strong>“Пальто мужское осеннее”</strong><br><small>пальто 命中 + мужское 命中，缺 повседневное</small></span><span class="match-layer" style="background:var(--orange);color:#fff">L4</span></div><div class="match-line"><span class="match-icon">✓</span><span class="match-title"><strong>“Зимнее пальто теплое”</strong><br><small>仅 пальто 命中，无修饰词</small></span><span class="match-layer" style="background:var(--red);color:#fff">L5</span></div><div class="match-line"><span class="match-icon">×</span><span class="match-title"><strong>“Женская куртка весенняя”</strong><br><small>没有 пальто/外套/coat，不相关</small></span><span class="match-layer" style="background:var(--text2);color:#fff">不展示</span></div></div></div><div class="note note-ok"><strong>关键结论</strong>跨语言匹配不要求标题和关键词用同一种语言。每个关键词独立做三语 OR 判断，不同关键词可以命中不同语言。</div></section>
+<section id="sec-edgecases"><h2>七、边界情况处理</h2><h3>7.1 空值处理</h3><ul><li><code>requiredKeywords</code> 为空数组 → 该搜索词无法匹配，返回空结果</li><li>某个关键词的 <code>zh/ru/en</code> 中有空字符串 → 该语言版本跳过</li><li>三个语言全为空 → 该关键词视为不存在</li><li><code>modifiers</code> 全空 → L1 条件等价于 L5</li><li><code>expandedKeywords</code> 为空 → L2/L3 自动跳过</li></ul><h3>7.2 品牌词处理</h3><p>顶层 <code>brand</code> 和 <code>modifiers.brand</code> 数组合并后统一作为修饰词参与匹配。品牌名通常保留原文。</p><h3>7.3 复合产品名</h3><p>如“手机壳”“麻将包”等复合产品名，AI 会将完整产品名作为 <code>requiredKeywords[0]</code>，后端按普通关键词处理即可。</p><h3>7.4 俄语词形变化</h3><p>当前方案先做子串包含匹配，不做词形还原。如果后续俄语漏匹配严重，可考虑接入俄语词形还原或让 AI 输出多个俄语变体。</p><h3>7.5 性能考虑</h3><ul><li>先用 <code>requiredKeywords[0]</code> 的三语版本做粗筛，快速排除不相关商品。</li><li>粗筛后的候选集再执行完整五层判断。</li><li>商品库量大时建议用 Elasticsearch / OpenSearch 的 multi-match + bool query 实现。</li></ul></section>
+<section id="sec-pseudo"><h2>八、完整伪代码</h2><pre><code>def match_keyword(title, kw):
+    return contains(title, normalize(kw.get("zh", ""))) \
+        or contains(title, normalize(kw.get("ru", ""))) \
+        or contains(title, normalize(kw.get("en", "")))
+
+def match_token_group(title, group):
+    for lang in ["zh", "ru", "en"]:
+        tokens = group.get(lang, {}).get("tokens", [])
+        if tokens and all(contains(title, normalize(t)) for t in tokens):
+            return True
+    return False
+
+def classify_layer(title_norm, analysis):
+    modifiers = collect_all_modifiers(analysis)
+    required = analysis["requiredKeywords"]
+
+    def required_hit():
+        return all(match_keyword(title_norm, rk) for rk in required)
+
+    if required_hit() and all(match_keyword(title_norm, m) for m in modifiers):
+        return 1
+    if any(match_keyword(title_norm, ek) for ek in analysis["expandedKeywords"]):
+        return 2
+    if required_hit() and any(match_token_group(title_norm, g) for g in analysis["expandedTokenGroups"]):
+        return 3
+    if required_hit() and any(match_keyword(title_norm, m) for m in modifiers):
+        return 4
+    if required_hit():
+        return 5
+    return 0</code></pre></section>
+</main>
+<footer><div class="wrap">OZON 跨语言匹配规则 v1.0 · 2026-08-13 · 店雷达后端技术规范</div></footer>
+<script>document.querySelectorAll('nav.toc a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var id=a.getAttribute('href').slice(1);var target=document.getElementById(id);if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'});}});});</script>
+</body>
+</html>
