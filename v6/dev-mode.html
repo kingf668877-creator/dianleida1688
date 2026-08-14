@@ -206,7 +206,7 @@
         <span class="version-badge" style="background:#f59e0b;">规划</span>
       </div>
       <div class="version-pages open" data-version="version-plan">
-        <button class="layer-item" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
+        <button class="layer-item active" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
       </div>
       <!-- V2.9.4 版本（最新） -->
       <div class="version-folder open" data-version="v2.9.4">
@@ -235,7 +235,7 @@
         <span>V2.8.9</span>
       </div>
       <div class="version-pages open" data-version="v2.8.9">
-        <button class="layer-item active" data-page="search-agent.html" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">S</span>搜索智能体</button>
+        <button class="layer-item" data-page="search-agent.html" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">S</span>搜索智能体</button>
         <button class="layer-item" data-page="ai-output-interaction-viewer.html" data-search="V2.8.9 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
 
         <button class="layer-item" data-page="backend-json-mapping-viewer.html" data-search="V2.8.9 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
@@ -244,13 +244,13 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="search-agent.html" title="设计页面预览"></iframe></div>
+    <div class="frame-shell"><iframe id="designFrame" src="version-plan.html?v=2026081118" title="设计页面预览"></iframe></div>
     <!-- 原型说明面板 -->
     <aside class="spec-panel" id="specPanel">
       <div class="spec-header">
         <div class="spec-header-left">
           <h3><a class="spec-title-link" id="specYuqueTitleLink" href="https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#" target="_blank" rel="noopener" title="打开语雀原型说明">原型说明 ↗</a></h3>
-          <span class="spec-page-tag" id="specPageTag">搜索智能体</span>
+          <span class="spec-page-tag" id="specPageTag">版本规划</span>
         </div>
         <div class="spec-header-actions">
           <button class="spec-btn" id="toggleSpecBtn" title="收起">▶</button>
@@ -436,7 +436,7 @@
     "search-agent.html": "搜索智能体",
     "version-plan.html": "版本规划"
   };
-  let currentPageKey = "搜索智能体";
+  let currentPageKey = "版本规划";
 
   function updateSpecYuqueLink(pageName) {
     const link = document.getElementById("specYuqueLink");
@@ -465,7 +465,7 @@
 
   // ===== 页面切换时更新原型说明链接 =====
   function updateCurrentPageKey(pageUrl) {
-    const pageName = pageNames[pageUrl] || "搜索智能体";
+    const pageName = pageNames[pageUrl] || "版本规划";
     currentPageKey = pageName;
     updateSpecYuqueLink(pageName);
   }
@@ -481,7 +481,7 @@
   });
 
   // ===== 初始化 =====
-  updateSpecYuqueLink("搜索智能体");
+  updateSpecYuqueLink("版本规划");
 </script>
 </body>
 </html>
