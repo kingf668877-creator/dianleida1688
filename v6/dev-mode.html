@@ -458,10 +458,10 @@
     toggleSpecBtn.textContent = specPanel.classList.contains("collapsed") ? "◀" : "▶";
     localStorage.setItem("spec-panel-collapsed", specPanel.classList.contains("collapsed"));
   });
-  if (localStorage.getItem("spec-panel-collapsed") === "true") {
-    specPanel.classList.add("collapsed");
-    toggleSpecBtn.textContent = "◀";
-  }
+  // 默认进入页面时收起原型说明面板，不读取上次打开状态。
+  specPanel.classList.add("collapsed");
+  toggleSpecBtn.textContent = "◀";
+  localStorage.setItem("spec-panel-collapsed", "true");
 
   // ===== 页面切换时更新原型说明链接 =====
   function updateCurrentPageKey(pageUrl) {
