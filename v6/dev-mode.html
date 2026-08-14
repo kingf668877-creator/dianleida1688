@@ -216,6 +216,7 @@
       </div>
       <div class="version-pages open" data-version="v2.9.4">
         <button class="layer-item" data-page="v2.9.4/search-agent.html" data-search="V2.9.4 OZONAI搜索词 AI 核心词提取 关键词扩展 实时商品搜索 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#7047ff;">AI</span>OZONAI搜索词</button>
+        <button class="layer-item" data-page="v2.9.4/search-agent-backend.html" data-search="V2.9.4 后端对接文档 OZON 跨语言匹配 五层规则 中俄英 三语"><span class="layer-icon icon-p" style="background:#10b981;">API</span>后端对接文档</button>
       </div>
       <!-- V2.9.3 版本 -->
       <div class="version-folder open" data-version="v2.9.3">
@@ -325,9 +326,13 @@
   // ===== 页面切换 =====
   const INNER_PAGE_VERSION = '2026081118';
   const V294_VERSION = '20260814c';
+  const V294_BACKEND_VERSION = '20260814d';
   function withVersion(url) {
     if (url.includes('v2.9.3/search-agent-yuque.html')) {
       return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
+    }
+    if (url.includes('v2.9.4/search-agent-backend.html')) {
+      return url + (url.includes('?') ? '&' : '?') + 'v=' + V294_BACKEND_VERSION;
     }
     if (url.includes('v2.9.4/search-agent.html')) {
       return url + (url.includes('?') ? '&' : '?') + 'v=' + V294_VERSION;
@@ -419,6 +424,7 @@
 
   const pageNames = {
     "v2.9.4/search-agent.html": "OZONAI搜索词",
+    "v2.9.4/search-agent-backend.html": "后端对接文档",
     "v2.9.3/search-agent-yuque.html": "创建图搜寻源",
     "v2.9.3/search-agent-yuque.html?page=list": "任务列表",
     "v2.9.3/search-agent-yuque.html?page=result": "寻源结果",
