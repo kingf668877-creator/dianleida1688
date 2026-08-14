@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OZONAI搜索词</title>
+<link rel="stylesheet" href="ozonai-search.css?v=20260814">
+</head>
+<body>
+<main class="search-page" aria-labelledby="page-title">
+  <section class="analysis-card">
+    <header class="analysis-header">
+      <div class="ai-mark" aria-hidden="true">AI</div>
+      <div><h1 id="page-title">AI 智能搜索分析中</h1><p id="analysis-status" aria-live="polite">正在匹配类目</p></div>
+    </header>
+    <div class="steps" aria-live="polite">
+      <section class="step done" data-step="1"><span class="step-dot">✓</span><div class="step-content"><h2>Step 1：核心词提取</h2><p>核心产品：万圣节产品 · 修饰词：万圣节 · 必含词：万圣节、产品</p><div class="tags"><span>核心：万圣节产品</span><span>修饰：万圣节</span><span>必含：万圣节</span><span>必含：产品</span></div></div></section>
+      <section class="step running" data-step="2"><span class="step-dot">●</span><div class="step-content"><h2>Step 2：关键词扩展</h2><p>智能扩展 6 个搜索实体</p><div class="tags"><span>万圣节产品</span><span>万圣节用品</span><span>万圣节道具</span><span>万圣节装饰品</span><span>万圣节服装</span><span>万圣节面具</span></div></div></section>
+      <section class="step waiting" data-step="3"><span class="step-dot">●</span><div class="step-content"><h2>Step 3：实时商品搜索中 <i class="loader" aria-label="持续搜索中"></i></h2><p>搜索词：万圣节产品、万圣节用品、万圣节道具、万圣节装饰品、万圣节服装、万圣节面具，正在搜索商品中...</p></div></section>
+    </div>
+    <footer class="analysis-footer"><button id="restart" type="button">↻ 重新分析</button></footer>
+  </section>
+</main>
+<script src="ozonai-search.js?v=20260814"></script>
+</body>
+</html>
