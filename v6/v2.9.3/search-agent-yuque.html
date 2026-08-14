@@ -59,7 +59,7 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="ai-three-step.html?v=2026081118" title="效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="ai-three-step.html?v=2026081410" title="效果图"></iframe></section>
     <section class="panel spec-panel-page" id="panel-spec">
       <article class="spec-doc">
         <header class="spec-head">
@@ -79,17 +79,98 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get('page');
-  const PREVIEW_VERSION = '2026081118';
+  const PREVIEW_VERSION = '2026081410';
+  const IMAGE_CACHE_BUST = '2026081410';
+  const IMAGE_FALLBACK = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160"><rect width="240" height="160" rx="16" fill="#f3f5f7"/><rect x="24" y="28" width="192" height="104" rx="12" fill="#ffffff" stroke="#d9dee6"/><path d="M48 108l28-28 24 22 20-18 32 24 24-18" fill="none" stroke="#c4cad4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="92" cy="64" r="12" fill="#d8dde6"/></svg>');
+  const previewFrame = document.getElementById('previewFrame');
   let currentPage = 'create';
   let iframeSrc = `ai-three-step.html?v=${PREVIEW_VERSION}`;
   if (pageParam === 'list') { currentPage = 'list'; iframeSrc = `ai-three-step.html?page=list&v=${PREVIEW_VERSION}`; }
   else if (pageParam === 'result') { currentPage = 'result'; iframeSrc = `ai-three-step.html?page=result&v=${PREVIEW_VERSION}`; }
   else if (pageParam === 'package') { currentPage = 'package'; iframeSrc = `ai-three-step.html?page=package&v=${PREVIEW_VERSION}`; }
-  document.getElementById('previewFrame').src = iframeSrc;
+  previewFrame.src = iframeSrc;
 
   const sectionLabels = { create: '创建图搜寻源', list: '任务列表', result: '寻源结果', package: '套餐配置' };
   const yuqueAnchors = { create: '', list: 'WsfIo', result: 'cPhHn', package: 'ZZa2l' };
   const YUQUE_BASE = 'https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#';
+
+  function isRemoteImage(src) {
+    return /^https?:\/\//i.test(src) || /^\/\//.test(src);
+  }
+
+  function appendCacheToken(url) {
+    if (!url || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.includes('cache-bust=')) return url;
+    return url + (url.includes('?') ? '&' : '?') + 'cache-bust=' + IMAGE_CACHE_BUST;
+  }
+
+  function installImageGuard(doc) {
+    if (!doc || !doc.documentElement || doc.documentElement.dataset.imageGuardInstalled === 'true') return;
+    doc.documentElement.dataset.imageGuardInstalled = 'true';
+    const win = doc.defaultView;
+    const seen = new WeakSet();
+
+    function guard(img) {
+      if (!img || seen.has(img)) return;
+      const originalSrc = img.getAttribute('src') || '';
+      if (!isRemoteImage(originalSrc)) return;
+      seen.add(img);
+      let retries = 0;
+      img.loading = 'eager';
+      img.decoding = 'async';
+      img.style.background = '#f3f5f7';
+      img.style.objectFit = img.style.objectFit || 'cover';
+      img.style.minHeight = img.style.minHeight || '24px';
+      img.addEventListener('error', () => {
+        if (retries < 2) {
+          retries += 1;
+          const retrySrc = appendCacheToken(originalSrc) + (appendCacheToken(originalSrc).includes('?') ? '&' : '?') + 'retry=' + retries;
+          img.src = retrySrc;
+          return;
+        }
+        img.onerror = null;
+        img.src = IMAGE_FALLBACK;
+        img.alt = img.alt || '图片加载失败';
+        img.style.objectFit = 'contain';
+        img.style.padding = '12px';
+      }, { once: false });
+      img.src = appendCacheToken(originalSrc);
+    }
+
+    function scan(root) {
+      if (!root || !root.querySelectorAll) return;
+      root.querySelectorAll('img[src]').forEach(guard);
+    }
+
+    scan(doc);
+    const observer = new win.MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach(node => {
+          if (!node || node.nodeType !== 1) return;
+          if (node.tagName === 'IMG') {
+            guard(node);
+            return;
+          }
+          scan(node);
+        });
+        if (mutation.type === 'attributes' && mutation.target && mutation.target.tagName === 'IMG') {
+          guard(mutation.target);
+        }
+      }
+    });
+    observer.observe(doc.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
+    win.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
+  }
+
+  function bindPreviewImageGuard() {
+    try {
+      const doc = previewFrame.contentDocument;
+      if (doc && doc.documentElement) installImageGuard(doc);
+    } catch (e) {}
+  }
+
+  previewFrame.addEventListener('load', () => { setTimeout(bindPreviewImageGuard, 0); });
+  setTimeout(bindPreviewImageGuard, 500);
 
   function getYuqueUrl(page) {
     const anchor = yuqueAnchors[page] || '';
@@ -181,6 +262,7 @@
       window.history.replaceState({}, '', newUrl);
       updateCodeHeaders(page);
       reloadAllCode();
+      setTimeout(bindPreviewImageGuard, 0);
     }
   });
 </script>
