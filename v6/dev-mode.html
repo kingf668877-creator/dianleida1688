@@ -208,11 +208,19 @@
       <div class="version-pages open" data-version="version-plan">
         <button class="layer-item active" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
       </div>
-      <!-- V2.9.4 版本（最新） -->
+      <!-- V2.9.5 版本（最新） -->
+      <div class="version-folder open" data-version="v2.9.5">
+        <span class="folder-arrow">▶</span>
+        <span>V2.9.5</span>
+        <span class="version-badge">最新</span>
+      </div>
+      <div class="version-pages open" data-version="v2.9.5">
+        <button class="layer-item" data-page="v2.9.5/search-agent.html" data-search="V2.9.5 V3插件更新提醒 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#7047ff;">V3</span>V3插件更新提醒</button>
+      </div>
+      <!-- V2.9.4 版本 -->
       <div class="version-folder open" data-version="v2.9.4">
         <span class="folder-arrow">▶</span>
         <span>V2.9.4</span>
-        <span class="version-badge">最新</span>
       </div>
       <div class="version-pages open" data-version="v2.9.4">
         <button class="layer-item" data-page="v2.9.4/search-agent.html" data-search="V2.9.4 OZONAI搜索词 AI 核心词提取 关键词扩展 实时商品搜索 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#7047ff;">AI</span>OZONAI搜索词</button>
@@ -325,9 +333,13 @@
   });
   // ===== 页面切换 =====
   const INNER_PAGE_VERSION = '2026081118';
+  const V295_VERSION = '20260814a';
   const V294_VERSION = '20260814c';
   const V294_BACKEND_VERSION = '20260814d';
   function withVersion(url) {
+    if (url.includes('v2.9.5/search-agent.html')) {
+      return url + (url.includes('?') ? '&' : '?') + 'v=' + V295_VERSION;
+    }
     if (url.includes('v2.9.3/search-agent-yuque.html')) {
       return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
     }
@@ -341,6 +353,7 @@
   }
   const PAGE_ROUTES = {
     'version-plan': 'version-plan.html',
+    'v2.9.5-v3-plugin-update-notification': 'v2.9.5/search-agent.html',
     'v2.9.4-ozonai-search': 'v2.9.4/search-agent.html',
     'v2.9.4-backend-doc': 'v2.9.4/search-agent-backend.html',
     'v2.9.3-image-source': 'v2.9.3/search-agent-yuque.html',
@@ -429,8 +442,8 @@
         folder.classList.add('open');
         pages.classList.add('open');
       } else {
-        // 非搜索状态下，V2.9.4、V2.9.3 和版本规划默认展开
-        if (version === 'v2.9.4' || version === 'v2.9.3' || version === 'v2.8.9' || version === 'version-plan') {
+        // 非搜索状态下，现有版本组和版本规划默认展开
+        if (version === 'v2.9.5' || version === 'v2.9.4' || version === 'v2.9.3' || version === 'v2.8.9' || version === 'version-plan') {
           folder.classList.add('open');
           pages.classList.add('open');
         } else {
@@ -461,6 +474,7 @@
   };
 
   const pageNames = {
+    "v2.9.5/search-agent.html": "V3插件更新提醒",
     "v2.9.4/search-agent.html": "OZONAI搜索词",
     "v2.9.4/search-agent-backend.html": "后端对接文档",
     "v2.9.3/search-agent-yuque.html": "创建图搜寻源",
