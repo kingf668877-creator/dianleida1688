@@ -324,9 +324,15 @@
   });
   // ===== 页面切换 =====
   const INNER_PAGE_VERSION = '2026081118';
+  const V294_VERSION = '20260814c';
   function withVersion(url) {
-    if (!url.includes('v2.9.3/search-agent-yuque.html')) return url;
-    return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
+    if (url.includes('v2.9.3/search-agent-yuque.html')) {
+      return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
+    }
+    if (url.includes('v2.9.4/search-agent.html')) {
+      return url + (url.includes('?') ? '&' : '?') + 'v=' + V294_VERSION;
+    }
+    return url;
   }
   items.forEach(item => item.addEventListener('click', () => {
     const target = item.dataset.page || '';
