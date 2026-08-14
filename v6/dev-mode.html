@@ -339,17 +339,50 @@
     }
     return url;
   }
+  const PAGE_ROUTES = {
+    'version-plan': 'version-plan.html',
+    'v2.9.4-ozonai-search': 'v2.9.4/search-agent.html',
+    'v2.9.4-backend-doc': 'v2.9.4/search-agent-backend.html',
+    'v2.9.3-image-source': 'v2.9.3/search-agent-yuque.html',
+    'v2.9.3-task-list': 'v2.9.3/search-agent-yuque.html?page=list',
+    'v2.9.3-source-result': 'v2.9.3/search-agent-yuque.html?page=result',
+    'v2.9.3-package-config': 'v2.9.3/search-agent-yuque.html?page=package',
+    'v2.8.9-search-agent': 'search-agent.html',
+    'v2.8.9-ai-output': 'ai-output-interaction-viewer.html',
+    'v2.8.9-backend-doc': 'backend-json-mapping-viewer.html'
+  };
+
+  function getRouteId(pageUrl) {
+    return Object.keys(PAGE_ROUTES).find(routeId => PAGE_ROUTES[routeId] === pageUrl) || 'version-plan';
+  }
+
+  function selectPage(target, shouldUpdateUrl) {
+    const selectedItem = items.find(item => item.dataset.page === target);
+    if (!selectedItem) return;
+    items.forEach(node => node.classList.remove('active'));
+    selectedItem.classList.add('active');
+    frame.src = withVersion(target);
+    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
+    if (shouldUpdateUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', getRouteId(target));
+      history.pushState({ page: getRouteId(target) }, '', url);
+    }
+  }
+
   items.forEach(item => item.addEventListener('click', () => {
     const target = item.dataset.page || '';
     if (target.startsWith('http://') || target.startsWith('https://')) {
       window.location.href = target;
       return;
     }
-    items.forEach(node => node.classList.remove('active'));
-    item.classList.add('active');
-    frame.src = withVersion(target);
-    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
+    selectPage(target, true);
   }));
+
+  window.addEventListener('popstate', () => {
+    const routeId = new URLSearchParams(window.location.search).get('page');
+    selectPage(PAGE_ROUTES[routeId] || PAGE_ROUTES['version-plan'], false);
+  });
   // ===== 监听 iframe 内部板块切换（postMessage）=====
   // 当 iframe 内部调用 switchPage 时，同步侧边栏选中状态（不刷新 iframe）
   window.addEventListener('message', (e) => {
@@ -374,6 +407,11 @@
     if (targetItem) {
       v293Items.forEach(node => node.classList.remove('active'));
       targetItem.classList.add('active');
+      if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(targetItem.dataset.page);
+      const url = new URL(window.location.href);
+      const routeId = getRouteId(targetItem.dataset.page);
+      url.searchParams.set('page', routeId);
+      history.pushState({ page: routeId }, '', url);
       // 不刷新 iframe，内容已在内部切换
     }
   });
@@ -480,8 +518,9 @@
     });
   });
 
-  // ===== 初始化 =====
-  updateSpecYuqueLink("版本规划");
+  // ===== 初始化：无参数时展示版本规划；带 page 参数时直达对应页面 =====
+  const initialRouteId = new URLSearchParams(window.location.search).get('page');
+  selectPage(PAGE_ROUTES[initialRouteId] || PAGE_ROUTES['version-plan'], false);
 </script>
 </body>
 </html>
