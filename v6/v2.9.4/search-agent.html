@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OZONAI搜索词</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #1d2129; }
+  /* 顶部 Tab 栏 */
+  .tabs-wrap { height: 48px; display: flex; align-items: center; padding: 0 20px; background: #fff; border-bottom: 1px solid #e5e6eb; gap: 4px; position: sticky; top: 0; z-index: 10; }
+  .tab-btn { height: 32px; padding: 0 16px; border: 0; border-radius: 6px; background: transparent; color: #4e5969; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; }
+  .tab-btn:hover { background: #f2f3f5; color: #1d2129; }
+  .tab-btn.active { background: #f0ebff; color: #6236ff; font-weight: 600; }
+  .tab-btn .tab-dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+  .tab-preview .tab-dot { background: #ff6b6b; }
+  .tab-spec .tab-dot { background: #3370ff; }
+  .tab-html .tab-dot { background: #e34f26; }
+  .tab-css .tab-dot { background: #1572b6; }
+  .tab-js .tab-dot { background: #b58b00; }
+  /* 面板容器 */
+  .panels { height: calc(100vh - 48px); overflow: hidden; position: relative; }
+  .panel { position: absolute; inset: 0; display: none; overflow: auto; }
+  .panel.active { display: block; }
+  #panel-preview iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+  /* 源码面板 */
+  .code-panel { padding: 20px; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .code-header small { color: #86909c; font: 12px Consolas, monospace; }
+  .copy-btn { height: 30px; padding: 0 14px; border: 1px solid #e5e6eb; border-radius: 6px; background: #fff; color: #4e5969; font-size: 12px; cursor: pointer; transition: .15s; }
+  .copy-btn:hover { border-color: #6236ff; color: #6236ff; }
+  .copy-btn.ok { background: #16a36a; border-color: #16a36a; color: #fff; }
+  pre.code { margin: 0; padding: 20px; overflow: auto; border: 1px solid #e5e6eb; border-radius: 10px; background: #fafbfc; color: #334155; font: 13px/1.7 Consolas, "Microsoft YaHei", monospace; white-space: pre; tab-size: 2; min-height: calc(100% - 50px); }
+  /* 原型说明面板 */
+  .spec-panel-page { background: #f7f8fa; padding: 18px; }
+  .spec-doc { max-width: 1500px; min-height: calc(100vh - 84px); margin: 0 auto; background: #fff; border: 1px solid #e5e6eb; border-radius: 10px; overflow: hidden; }
+  .spec-head { padding: 18px 20px 14px; border-bottom: 1px solid #eef0f2; }
+  .spec-title { font-size: 19px; font-weight: 700; margin: 0 0 5px; }
+  .spec-sub { font-size: 13px; color: #86909c; }
+  .table-wrap { padding: 15px; overflow: auto; }
+  .sheet { width: 100%; min-width: 880px; border-collapse: separate; border-spacing: 0; border: 1px solid #dfe3e8; border-radius: 8px; overflow: hidden; table-layout: fixed; }
+  .sheet th, .sheet td { border-right: 1px solid #e5e6eb; border-bottom: 1px solid #e5e6eb; }
+  .sheet tr:last-child td { border-bottom: 0; }
+  .sheet th:last-child, .sheet td:last-child { border-right: 0; }
+  .sheet th { height: 40px; background: #f4f6f8; padding: 0 12px; text-align: left; color: #4e5969; font-size: 12px; }
+  .sheet td { padding: 12px; background: #fff; vertical-align: top; font-size: 13px; line-height: 1.6; color: #1d2129; word-break: break-word; }
+  .num { width: 48px; text-align: center !important; color: #86909c; background: #f7f8fa !important; }
+  @media(max-width:1000px){ .spec-panel-page { padding: 9px; } }
+</style>
+</head>
+<body>
+  <div class="tabs-wrap" role="tablist">
+    <button class="tab-btn tab-preview active" data-tab="preview" role="tab"><span class="tab-dot"></span>效果图</button>
+    <button class="tab-btn tab-spec" data-tab="spec" role="tab"><span class="tab-dot"></span>原型说明</button>
+    <button class="tab-btn tab-html" data-tab="html" role="tab"><span class="tab-dot"></span>HTML</button>
+    <button class="tab-btn tab-css" data-tab="css" role="tab"><span class="tab-dot"></span>CSS</button>
+    <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
+  </div>
+  <div class="panels">
+    <section class="panel active" id="panel-preview"><iframe id="previewFrame" src="ozonai-search.html?v=20260814" title="效果图"></iframe></section>
+    <section class="panel spec-panel-page" id="panel-spec">
+      <article class="spec-doc">
+        <header class="spec-head">
+          <h1 class="spec-title">OZONAI搜索词 · 原型说明</h1>
+          <div class="spec-sub">数据来源：prototype-spec.json</div>
+        </header>
+        <div class="table-wrap"><table class="sheet"><thead id="specHead"></thead><tbody id="specBody"></tbody></table></div>
+      </article>
+    </section>
+    <section class="panel code-panel" id="panel-html"><div class="code-header"><small>ozonai-search.html</small><button class="copy-btn" data-copy="html">复制 HTML</button></div><pre class="code" id="codeHtml">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-css"><div class="code-header"><small>ozonai-search.css</small><button class="copy-btn" data-copy="css">复制 CSS</button></div><pre class="code" id="codeCss">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-js"><div class="code-header"><small>ozonai-search.js</small><button class="copy-btn" data-copy="js">复制 JS</button></div><pre class="code" id="codeJs">正在加载…</pre></section>
+  </div>
+<script>
+  // ===== Tab 切换 =====
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(btn => btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    tabs.forEach(b => b.classList.toggle('active', b === btn));
+    panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  }));
+
+  // ===== 源码加载 =====
+  const codeCache = { html: '', css: '', js: '' };
+  function loadCode(type, url, targetId) {
+    fetch(url).then(r => { if (!r.ok) throw new Error('加载失败'); return r.text(); })
+      .then(text => { codeCache[type] = text; document.getElementById(targetId).textContent = text; })
+      .catch(() => { document.getElementById(targetId).textContent = '加载失败：' + url; });
+  }
+  loadCode('html', 'ozonai-search.html', 'codeHtml');
+  loadCode('css', 'ozonai-search.css', 'codeCss');
+  loadCode('js', 'ozonai-search.js', 'codeJs');
+
+  // ===== 复制按钮 =====
+  document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', async () => {
+    const type = btn.dataset.copy, text = codeCache[type];
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = btn.textContent;
+      btn.textContent = '已复制';
+      btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1500);
+    } catch (e) {}
+  }));
+
+  // ===== 原型说明渲染（只读表格） =====
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+  fetch('prototype-spec.json').then(r => { if (!r.ok) throw new Error('加载失败'); return r.json(); })
+    .then(data => {
+      const cols = data.columns || [];
+      const rows = data.rows || [];
+      const thead = document.getElementById('specHead');
+      const tbody = document.getElementById('specBody');
+      let headHtml = '<tr><th class="num">#</th>';
+      cols.forEach(c => { headHtml += '<th>' + escapeHtml(c) + '</th>'; });
+      headHtml += '</tr>';
+      thead.innerHTML = headHtml;
+      let bodyHtml = '';
+      rows.forEach((row, i) => {
+        bodyHtml += '<tr><td class="num">' + (i + 1) + '</td>';
+        cols.forEach(c => { bodyHtml += '<td>' + escapeHtml(row[c]) + '</td>'; });
+        bodyHtml += '</tr>';
+      });
+      tbody.innerHTML = bodyHtml || '<tr><td colspan="' + (cols.length + 1) + '" style="text-align:center;color:#86909c">暂无数据</td></tr>';
+    })
+    .catch(() => {
+      document.getElementById('specBody').innerHTML = '<tr><td style="text-align:center;color:#e54848">原型说明加载失败：prototype-spec.json</td></tr>';
+    });
+</script>
+</body>
+</html>
