@@ -12,6 +12,19 @@
     "2026": [
       {
         "module": "产品需求",
+        "version": "V2.9.4",
+        "features": [
+          "OZON AI搜索词"
+        ],
+        "reviewAt": "2026-08-17",
+        "plannedAt": "",
+        "releasedAt": "",
+        "progress": "",
+        "completion": "",
+        "owner": "郑桂锋"
+      },
+      {
+        "module": "产品需求",
         "version": "V2.9.3",
         "features": [
           "图搜批量寻源"
@@ -32,7 +45,7 @@
         "reviewAt": "2026-07-20",
         "plannedAt": "2026-07-23",
         "releasedAt": "2026-07-27",
-        "progress": "0%",
+        "progress": "100%",
         "completion": "完成度：100%\n（功能完整上线且前稳定运行）",
         "owner": "郑桂锋"
       }
