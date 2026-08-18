@@ -1,5 +1,5 @@
 (() => {
-  const storageKey = 'v3-update-prototype-state';
+  const storageKey = 'v3-update-prototype-state-v3';
   const db = {
     currentVersion: '2.9.8',
     latestVersion: '3.6.0',
@@ -26,45 +26,146 @@
     }
   };
   const elements = {
-    layer: document.getElementById('updateLayer'), releaseView: document.getElementById('releaseView'), guideView: document.getElementById('guideView'),
-    close: document.getElementById('closeModal'), later: document.getElementById('laterBtn'), update: document.getElementById('updateBtn'), back: document.getElementById('backBtn'),
-    finish: document.getElementById('finishBtn'), dot: document.getElementById('entryDot'), toast: document.getElementById('toast'), reset: document.getElementById('resetDemo'),
-    clear: document.getElementById('clearUpdate'), productGrid: document.getElementById('productGrid'), releaseList: document.getElementById('releaseList')
+    layer: document.getElementById('updateLayer'),
+    releaseView: document.getElementById('releaseView'),
+    guideView: document.getElementById('guideView'),
+    close: document.getElementById('closeModal'),
+    later: document.getElementById('laterBtn'),
+    update: document.getElementById('updateBtn'),
+    back: document.getElementById('backBtn'),
+    finish: document.getElementById('finishBtn'),
+    dot: document.getElementById('entryDot'),
+    toast: document.getElementById('toast'),
+    reset: document.getElementById('resetDemo'),
+    clear: document.getElementById('clearUpdate'),
+    productGrid: document.getElementById('productGrid'),
+    releaseList: document.getElementById('releaseList'),
+    floatingPlugin: document.getElementById('floatingPlugin'),
+    closeFloating: document.getElementById('closeFloatingPlugin'),
+    floatingUpdateTool: document.querySelector('.floating-update-tool')
   };
   let state = readState();
   let toastTimer;
+
   function readState() {
     try { return { dismissed: false, updated: false, ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; }
     catch (error) { return { dismissed: false, updated: false }; }
   }
   function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); }
+
   function renderStaticData() {
     document.querySelectorAll('[data-current-version]').forEach(node => { node.textContent = db.currentVersion; });
     document.querySelectorAll('[data-latest-version]').forEach(node => { node.textContent = db.latestVersion; });
-    elements.releaseList.innerHTML = db.notes.map(note => `<article class="release-item"><span class="release-icon">✓</span><div><strong>${note.title}</strong><p>${note.detail}</p></div></article>`).join('');
-    elements.productGrid.innerHTML = db.products.map(product => `<article class="product-card"><div class="product-image"><div class="jacket"></div></div><div class="product-body"><div class="product-tags"><span class="product-tag">实力商家</span><span class="product-tag">一件代发</span></div><p class="product-name">${product.name}</p><div class="price-row"><span class="price"><small>¥</small>${product.price}</span><span class="sales">月销 ${product.sales}</span></div><div class="shop">${product.shop}</div></div></article>`).join('');
+    if (elements.releaseList) elements.releaseList.innerHTML = db.notes.map(note => `<article class="release-item"><span class="release-icon">✓</span><div><strong>${note.title}</strong><p>${note.detail}</p></div></article>`).join('');
+    if (elements.productGrid) elements.productGrid.innerHTML = db.products.map(product => `<article class="product-card"><div class="product-image"><div class="jacket"></div></div><div class="product-body"><div class="product-tags"><span class="product-tag">实力商家</span><span class="product-tag">一件代发</span></div><p class="product-name">${product.name}</p><div class="price-row"><span class="price"><small>¥</small>${product.price}</span><span class="sales">月销 ${product.sales}</span></div><div class="shop">${product.shop}</div></div></article>`).join('');
   }
+
   function syncUpdateState() {
-    elements.dot.classList.toggle('hidden', state.updated);
+    const hasUpdate = !state.updated;
+    if (elements.dot) elements.dot.classList.toggle('hidden', state.updated);
+    document.querySelectorAll('.floating-update-main').forEach(button => button.classList.toggle('has-update', hasUpdate));
+    document.querySelectorAll('.floating-update-tool').forEach(button => button.classList.toggle('has-update', hasUpdate));
+    document.querySelectorAll('.floating-update-dot').forEach(dot => dot.classList.toggle('hidden', state.updated));
     document.querySelectorAll('[data-current-version]').forEach(node => { node.textContent = state.updated ? db.latestVersion : db.currentVersion; });
-    document.querySelectorAll('[data-open-update]').forEach(button => button.setAttribute('aria-label', state.updated ? '插件已是最新版本' : '打开插件更新提醒'));
+    document.querySelectorAll('[data-open-update]').forEach(button => {
+      button.setAttribute('aria-label', state.updated ? '插件已是最新版本' : '打开插件更新提醒');
+      button.setAttribute('title', state.updated ? '插件已是最新版本' : '发现新版本');
+    });
     document.querySelectorAll('.version-link').forEach(button => { button.textContent = state.updated ? '已是最新版本' : '发现新版本'; });
   }
-  function setView(view) { const guideActive = view === 'guide'; elements.releaseView.classList.toggle('is-hidden', guideActive); elements.guideView.classList.toggle('is-active', guideActive); }
-  function showToast(message) { clearTimeout(toastTimer); elements.toast.textContent = message; elements.toast.classList.add('show'); toastTimer = setTimeout(() => elements.toast.classList.remove('show'), 2200); }
-  function openModal() { if (state.updated) { showToast('当前已是最新版本 v' + db.latestVersion); return; } setView('release'); elements.layer.classList.remove('is-hidden'); setTimeout(() => elements.close.focus(), 0); }
-  function closeModal() { elements.layer.classList.add('is-hidden'); }
-  async function beginUpdate() { elements.update.disabled = true; elements.update.textContent = '正在准备...'; const response = await api.startUpdate(); elements.update.disabled = false; elements.update.textContent = '立即升级'; if (response.code === 0) setView('guide'); }
-  function postpone() { state.dismissed = true; saveState(); closeModal(); showToast('已设置稍后提醒，更新入口会继续保留'); }
-  function finishUpdate() { state.updated = true; state.dismissed = true; saveState(); syncUpdateState(); closeModal(); showToast('模拟完成：更新红点已消失'); }
-  function resetDemo() { state = { dismissed: false, updated: false }; saveState(); syncUpdateState(); openModal(); showToast('已恢复首次发现新版本状态'); }
+
+  function setView(view) {
+    const guideActive = view === 'guide';
+    if (elements.releaseView) elements.releaseView.classList.toggle('is-hidden', guideActive);
+    if (elements.guideView) elements.guideView.classList.toggle('is-active', guideActive);
+  }
+
+  function showToast(message) {
+    clearTimeout(toastTimer);
+    if (!elements.toast) return;
+    elements.toast.textContent = message;
+    elements.toast.classList.add('show');
+    toastTimer = setTimeout(() => elements.toast.classList.remove('show'), 2200);
+  }
+
+  function openModal() {
+    if (!elements.layer) return;
+    if (state.updated) { showToast('当前已是最新版本 v' + db.latestVersion); return; }
+    setView('release');
+    elements.layer.classList.remove('is-hidden');
+    if (elements.close && typeof elements.close.focus === 'function') {
+      setTimeout(() => { try { elements.close.focus(); } catch (error) {} }, 0);
+    }
+  }
+
+  function closeModal() { if (elements.layer) elements.layer.classList.add('is-hidden'); }
+
+  async function beginUpdate() {
+    if (!elements.update) return;
+    elements.update.disabled = true;
+    elements.update.textContent = '正在准备...';
+    const response = await api.startUpdate();
+    elements.update.disabled = false;
+    elements.update.textContent = '立即升级';
+    if (response.code === 0) setView('guide');
+  }
+
+  function postpone() {
+    state.dismissed = true;
+    saveState();
+    closeModal();
+    showToast('已设置稍后提醒，更新入口会继续保留');
+  }
+
+  function finishUpdate() {
+    state.updated = true;
+    state.dismissed = true;
+    saveState();
+    syncUpdateState();
+    closeModal();
+    showToast('模拟完成：更新红点已消失');
+  }
+
+  function resetDemo() {
+    state = { dismissed: false, updated: false };
+    saveState();
+    syncUpdateState();
+    openModal();
+    showToast('已恢复首次发现新版本状态');
+  }
+
   function bindEvents() {
     document.querySelectorAll('[data-open-update]').forEach(button => button.addEventListener('click', openModal));
-    elements.close.addEventListener('click', closeModal); elements.later.addEventListener('click', postpone); elements.update.addEventListener('click', beginUpdate);
-    elements.back.addEventListener('click', () => setView('release')); elements.finish.addEventListener('click', finishUpdate); elements.reset.addEventListener('click', resetDemo); elements.clear.addEventListener('click', finishUpdate);
-    elements.layer.addEventListener('click', event => { if (event.target === elements.layer) closeModal(); });
-    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !elements.layer.classList.contains('is-hidden')) closeModal(); });
+    if (elements.close) elements.close.addEventListener('click', closeModal);
+    if (elements.later) elements.later.addEventListener('click', postpone);
+    if (elements.update) elements.update.addEventListener('click', beginUpdate);
+    if (elements.back) elements.back.addEventListener('click', () => setView('release'));
+    if (elements.finish) elements.finish.addEventListener('click', finishUpdate);
+    if (elements.reset) elements.reset.addEventListener('click', resetDemo);
+    if (elements.clear) elements.clear.addEventListener('click', finishUpdate);
+    if (elements.closeFloating) {
+      elements.closeFloating.addEventListener('click', () => {
+        if (elements.floatingPlugin) elements.floatingPlugin.classList.add('is-hidden');
+        showToast('已隐藏插件悬浮工具条');
+      });
+    }
+    if (elements.layer) {
+      elements.layer.addEventListener('click', event => { if (event.target === elements.layer) closeModal(); });
+    }
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && elements.layer && !elements.layer.classList.contains('is-hidden')) closeModal(); });
   }
-  async function init() { renderStaticData(); bindEvents(); const response = await api.checkVersion(); if (response.code !== 0) { showToast('版本检查失败，请稍后重试'); return; } syncUpdateState(); if (response.data.hasUpdate && !state.dismissed && !state.updated) openModal(); }
+
+  async function init() {
+    try {
+      renderStaticData();
+      bindEvents();
+      syncUpdateState();
+      const response = await api.checkVersion();
+      if (response.code !== 0) { showToast('版本检查失败，请稍后重试'); return; }
+    } catch (error) {
+      console.error('[plugin-update] init failed:', error);
+      showToast('初始化失败，请刷新页面');
+    }
+  }
   init();
 })();
