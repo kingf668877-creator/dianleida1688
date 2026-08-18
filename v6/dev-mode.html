@@ -85,7 +85,7 @@
   }
   .icon-p { background:#ff6b6b; }
   .stage { min-width:0; flex:1; height:100%; background:#eef0f3; padding:20px; position:relative; display:flex; gap:16px; }
-  .frame-shell { flex:1; min-width:0; height:100%; overflow:hidden; background:#fff; border:1px solid #dfe1e5; border-radius:8px; box-shadow:0 8px 24px rgba(29,33,41,.08); }
+  .frame-shell { flex:1; min-width:0; height:100%; overflow:hidden; background:#fff; border:1px solid #dfe1e5; border-radius:8px; box-shadow:0 8px 24px rgba(29,33,41,.08); position:relative; }
   iframe { width:100%; height:100%; border:0; display:block; background:#fff; }
   .expand-btn {
     position:fixed; top:12px; left:12px; z-index:100;
@@ -99,6 +99,7 @@
   }
   .expand-btn:hover { background:var(--hover); color:var(--text); }
   .expand-btn.show { display:flex; }
+
   .spec-panel {
     width:380px; flex:0 0 380px;
     height:100%; background:#fff;
@@ -134,6 +135,7 @@
     transition:.15s; white-space:nowrap;
   }
   .spec-btn:hover { background:var(--hover); color:var(--text); }
+
   .spec-yuque-wrap {
     flex:1; display:flex; flex-direction:column;
     align-items:center; justify-content:center;
@@ -152,6 +154,21 @@
     transform:translateY(-1px);
     box-shadow:0 6px 24px rgba(51,112,255,.4);
   }
+
+  /* 顶部展开按钮：默认显示 */
+  .expand-spec-btn {
+    position:absolute; top:14px; right:14px; z-index:30;
+    height:30px; padding:0 12px;
+    border:1px solid var(--border); border-radius:6px;
+    background:rgba(255,255,255,.95); color:#4e5969;
+    font-size:12px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+    transition:.15s;
+  }
+  .expand-spec-btn:hover { background:var(--hover); color:var(--text); }
+  .expand-spec-btn::before { content:""; width:14px; height:14px; background:linear-gradient(135deg,#3370ff,#5b47fb); border-radius:3px; }
+
   @media (max-width:1099px) { .spec-panel { width:300px; flex-basis:300px; } }
   @media (max-width:899px) { .spec-panel { display:none; } .stage { flex-direction:column; } }
   @media (max-width:720px) { .layers { width:176px; flex-basis:176px; } .stage { padding:10px; gap:8px; } }
@@ -178,7 +195,7 @@
         <span class="version-badge" style="background:#f59e0b;">规划</span>
       </div>
       <div class="version-pages open" data-version="version-plan">
-        <button class="layer-item active" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
+        <button class="layer-item" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
       </div>
       <div class="version-folder open" data-version="v2.9.5">
         <span class="folder-arrow">▶</span>
@@ -219,8 +236,11 @@
     </nav>
   </aside>
   <main class="stage">
-    <div class="frame-shell"><iframe id="designFrame" src="version-plan.html?v=2026081118" title="设计页面预览"></iframe></div>
-    <aside class="spec-panel" id="specPanel">
+    <div class="frame-shell">
+      <iframe id="designFrame" src="version-plan.html?v=2026081118" title="设计页面预览"></iframe>
+      <button class="expand-spec-btn" id="expandSpecBtn" title="展开原型说明">原型说明</button>
+    </div>
+    <aside class="spec-panel collapsed" id="specPanel">
       <div class="spec-header">
         <div class="spec-header-left">
           <h3><a class="spec-title-link" id="specYuqueTitleLink" href="https://www.yuque.com/u26544515/sldqp9/xlf8hgmqhski5mfe?singleDoc#" target="_blank" rel="noopener" title="打开语雀原型说明">原型说明 ↗</a></h3>
@@ -261,6 +281,9 @@
   const expandBtn = document.getElementById('expandBtn');
   const versionFolders = Array.from(document.querySelectorAll('.version-folder'));
   const versionPages = Array.from(document.querySelectorAll('.version-pages'));
+  const specPanel = document.getElementById('specPanel');
+  const toggleSpecBtn = document.getElementById('toggleSpecBtn');
+  const expandSpecBtn = document.getElementById('expandSpecBtn');
 
   function toggleSidebar(show) {
     if (show) {
@@ -275,6 +298,20 @@
   }
   toggleBtn.addEventListener('click', () => toggleSidebar(false));
   expandBtn.addEventListener('click', () => toggleSidebar(true));
+
+  function toggleSpecPanel(show) {
+    if (show) {
+      specPanel.classList.remove('collapsed');
+      expandSpecBtn.style.display = 'none';
+      localStorage.setItem('spec-panel-collapsed', 'false');
+    } else {
+      specPanel.classList.add('collapsed');
+      expandSpecBtn.style.display = 'inline-flex';
+      localStorage.setItem('spec-panel-collapsed', 'true');
+    }
+  }
+  toggleSpecBtn.addEventListener('click', () => toggleSpecPanel(false));
+  expandSpecBtn.addEventListener('click', () => toggleSpecPanel(true));
 
   function toggleVersion(version, open) {
     const folder = document.querySelector('.version-folder[data-version="' + version + '"]');
@@ -362,15 +399,28 @@
     selectPage(PAGE_ROUTES[routeId] || PAGE_ROUTES['version-plan'], false);
   });
 
-  // V2.9.5 顶部入口置为默认选中
-  (function defaultSelectV295() {
+  // 默认状态：收起侧边栏（如果之前已展开），右侧原型说明面板默认收起
+  (function defaultState() {
+    if (localStorage.getItem('sidebar-collapsed') === null) {
+      localStorage.setItem('sidebar-collapsed', 'false');
+    }
+    if (localStorage.getItem('spec-panel-collapsed') === null) {
+      localStorage.setItem('spec-panel-collapsed', 'true');
+      specPanel.classList.add('collapsed');
+      expandSpecBtn.style.display = 'inline-flex';
+    } else if (localStorage.getItem('spec-panel-collapsed') === 'true') {
+      specPanel.classList.add('collapsed');
+      expandSpecBtn.style.display = 'inline-flex';
+    } else {
+      expandSpecBtn.style.display = 'none';
+    }
     const routeId = new URLSearchParams(window.location.search).get('page');
     const target = PAGE_ROUTES[routeId] || PAGE_ROUTES['version-plan'];
     selectPage(target, false);
     if (!routeId) {
       const url = new URL(window.location.href);
-      url.searchParams.set('page', 'v2.9.5-v3-plugin-update-notification');
-      history.replaceState({ page: 'v2.9.5-v3-plugin-update-notification' }, '', url);
+      url.searchParams.set('page', 'version-plan');
+      history.replaceState({ page: 'version-plan' }, '', url);
     }
   })();
 </script>
