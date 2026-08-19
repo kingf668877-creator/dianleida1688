@@ -12,6 +12,32 @@
     "2026": [
       {
         "module": "产品需求",
+        "version": "V2.9.6",
+        "features": [
+          "店铺榜单和商品推荐优化"
+        ],
+        "reviewAt": "2026-08-18",
+        "plannedAt": "",
+        "releasedAt": "",
+        "progress": "",
+        "completion": "",
+        "owner": "卢佳兴"
+      },
+      {
+        "module": "产品需求",
+        "version": "V2.9.5",
+        "features": [
+          "店雷达V3插件更新"
+        ],
+        "reviewAt": "2026-08-19",
+        "plannedAt": "",
+        "releasedAt": "",
+        "progress": "",
+        "completion": "",
+        "owner": "郑桂锋"
+      },
+      {
+        "module": "产品需求",
         "version": "V2.9.4",
         "features": [
           "OZON AI搜索词"
