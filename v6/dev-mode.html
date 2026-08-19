@@ -169,6 +169,40 @@
   .expand-spec-btn:hover { background:var(--hover); color:var(--text); }
   .expand-spec-btn::before { content:""; width:14px; height:14px; background:linear-gradient(135deg,#3370ff,#5b47fb); border-radius:3px; }
 
+  /* 当前页面短链展示 */
+  .share-link {
+    position:absolute; right:18px; top:60px; z-index:25;
+    width:320px; padding:12px;
+    background:rgba(255,255,255,.94);
+    border:1px solid var(--border); border-radius:10px;
+    box-shadow:0 8px 24px rgba(29,33,41,.08);
+  }
+  .share-link-title {
+    font-size:12px; font-weight:600; color:#4e5969;
+    margin-bottom:8px;
+  }
+  .share-link-row { display:flex; gap:6px; }
+  .share-link-input {
+    flex:1; min-width:0; height:32px; padding:0 10px;
+    font:12px Consolas, "Microsoft YaHei", monospace;
+    color:#1d2129; background:#fafbfc;
+    border:1px solid var(--border); border-radius:6px;
+    outline:none;
+  }
+  .share-link-input:focus { border-color:var(--blue); background:#fff; }
+  .share-link-copy {
+    height:32px; padding:0 12px;
+    border:0; border-radius:6px;
+    background:var(--blue); color:#fff;
+    font-size:12px; font-weight:600; cursor:pointer;
+    transition:.15s;
+  }
+  .share-link-copy:hover { background:#2860d9; }
+  .share-link-copy.ok { background:#16a36a; }
+  .share-link-hint {
+    margin-top:8px; font-size:11px; color:#86909c; line-height:1.5;
+  }
+
   @media (max-width:1099px) { .spec-panel { width:300px; flex-basis:300px; } }
   @media (max-width:899px) { .spec-panel { display:none; } .stage { flex-direction:column; } }
   @media (max-width:720px) { .layers { width:176px; flex-basis:176px; } .stage { padding:10px; gap:8px; } }
@@ -240,6 +274,14 @@
     <div class="frame-shell">
       <iframe id="designFrame" src="version-plan.html?v=2026081118" title="设计页面预览"></iframe>
       <button class="expand-spec-btn" id="expandSpecBtn" title="展开原型说明">原型说明</button>
+    </div>
+    <div class="share-link" id="shareLink" aria-label="当前页面短链">
+      <div class="share-link-title">当前页面短链</div>
+      <div class="share-link-row">
+        <input class="share-link-input" id="shareLinkInput" type="text" readonly>
+        <button class="share-link-copy" id="shareLinkCopy" type="button">复制</button>
+      </div>
+      <div class="share-link-hint" id="shareLinkHint">链接路径直接带版本/页面名，便于前端识别。</div>
     </div>
     <aside class="spec-panel collapsed" id="specPanel">
       <div class="spec-header">
@@ -347,16 +389,69 @@
     const sep = url.includes('?') ? '&' : '?';
     return url + sep + 'v=' + INNER_PAGE_VERSION;
   }
+
+  // ===== 路由：URL ?route=<path>，把 path 映射到导航项 =====
+  const shareLinkInput = document.getElementById('shareLinkInput');
+  const shareLinkCopy = document.getElementById('shareLinkCopy');
+  const shareLinkHint = document.getElementById('shareLinkHint');
+  function getRouteFromUrl() {
+    try {
+      const url = new URL(window.location.href);
+      const raw = (url.searchParams.get('route') || '').trim();
+      return raw || null;
+    } catch (e) { return null; }
+  }
+  function setUrlRoute(route) {
+    try {
+      const url = new URL(window.location.href);
+      if (route) url.searchParams.set('route', route);
+      else url.searchParams.delete('route');
+      history.replaceState(null, '', url);
+    } catch (e) {}
+  }
+  function routeFromPagePath(pagePath) {
+    return (pagePath || '').split('?')[0];
+  }
+  function findItemByRoute(route) {
+    if (!route) return null;
+    return items.find(item => routeFromPagePath(item.dataset.page || '') === route) || null;
+  }
+  function buildShareUrl(route) {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('route', route);
+      url.searchParams.delete('v');
+      return url.toString();
+    } catch (e) {
+      return window.location.href;
+    }
+  }
+  function refreshShareLink(route) {
+    if (!shareLinkInput) return;
+    shareLinkInput.value = route ? buildShareUrl(route) : '';
+  }
+
+  function activateItem(item, shouldSyncUrl) {
+    if (!item) return;
+    const target = item.dataset.page || '';
+    items.forEach(node => node.classList.remove('active'));
+    item.classList.add('active');
+    frame.src = withVersion(target);
+    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
+    if (shouldSyncUrl !== false) {
+      const route = routeFromPagePath(target);
+      setUrlRoute(route);
+      refreshShareLink(route);
+    }
+  }
+
   items.forEach(item => item.addEventListener('click', () => {
     const target = item.dataset.page || '';
     if (target.startsWith('http://') || target.startsWith('https://')) {
       window.location.href = target;
       return;
     }
-    items.forEach(node => node.classList.remove('active'));
-    item.classList.add('active');
-    frame.src = withVersion(target);
-    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
+    activateItem(item);
   }));
   // ===== 监听 iframe 内部板块切换（postMessage）=====
   window.addEventListener('message', (e) => {
@@ -381,6 +476,9 @@
       items.forEach(node => node.classList.remove('active'));
       targetItem.classList.add('active');
       if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(targetItem.dataset.page);
+      const r = routeFromPagePath(targetItem.dataset.page || '');
+      setUrlRoute(r);
+      refreshShareLink(r);
     }
   });
   // ===== 搜索 =====
@@ -407,6 +505,44 @@
   layerSearch.addEventListener('input', applySearch);
   // ===== 侧边栏记忆 =====
   if (localStorage.getItem('sidebar-collapsed') === 'true') toggleSidebar(false);
+  // ===== 复制短链 =====
+  if (shareLinkCopy && shareLinkInput) {
+    shareLinkCopy.addEventListener('click', async () => {
+      const value = shareLinkInput.value;
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        const old = shareLinkCopy.textContent;
+        shareLinkCopy.textContent = '已复制';
+        shareLinkCopy.classList.add('ok');
+        setTimeout(() => {
+          shareLinkCopy.textContent = old;
+          shareLinkCopy.classList.remove('ok');
+        }, 1500);
+      } catch (e) {
+        shareLinkInput.select();
+        document.execCommand && document.execCommand('copy');
+      }
+    });
+  }
+  if (shareLinkInput) {
+    shareLinkInput.addEventListener('focus', () => shareLinkInput.select());
+  }
+  // ===== 初始化路由 =====
+  const initialRoute = getRouteFromUrl();
+  const initialItem = (initialRoute && findItemByRoute(initialRoute)) || items[0];
+  if (initialItem) {
+    const route = routeFromPagePath(initialItem.dataset.page || '');
+    items.forEach(node => node.classList.remove('active'));
+    initialItem.classList.add('active');
+    setUrlRoute(route);
+    refreshShareLink(route);
+    frame.src = withVersion(initialItem.dataset.page || '');
+    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(initialItem.dataset.page);
+  }
+  if (shareLinkHint) {
+    shareLinkHint.textContent = '当前 URL：' + (window.location.pathname.replace(/^.*\//, '') || 'dev-mode.html') + '?route=<版本>/<页面>';
+  }
   // ===== iframe 自适应高度（可选）=====
   window.addEventListener('message', (e) => {
     if (!e.data || e.data.type !== 'frameHeight') return;
