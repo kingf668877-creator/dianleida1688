@@ -167,7 +167,7 @@
     transition:.15s;
   }
   .expand-spec-btn:hover { background:var(--hover); color:var(--text); }
-  .expand-spec-btn::before { content:""; width:14px; height:14px; background:linear-gradient(135deg,#3370ff,#5b47fb); border-radius:3px; }
+  .expand-spec-btn::before { content:; width:14px; height:14px; background:linear-gradient(135deg,#3370ff,#5b47fb); border-radius:3px; }
 
   /* 当前页面短链展示 */
   .share-link {
@@ -332,7 +332,7 @@
     </div>
   </div>
 </div>
-<div class="spec-toast" id="specToast"></div>
+<div class="spec-toast" id="specToast"></></script>
 <script>
   const frame = document.getElementById('designFrame');
   const items = Array.from(document.querySelectorAll('.layer-item'));
@@ -413,6 +413,24 @@
   const shareLinkInput = document.getElementById('shareLinkInput');
   const shareLinkCopy = document.getElementById('shareLinkCopy');
   const shareLinkHint = document.getElementById('shareLinkHint');
+  // 兜底清理：URL 中残留的旧参数（?domain= / ?route=）会被自动移除
+  function stripLegacyParams() {
+    try {
+      const url = new URL(window.location.href);
+      let changed = false;
+      ['domain', 'route'].forEach(key => {
+        if (url.searchParams.has(key)) {
+          url.searchParams.delete(key);
+          changed = true;
+        }
+      });
+      if (changed) {
+        history.replaceState(null, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash);
+      }
+    } catch (e) {}
+  }
+  stripLegacyParams();
+
   function getRouteFromUrl() {
     try {
       const url = new URL(window.location.href);
@@ -594,7 +612,7 @@
     setUrlRoute(route);
     refreshShareLink(route);
     frame.src = withVersion(initialItem.dataset.page || '');
-    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(initialItem.dataset.page);
+    if (typeof updateCurrentPageKey === 'function()') updateCurrentPageKey(initialItem.dataset.page);
   }
   if (shareLinkHint) {
     const fileName = (window.location.pathname.replace(/^.*\//, '') || 'dev-mode.html');
