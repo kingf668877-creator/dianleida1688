@@ -203,7 +203,8 @@
         <span class="version-badge">最新</span>
       </div>
       <div class="version-pages open" data-version="v2.9.5">
-        <button class="layer-item" data-page="v2.9.5/search-agent.html" data-search="V2.9.5 V3插件更新提醒 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#19a974;">V3</span>V3插件更新提醒</button>
+        <button class="layer-item" data-page="v2.9.5/v2-upgrade-v3-plugin-update.html" data-search="V2.9.5 V2升级V3插件更新 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#19a974;">V2</span>V2升级V3插件更新</button>
+        <button class="layer-item" data-page="v2.9.5/v3-upgrade-v3-plugin-update.html" data-search="V2.9.5 V3升级V3插件更新 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3370ff;">V3</span>V3升级V3插件更新</button>
       </div>
       <div class="version-folder open" data-version="v2.9.4">
         <span class="folder-arrow">▶</span>
@@ -333,96 +334,87 @@
     });
   });
 
-  const INNER_PAGE_VERSION = '2026081118';
-  const V295_VERSION = '2026081810';
-  const V294_VERSION = '20260814c';
-  const V294_BACKEND_VERSION = '20260814d';
+  // ===== 页面切换 =====
+  const INNER_PAGE_VERSION = '2026081810';
+  const VERSIONED_PATHS = [
+    'v2.9.3/search-agent-yuque.html',
+    'v2.9.5/v2-upgrade-v3-plugin-update.html',
+    'v2.9.5/v3-upgrade-v3-plugin-update.html'
+  ];
   function withVersion(url) {
-    if (url.includes('v2.9.5/search-agent.html')) {
-      return url + (url.includes('?') ? '&' : '?') + 'v=' + V295_VERSION;
-    }
-    if (url.includes('v2.9.3/search-agent-yuque.html')) {
-      return url + (url.includes('?') ? '&' : '?') + 'v=' + INNER_PAGE_VERSION;
-    }
-    if (url.includes('v2.9.4/search-agent-backend.html')) {
-      return url + (url.includes('?') ? '&' : '?') + 'v=' + V294_BACKEND_VERSION;
-    }
-    if (url.includes('v2.9.4/search-agent.html')) {
-      return url + (url.includes('?') ? '&' : '?') + 'v=' + V294_VERSION;
-    }
-    return url;
+    if (!url) return url;
+    if (!VERSIONED_PATHS.some(prefix => url.startsWith(prefix))) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return url + sep + 'v=' + INNER_PAGE_VERSION;
   }
-
-  const PAGE_ROUTES = {
-    'version-plan': 'version-plan.html',
-    'v2.9.5-v3-plugin-update-notification': 'v2.9.5/search-agent.html',
-    'v2.9.4-ozonai-search': 'v2.9.4/search-agent.html',
-    'v2.9.4-backend-doc': 'v2.9.4/search-agent-backend.html',
-    'v2.9.3-image-source': 'v2.9.3/search-agent-yuque.html',
-    'v2.9.3-task-list': 'v2.9.3/search-agent-yuque.html?page=list',
-    'v2.9.3-source-result': 'v2.9.3/search-agent-yuque.html?page=result',
-    'v2.9.3-package-config': 'v2.9.3/search-agent-yuque.html?page=package',
-    'v2.8.9-search-agent': 'search-agent.html',
-    'v2.8.9-ai-output': 'ai-output-interaction-viewer.html',
-    'v2.8.9-backend-doc': 'backend-json-mapping-viewer.html'
-  };
-
-  function getRouteId(pageUrl) {
-    return Object.keys(PAGE_ROUTES).find(routeId => PAGE_ROUTES[routeId] === pageUrl) || 'version-plan';
-  }
-
-  function selectPage(target, shouldUpdateUrl) {
-    const selectedItem = items.find(item => item.dataset.page === target);
-    if (!selectedItem) return;
-    items.forEach(node => node.classList.remove('active'));
-    selectedItem.classList.add('active');
-    frame.src = withVersion(target);
-    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
-    if (shouldUpdateUrl) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('page', getRouteId(target));
-      history.pushState({ page: getRouteId(target) }, '', url);
-    }
-  }
-
   items.forEach(item => item.addEventListener('click', () => {
     const target = item.dataset.page || '';
     if (target.startsWith('http://') || target.startsWith('https://')) {
       window.location.href = target;
       return;
     }
-    selectPage(target, true);
+    items.forEach(node => node.classList.remove('active'));
+    item.classList.add('active');
+    frame.src = withVersion(target);
+    if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
   }));
-
-  window.addEventListener('popstate', () => {
-    const routeId = new URLSearchParams(window.location.search).get('page');
-    selectPage(PAGE_ROUTES[routeId] || PAGE_ROUTES['version-plan'], false);
+  // ===== 监听 iframe 内部板块切换（postMessage）=====
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'pageChange') return;
+    const page = e.data.page;
+    if (!page) return;
+    if (page.startsWith('http')) { window.location.href = page; return; }
+    const matchList = items.filter(item => {
+      const dp = item.dataset.page || '';
+      return VERSIONED_PATHS.some(prefix => dp.startsWith(prefix));
+    });
+    let targetItem = null;
+    matchList.forEach(item => {
+      const dp = item.dataset.page || '';
+      if (page === 'create' && !dp.includes('page=') && dp.includes('v2.9.3')) {
+        targetItem = item;
+      } else if (dp.includes('page=' + page)) {
+        targetItem = item;
+      }
+    });
+    if (targetItem) {
+      items.forEach(node => node.classList.remove('active'));
+      targetItem.classList.add('active');
+      if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(targetItem.dataset.page);
+    }
   });
-
-  // 默认状态：收起侧边栏（如果之前已展开），右侧原型说明面板默认收起
-  (function defaultState() {
-    if (localStorage.getItem('sidebar-collapsed') === null) {
-      localStorage.setItem('sidebar-collapsed', 'false');
+  // ===== 搜索 =====
+  function applySearch() {
+    const keyword = (layerSearch.value || '').trim().toLowerCase();
+    let hasMatch = false;
+    items.forEach(item => {
+      const text = (item.dataset.search || item.textContent || '').toLowerCase();
+      const visible = !keyword || text.includes(keyword);
+      item.style.display = visible ? '' : 'none';
+      if (visible) hasMatch = true;
+    });
+    versionFolders.forEach(folder => {
+      const version = folder.dataset.version;
+      const versionItems = Array.from(document.querySelectorAll('.version-pages[data-version="' + version + '"] .layer-item'));
+      const visibleCount = versionItems.filter(item => item.style.display !== 'none').length;
+      const shouldShow = !keyword || visibleCount > 0;
+      folder.style.display = shouldShow ? '' : 'none';
+      const pages = document.querySelector('.version-pages[data-version="' + version + '"]');
+      if (pages) pages.style.display = shouldShow ? (keyword ? 'block' : '') : 'none';
+    });
+    layerEmpty.style.display = hasMatch || !keyword ? 'none' : 'block';
+  }
+  layerSearch.addEventListener('input', applySearch);
+  // ===== 侧边栏记忆 =====
+  if (localStorage.getItem('sidebar-collapsed') === 'true') toggleSidebar(false);
+  // ===== iframe 自适应高度（可选）=====
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'frameHeight') return;
+    const frameEl = document.getElementById('designFrame');
+    if (frameEl && typeof e.data.height === 'number') {
+      frameEl.style.height = e.data.height + 'px';
     }
-    if (localStorage.getItem('spec-panel-collapsed') === null) {
-      localStorage.setItem('spec-panel-collapsed', 'true');
-      specPanel.classList.add('collapsed');
-      expandSpecBtn.style.display = 'inline-flex';
-    } else if (localStorage.getItem('spec-panel-collapsed') === 'true') {
-      specPanel.classList.add('collapsed');
-      expandSpecBtn.style.display = 'inline-flex';
-    } else {
-      expandSpecBtn.style.display = 'none';
-    }
-    const routeId = new URLSearchParams(window.location.search).get('page');
-    const target = PAGE_ROUTES[routeId] || PAGE_ROUTES['version-plan'];
-    selectPage(target, false);
-    if (!routeId) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('page', 'version-plan');
-      history.replaceState({ page: 'version-plan' }, '', url);
-    }
-  })();
+  });
 </script>
 </body>
 </html>
