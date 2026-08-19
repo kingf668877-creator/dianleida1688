@@ -418,25 +418,12 @@
     return url + sep + 'v=' + INNER_PAGE_VERSION;
   }
 
-  // ===== 域名 → URL 路径前缀映射（链接里带入区分）=====
-  const DOMAIN_PREFIX = {
-    '1688': '1688',
-    'OZON': 'ozon',
-    'API':  'api',
-    'AI':   'ai'
-  };
-  function buildPageUrl(item) {
-    const base = item.dataset.page || '';
-    const domain = item.dataset.domain || '1688';
-    const prefix = DOMAIN_PREFIX[domain];
-    if (!prefix) return base;
-    if (base.startsWith('http://') || base.startsWith('https://')) return base;
-    return prefix + '/' + base;
-  }
+  // ===== 域名锁定：URL 中始终带 domain= 参数 =====
+  const DOMAIN_KEYS = { '1688': '1688', 'OZON': '1688', 'API': '1688', 'AI': '1688' };
   function setUrlDomain(domain) {
     try {
       const url = new URL(window.location.href);
-      url.searchParams.set('domain', domain.toLowerCase());
+      url.searchParams.set('domain', (domain || '1688').toLowerCase());
       history.replaceState(null, '', url);
     } catch (e) {}
   }
@@ -444,12 +431,12 @@
     try {
       const url = new URL(window.location.href);
       const raw = (url.searchParams.get('domain') || '').toUpperCase();
-      if (DOMAIN_PREFIX[raw]) return raw;
+      if (DOMAIN_KEYS[raw]) return raw;
     } catch (e) {}
     return null;
   }
   items.forEach(item => item.addEventListener('click', () => {
-    const target = buildPageUrl(item);
+    const target = item.dataset.page || '';
     if (target.startsWith('http://') || target.startsWith('https://')) {
       window.location.href = target;
       return;
@@ -490,7 +477,7 @@
   });
   // ===== 搜索 =====
   function applySearch() {
-    const keyword = (layerSearch.value || '').trim().toLowerCase();
+    const keyword = (layerSearch.value || '').).trim().toLowerCase();
     let hasMatch = false;
     items.forEach(item => {
       const text = (item.dataset.search || item.textContent || '').toLowerCase();
@@ -532,7 +519,7 @@
   }
   applyDomain(initialActive ? initialActive.dataset.domain : '1688');
   if (initialActive) {
-    frame.src = withVersion(buildPageUrl(initialActive));
+    frame.src = withVersion(initialActive.dataset.page || '');
   }
 </script>
 </body>
