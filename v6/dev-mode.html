@@ -202,6 +202,20 @@
   .share-link-hint {
     margin-top:8px; font-size:11px; color:#86909c; line-height:1.5;
   }
+  .share-link-modes {
+    display:flex; gap:4px; margin-top:8px;
+  }
+  .share-link-mode {
+    flex:1; height:24px; padding:0 8px;
+    border:1px solid var(--border); border-radius:4px;
+    background:#fff; color:#86909c;
+    font-size:11px; font-weight:600; cursor:pointer;
+    transition:.12s;
+  }
+  .share-link-mode:hover { color:var(--text); border-color:var(--blue); }
+  .share-link-mode.active {
+    background:var(--blue); border-color:var(--blue); color:#fff;
+  }
 
   @media (max-width:1099px) { .spec-panel { width:300px; flex-basis:300px; } }
   @media (max-width:899px) { .spec-panel { display:none; } .stage { flex-direction:column; } }
@@ -280,6 +294,11 @@
       <div class="share-link-row">
         <input class="share-link-input" id="shareLinkInput" type="text" readonly>
         <button class="share-link-copy" id="shareLinkCopy" type="button">复制</button>
+      </div>
+      <div class="share-link-modes" id="shareLinkModes">
+        <button class="share-link-mode active" type="button" data-mode="tiny">短链</button>
+        <button class="share-link-mode" type="button" data-mode="route">仅路由</button>
+        <button class="share-link-mode" type="button" data-mode="full">完整 URL</button>
       </div>
       <div class="share-link-hint" id="shareLinkHint">链接路径直接带版本/页面名，便于前端识别。</div>
     </div>
@@ -426,9 +445,26 @@
       return window.location.href;
     }
   }
+  function buildRouteOnly(route) {
+    return '?route=' + route;
+  }
+  function buildTinyUrl(route) {
+    return 'dld/' + route;
+  }
+  function currentShareMode() {
+    const btn = document.querySelector('.share-link-mode.active');
+    return btn ? btn.dataset.mode : 'tiny';
+  }
   function refreshShareLink(route) {
     if (!shareLinkInput) return;
-    shareLinkInput.value = route ? buildShareUrl(route) : '';
+    if (!route) {
+      shareLinkInput.value = '';
+      return;
+    }
+    const mode = currentShareMode();
+    if (mode === 'route') shareLinkInput.value = buildRouteOnly(route);
+    else if (mode === 'full') shareLinkInput.value = buildShareUrl(route);
+    else shareLinkInput.value = buildTinyUrl(route);
   }
 
   function activateItem(item, shouldSyncUrl) {
@@ -528,6 +564,20 @@
   if (shareLinkInput) {
     shareLinkInput.addEventListener('focus', () => shareLinkInput.select());
   }
+  // 切换短链格式
+  document.querySelectorAll('.share-link-mode').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.share-link-mode').forEach(b => b.classList.toggle('active', b === btn));
+      const currentRoute = (() => {
+        try {
+          const u = new URL(window.location.href);
+          const raw = (u.searchParams.get('route') || '').trim();
+          return raw || null;
+        } catch (e) { return null; }
+      })();
+      refreshShareLink(currentRoute);
+    });
+  });
   // ===== 初始化路由 =====
   const initialRoute = getRouteFromUrl();
   const initialItem = (initialRoute && findItemByRoute(initialRoute)) || items[0];
@@ -541,7 +591,8 @@
     if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(initialItem.dataset.page);
   }
   if (shareLinkHint) {
-    shareLinkHint.textContent = '当前 URL：' + (window.location.pathname.replace(/^.*\//, '') || 'dev-mode.html') + '?route=<版本>/<页面>';
+    const fileName = (window.location.pathname.replace(/^.*\//, '') || 'dev-mode.html');
+    shareLinkHint.textContent = '当前 URL：' + fileName + '?route=<版本>/<页面>';
   }
   // ===== iframe 自适应高度（可选）=====
   window.addEventListener('message', (e) => {
