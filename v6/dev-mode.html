@@ -409,22 +409,27 @@
     return url + sep + 'v=' + INNER_PAGE_VERSION;
   }
 
-  // ===== 路由：URL ?route=<path>，把 path 映射到导航项 =====
+  // ===== 路由：URL ?r=<route>，把 route 映射到导航项 =====
   const shareLinkInput = document.getElementById('shareLinkInput');
   const shareLinkCopy = document.getElementById('shareLinkCopy');
   const shareLinkHint = document.getElementById('shareLinkHint');
   function getRouteFromUrl() {
     try {
       const url = new URL(window.location.href);
-      const raw = (url.searchParams.get('route') || '').trim();
+      const raw = (url.searchParams.get('r') || url.searchParams.get('route') || '').trim();
       return raw || null;
     } catch (e) { return null; }
   }
   function setUrlRoute(route) {
     try {
       const url = new URL(window.location.href);
-      if (route) url.searchParams.set('route', route);
-      else url.searchParams.delete('route');
+      if (route) {
+        url.searchParams.set('r', route);
+        url.searchParams.delete('route');
+      } else {
+        url.searchParams.delete('r');
+        url.searchParams.delete('route');
+      }
       history.replaceState(null, '', url);
     } catch (e) {}
   }
@@ -438,7 +443,8 @@
   function buildShareUrl(route) {
     try {
       const url = new URL(window.location.href);
-      url.searchParams.set('route', route);
+      url.searchParams.set('r', route);
+      url.searchParams.delete('route');
       url.searchParams.delete('v');
       return url.toString();
     } catch (e) {
@@ -446,7 +452,7 @@
     }
   }
   function buildRouteOnly(route) {
-    return '?route=' + route;
+    return '?r=' + route;
   }
   function buildTinyUrl(route) {
     return 'dld/' + route;
@@ -571,7 +577,7 @@
       const currentRoute = (() => {
         try {
           const u = new URL(window.location.href);
-          const raw = (u.searchParams.get('route') || '').trim();
+          const raw = (u.searchParams.get('r') || u.searchParams.get('route') || '').trim();
           return raw || null;
         } catch (e) { return null; }
       })();
@@ -592,7 +598,7 @@
   }
   if (shareLinkHint) {
     const fileName = (window.location.pathname.replace(/^.*\//, '') || 'dev-mode.html');
-    shareLinkHint.textContent = '当前 URL：' + fileName + '?route=<版本>/<页面>';
+    shareLinkHint.textContent = '当前 URL：' + fileName + '?r=<版本>/<页面>';
   }
   // ===== iframe 自适应高度（可选）=====
   window.addEventListener('message', (e) => {
