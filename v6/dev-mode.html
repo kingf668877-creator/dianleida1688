@@ -169,53 +169,6 @@
   .expand-spec-btn:hover { background:var(--hover); color:var(--text); }
   .expand-spec-btn::before { content:""; width:14px; height:14px; background:linear-gradient(135deg,#3370ff,#5b47fb); border-radius:3px; }
 
-  /* 主机域名徽标 */
-  .host-badge {
-    display:inline-flex; align-items:center; gap:6px;
-    height:30px; padding:0 12px; margin-left:8px;
-    color:#fff; border-radius:6px;
-    font-size:13px; font-weight:700; letter-spacing:0;
-    background:var(--host-orange,#ff6a00);
-    transition: background .2s ease;
-  }
-  .host-badge::before {
-    content:""; width:14px; height:14px;
-    background:rgba(255,255,255,.22); border-radius:3px;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.45);
-  }
-
-  /* 域名直达入口 */
-  .domain-links {
-    position:absolute; right:18px; top:60px; z-index:25;
-    display:flex; flex-direction:column; gap:8px;
-    padding:10px; background:rgba(255,255,255,.94);
-    border:1px solid var(--border); border-radius:10px;
-    box-shadow:0 8px 24px rgba(29,33,41,.08);
-  }
-  .domain-links::before {
-    content:"域名入口";
-    display:block; margin-bottom:6px;
-    color:#86909c; font-size:11px; font-weight:600; letter-spacing:.2px;
-  }
-  .domain-link {
-    display:flex; align-items:center; gap:8px;
-    min-width:120px; height:32px; padding:0 12px;
-    color:#fff; border-radius:6px;
-    font-size:12px; font-weight:700; text-decoration:none;
-    background:#ff6a00; transition:.15s;
-  }
-  .domain-link[data-domain="OZON"] { background:#0050b3; }
-  .domain-link[data-domain="API"]  { background:#10b981; }
-  .domain-link[data-domain="AI"]   { background:#7c4dff; }
-  .domain-link::before {
-    content:""; width:10px; height:10px;
-    background:rgba(255,255,255,.4); border-radius:2px;
-  }
-  .domain-link:hover {
-    transform:translateY(-1px);
-    box-shadow:0 4px 12px rgba(29,33,41,.18);
-  }
-
   @media (max-width:1099px) { .spec-panel { width:300px; flex-basis:300px; } }
   @media (max-width:899px) { .spec-panel { display:none; } .stage { flex-direction:column; } }
   @media (max-width:720px) { .layers { width:176px; flex-basis:176px; } .stage { padding:10px; gap:8px; } }
@@ -229,7 +182,6 @@
       <div class="layers-title-left">
         <img src="logo.png" alt="店雷达选品">
         <span>店雷达选品</span>
-        <span class="host-badge" id="hostBadge">1688</span>
       </div>
       <button class="toggle-btn" id="toggleBtn" title="收起导航栏">✕</button>
     </div>
@@ -243,7 +195,7 @@
         <span class="version-badge" style="background:#f59e0b;">规划</span>
       </div>
       <div class="version-pages open" data-version="version-plan">
-        <button class="layer-item" data-page="version-plan.html" data-domain="1688" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
+        <button class="layer-item" data-page="version-plan.html" data-search="版本规划"><span class="layer-icon icon-p" style="background:#f59e0b;">V</span>版本规划</button>
       </div>
       <div class="version-folder open" data-version="v2.9.5">
         <span class="folder-arrow">▶</span>
@@ -251,35 +203,35 @@
         <span class="version-badge">最新</span>
       </div>
       <div class="version-pages open" data-version="v2.9.5">
-        <button class="layer-item" data-page="v2.9.5/v2-upgrade-v3-plugin-update.html" data-domain="1688" data-search="V2.9.5 V2升级V3插件更新 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#19a974;">V2</span>V2升级V3插件更新</button>
-        <button class="layer-item" data-page="v2.9.5/v3-upgrade-v3-plugin-update.html" data-domain="1688" data-search="V2.9.5 V3升级V3插件更新 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3370ff;">V3</span>V3升级V3插件更新</button>
+        <button class="layer-item" data-page="v2.9.5/v2-upgrade-v3-plugin-update.html" data-search="V2.9.5 V2升级V3插件更新 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#19a974;">V2</span>V2升级V3插件更新</button>
+        <button class="layer-item" data-page="v2.9.5/v3-upgrade-v3-plugin-update.html" data-search="V2.9.5 V3升级V3插件更新 插件更新 提醒 弹窗 通知 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3370ff;">V3</span>V3升级V3插件更新</button>
       </div>
       <div class="version-folder open" data-version="v2.9.4">
         <span class="folder-arrow">▶</span>
         <span>V2.9.4</span>
       </div>
       <div class="version-pages open" data-version="v2.9.4">
-        <button class="layer-item" data-page="v2.9.4/search-agent.html" data-domain="OZON" data-search="V2.9.4 OZONAI搜索词 AI 核心词提取 关键词扩展 实时商品搜索 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#7047ff;">AI</span>OZONAI搜索词</button>
-        <button class="layer-item" data-page="v2.9.4/search-agent-backend.html" data-domain="API" data-search="V2.9.4 后端对接文档 OZON 跨语言匹配 五层规则 中俄英 三语"><span class="layer-icon icon-p" style="background:#10b981;">API</span>后端对接文档</button>
+        <button class="layer-item" data-page="v2.9.4/search-agent.html" data-search="V2.9.4 OZONAI搜索词 AI 核心词提取 关键词扩展 实时商品搜索 效果图 原型说明 HTML CSS JS"><span class="layer-icon icon-p" style="background:#7047ff;">AI</span>OZONAI搜索词</button>
+        <button class="layer-item" data-page="v2.9.4/search-agent-backend.html" data-search="V2.9.4 后端对接文档 OZON 跨语言匹配 五层规则中俄英 三语"><span class="layer-icon icon-p" style="background:#10b981;">API</span>后端对接文档</button>
       </div>
       <div class="version-folder open" data-version="v2.9.3">
         <span class="folder-arrow">▶</span>
         <span>V2.9.3</span>
       </div>
       <div class="version-pages open" data-version="v2.9.3">
-        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html" data-domain="1688" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">C</span>创建图搜寻源</button>
-        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=list" data-domain="1688" data-search="V2.9.3 任务列表 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#ffa502;">L</span>任务列表</button>
-        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=result" data-domain="1688" data-search="V2.9.3 寻源结果 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#00b894;">R</span>寻源结果</button>
-        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=package" data-domain="1688" data-search="V2.9.3 套餐配置 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3742fa;">P</span>套餐配置</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html" data-search="V2.9.3 创建图搜寻源 效果图 HTML CSS JS"><span class="layer-icon icon-p">C</span>创建图搜寻源</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=list" data-search="V2.9.3 任务列表 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#ffa502;">L</span>任务列表</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=result" data-search="V2.9.3 寻源结果 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#00b894;">R</span>寻源结果</button>
+        <button class="layer-item" data-page="v2.9.3/search-agent-yuque.html?page=package" data-search="V2.9.3 套餐配置 效果图 HTML CSS JS"><span class="layer-icon icon-p" style="background:#3742fa;">P</span>套餐配置</button>
       </div>
       <div class="version-folder open" data-version="v2.8.9">
         <span class="folder-arrow">▶</span>
         <span>V2.8.9</span>
       </div>
       <div class="version-pages open" data-version="v2.8.9">
-        <button class="layer-item" data-page="search-agent.html" data-domain="1688" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">S</span>搜索智能体</button>
-        <button class="layer-item" data-page="ai-output-interaction-viewer.html" data-domain="AI" data-search="V2.8.9 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
-        <button class="layer-item" data-page="backend-json-mapping-viewer.html" data-domain="API" data-search="V2.8.9 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
+        <button class="layer-item" data-page="search-agent.html" data-search="V2.8.9 搜索智能体 效果图 HTML CSS JS MD 后端 JSON 映射"><span class="layer-icon icon-p">S</span>搜索智能体</button>
+        <button class="layer-item" data-page="ai-output-interaction-viewer.html" data-search="V2.8.9 AI输出结果交互 效果图 HTML CSS JS MD 智能体提示词"><span class="layer-icon icon-p" style="background:#7c4dff;">AI</span>AI输出结果交互</button>
+        <button class="layer-item" data-page="backend-json-mapping-viewer.html" data-search="V2.8.9 后端对接文档 扣子智能体 API SSE Markdown 编辑 发布 导入"><span class="layer-icon icon-p" style="background:#10b981;">MD</span>后端对接文档</button>
       </div>
       <div class="layer-empty" id="layerEmpty">暂无匹配内容</div>
     </nav>
@@ -288,12 +240,6 @@
     <div class="frame-shell">
       <iframe id="designFrame" src="version-plan.html?v=2026081118" title="设计页面预览"></iframe>
       <button class="expand-spec-btn" id="expandSpecBtn" title="展开原型说明">原型说明</button>
-    </div>
-    <div class="domain-links" id="domainLinks" aria-label="按域名直达入口">
-      <a class="domain-link" data-domain="1688" href="./1688-dev-mode.html"><span>1688</span></a>
-      <a class="domain-link" data-domain="OZON" href="./ozon-dev-mode.html"><span>OZON</span></a>
-      <a class="domain-link" data-domain="API" href="./api-dev-mode.html"><span>API</span></a>
-      <a class="domain-link" data-domain="AI" href="./ai-dev-mode.html"><span>AI</span></a>
     </div>
     <aside class="spec-panel collapsed" id="specPanel">
       <div class="spec-header">
@@ -339,22 +285,6 @@
   const specPanel = document.getElementById('specPanel');
   const toggleSpecBtn = document.getElementById('toggleSpecBtn');
   const expandSpecBtn = document.getElementById('expandSpecBtn');
-  const hostBadge = document.getElementById('hostBadge');
-
-  // ===== 不同域名视觉配置 =====
-  const DOMAIN_PRESETS = {
-    '1688': { text: '1688', color: '#ff6a00' },
-    'OZON': { text: 'OZON', color: '#0050b3' },
-    'API':  { text: 'API',  color: '#10b981' },
-    'AI':   { text: 'AI',   color: '#7c4dff' }
-  };
-  function applyDomain(domain) {
-    const preset = DOMAIN_PRESETS[domain] || DOMAIN_PRESETS['1688'];
-    if (hostBadge) {
-      hostBadge.textContent = preset.text;
-      hostBadge.style.background = preset.color;
-    }
-  }
 
   function toggleSidebar(show) {
     if (show) {
@@ -417,24 +347,6 @@
     const sep = url.includes('?') ? '&' : '?';
     return url + sep + 'v=' + INNER_PAGE_VERSION;
   }
-
-  // ===== 域名锁定：URL 中始终带 domain= 参数 =====
-  const DOMAIN_KEYS = { '1688': '1688', 'OZON': '1688', 'API': '1688', 'AI': '1688' };
-  function setUrlDomain(domain) {
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.set('domain', (domain || '1688').toLowerCase());
-      history.replaceState(null, '', url);
-    } catch (e) {}
-  }
-  function getUrlDomain() {
-    try {
-      const url = new URL(window.location.href);
-      const raw = (url.searchParams.get('domain') || '').toUpperCase();
-      if (DOMAIN_KEYS[raw]) return raw;
-    } catch (e) {}
-    return null;
-  }
   items.forEach(item => item.addEventListener('click', () => {
     const target = item.dataset.page || '';
     if (target.startsWith('http://') || target.startsWith('https://')) {
@@ -443,8 +355,6 @@
     }
     items.forEach(node => node.classList.remove('active'));
     item.classList.add('active');
-    applyDomain(item.dataset.domain);
-    setUrlDomain(item.dataset.domain || '1688');
     frame.src = withVersion(target);
     if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(target);
   }));
@@ -470,14 +380,12 @@
     if (targetItem) {
       items.forEach(node => node.classList.remove('active'));
       targetItem.classList.add('active');
-      applyDomain(targetItem.dataset.domain);
-      setUrlDomain(targetItem.dataset.domain || '1688');
       if (typeof updateCurrentPageKey === 'function') updateCurrentPageKey(targetItem.dataset.page);
     }
   });
   // ===== 搜索 =====
   function applySearch() {
-    const keyword = (layerSearch.value || '').).trim().toLowerCase();
+    const keyword = (layerSearch.value || '').trim().toLowerCase();
     let hasMatch = false;
     items.forEach(item => {
       const text = (item.dataset.search || item.textContent || '').toLowerCase();
@@ -507,20 +415,6 @@
       frameEl.style.height = e.data.height + 'px';
     }
   });
-  // ===== 初始化域名徽标 =====
-  const urlDomain = getUrlDomain();
-  const initialActive = (urlDomain && items.find(i => (i.dataset.domain || '').toUpperCase() === urlDomain))
-    || items.find(i => i.classList.contains('active'))
-    || items[0];
-  if (initialActive) {
-    items.forEach(node => node.classList.remove('active'));
-    initialActive.classList.add('active');
-    setUrlDomain(initialActive.dataset.domain || '1688');
-  }
-  applyDomain(initialActive ? initialActive.dataset.domain : '1688');
-  if (initialActive) {
-    frame.src = withVersion(initialActive.dataset.page || '');
-  }
 </script>
 </body>
 </html>
