@@ -1,0 +1,18 @@
+/* ===== 后台-AI订单 页面专属样式（公共后台样式复用 admin-ai-package.css） ===== */
+.orderIndex .main{background:#fff;padding:20px;min-height:calc(100vh - 134px)}
+.filterView{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px}
+.filterView .lbl{font-size:14px;color:#606266}
+.filterView .sep{margin:0 6px;color:#909399;font-size:13px}
+.filterView .range-input{width:110px}
+.filterView .w120{width:120px}.filterView .w140{width:140px}.filterView .w165{width:165px}
+.filterView .ml10{margin-left:10px}
+.order-table td .cell{font-size:13px}
+.order-table .op-btns{justify-content:center}
+.tag-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:2px}
+.tag-dot.pay-wait{background:#faad14}.tag-dot.pay-ok{background:#67c23a}.tag-dot.pay-close{background:#c0c4cc}
+.st-ai{display:inline-block;margin-left:6px;padding:0 6px;border-radius:8px;background:#f0ebff;color:#6236ff;font-size:11px;line-height:16px}
+.total-line-orders{display:flex;align-items:center;justify-content:flex-end;margin-top:16px;font-size:13px;color:#606266}
+.total-line-orders i{font-style:normal;color:#ff6000;margin:0 4px}
+.col-new-text{color:#ff6034;font-weight:600}
+.hint-block{background:#f4f8ff;border:1px solid #d9e8ff;border-radius:4px;padding:8px 12px;color:#606266;font-size:12px;line-height:1.7;margin-bottom:14px}
+.detail-table th{background:#f5f7fa}

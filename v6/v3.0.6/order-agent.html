@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后台-AI订单 · V3.0.6</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #1d2129; }
+  button { font-family: inherit; }
+  .tabs-wrap { height: 48px; display: flex; align-items: center; padding: 0 20px; background: #fff; border-bottom: 1px solid #e5e6eb; gap: 4px; position: sticky; top: 0; z-index: 10; }
+  .tab-btn { height: 32px; padding: 0 16px; border: 0; border-radius: 6px; background: transparent; color: #4e5969; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; }
+  .tab-btn:hover { background: #f2f3f5; color: #1d2129; }
+  .tab-btn.active { background: #f0ebff; color: #6236ff; font-weight: 600; }
+  .tab-dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+  .tab-preview .tab-dot { background: #ff6b6b; }
+  .tab-spec .tab-dot { background: #3370ff; }
+  .tab-html .tab-dot { background: #e34f26; }
+  .tab-css .tab-dot { background: #1572b6; }
+  .tab-js .tab-dot { background: #b58b00; }
+  .panels { height: calc(100vh - 48px); overflow: hidden; position: relative; }
+  .panel { position: absolute; inset: 0; display: none; overflow: auto; }
+  .panel.active { display: block; }
+  #panel-preview iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+  .empty-wrap { height: 100%; min-height: 360px; display: flex; align-items: center; justify-content: center; padding: 32px; background: #f7f8fa; }
+  .empty-state { width: min(520px, 100%); padding: 52px 32px; border: 1px dashed #c9cdd4; border-radius: 12px; background: #fff; text-align: center; }
+  .empty-icon { width: 52px; height: 52px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 14px; background: #f0ebff; color: #6236ff; font-size: 17px; font-weight: 700; }
+  .empty-state h1 { margin: 0 0 10px; font-size: 20px; }
+  .empty-state p { margin: 0; color: #86909c; font-size: 14px; line-height: 1.7; }
+  .status { display: inline-flex; margin-top: 18px; padding: 5px 11px; border-radius: 999px; background: #f2f3f5; color: #4e5969; font-size: 12px; }
+  .code-panel { padding: 20px; }
+  .spec-wrap { height: 100%; overflow: auto; padding: 28px 32px; background: #f7f8fa; }
+  .spec-card { max-width: 760px; margin: 0 auto; padding: 28px 32px; border: 1px solid #e5e6eb; border-radius: 12px; background: #fff; box-shadow: 0 1px 4px rgba(29,33,41,.05); }
+  .spec-flag { display: inline-block; margin-bottom: 12px; padding: 3px 12px; border-radius: 999px; background: linear-gradient(135deg, #ff6034, #ff4d4f); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+  .spec-card h1 { margin: 0 0 14px; font-size: 20px; }
+  .spec-card h1 small { margin-left: 8px; color: #86909c; font-size: 13px; font-weight: 400; }
+  .spec-card ul { margin: 0; padding-left: 20px; color: #4e5969; font-size: 14px; line-height: 2; }
+  .spec-card b { color: #1d2129; }
+  .spec-card code { padding: 1px 7px; border-radius: 5px; background: #f0ebff; color: #6236ff; font: 13px Consolas, monospace; }
+  .spec-card .dim { margin-left: -20px; color: #86909c; font-size: 13px; list-style: none; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .code-header small { color: #86909c; font: 12px Consolas, monospace; }
+  .copy-btn { height: 30px; padding: 0 14px; border: 1px solid #e5e6eb; border-radius: 6px; background: #fff; color: #4e5969; font-size: 12px; cursor: pointer; }
+  .copy-btn:hover { border-color: #6236ff; color: #6236ff; }
+  .copy-btn.ok { background: #16a36a; border-color: #16a36a; color: #fff; }
+  pre.code { margin: 0; padding: 20px; overflow: auto; border: 1px solid #e5e6eb; border-radius: 10px; background: #fafbfc; color: #334155; font: 13px/1.7 Consolas, "Microsoft YaHei", monospace; white-space: pre-wrap; tab-size: 2; min-height: calc(100% - 50px); }
+</style>
+</head>
+<body>
+  <div class="tabs-wrap" role="tablist" aria-label="后台-AI订单原型内容">
+    <button class="tab-btn tab-preview active" data-tab="preview" role="tab"><span class="tab-dot"></span>效果图</button>
+    <button class="tab-btn tab-spec" data-tab="spec" role="tab"><span class="tab-dot"></span>原型说明</button>
+    <button class="tab-btn tab-html" data-tab="html" role="tab"><span class="tab-dot"></span>HTML</button>
+    <button class="tab-btn tab-css" data-tab="css" role="tab"><span class="tab-dot"></span>CSS</button>
+    <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
+  </div>
+  <div class="panels">
+    <section class="panel active" id="panel-preview"><iframe src="admin-ai-order.html?v=2026100950" title="后台-AI订单效果图"></iframe></section>
+    <section class="panel" id="panel-spec">
+      <div class="spec-wrap">
+        <div class="spec-card">
+          <span class="spec-flag">新增模块</span>
+          <h1>后台-AI订单 · 开发说明<small>V3.0.6</small></h1>
+          <ul>
+            <li><b>模块入口：</b>订单管理 → AI订单（新增菜单，位于「MCP订单」下方）；列表筛选、创建流程均基于原 MCP订单 页面改造</li>
+            <li><b>列表：</b>沿用 18 列结构，「MCP点数」列替换为「AI点数」（带「新增」标记）；订单类型固定为 AI订单</li>
+            <li><b>筛选：</b>创建时间 / 订单状态 / 是否续费订单 / 订单类型（全部、AI订单）/ 订单来源 / 手机号</li>
+            <li><b>创建手工订单：</b>手机号 + 选择 AI 套餐（自动带出点数与金额，可调）+ 支付金额；校验手机号为主账号</li>
+            <li><b>创建赠送订单：</b>手机号 + AI 套餐 + 赠送时长 + 赠送AI点数 + 备注；交易金额为 0</li>
+            <li><b>点数明细：</b>操作列「使用」查看该订单 AI 点数消耗记录（功能模块 / 消耗 / 剩余）</li>
+            <li class="dim">列表为演示数据，保存在浏览器本地；HTML / CSS / JS 标签可查看对应源码（公共后台样式复用 admin-ai-package.css）</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    <section class="panel code-panel" id="panel-html"><div class="code-header"><small>admin-ai-order.html</small><button class="copy-btn" data-copy="html">复制 HTML</button></div><pre class="code" id="codeHtml">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-css"><div class="code-header"><small>admin-ai-order.css</small><button class="copy-btn" data-copy="css">复制 CSS</button></div><pre class="code" id="codeCss">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-js"><div class="code-header"><small>admin-ai-order.js</small><button class="copy-btn" data-copy="js">复制 JS</button></div><pre class="code" id="codeJs">正在加载…</pre></section>
+  </div>
+<script>
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  const codeCache = { html: '', css: '', js: '' };
+  tabs.forEach(button => button.addEventListener('click', () => {
+    const tab = button.dataset.tab;
+    tabs.forEach(node => node.classList.toggle('active', node === button));
+    panels.forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab));
+  }));
+  function loadCode(type, url, targetId) {
+    fetch(url + '?v=2026100950').then(response => {
+      if (!response.ok) throw new Error('加载失败');
+      return response.text();
+    }).then(text => {
+      codeCache[type] = text;
+      document.getElementById(targetId).textContent = text;
+    }).catch(() => {
+      document.getElementById(targetId).textContent = '源码加载失败，请刷新页面后重试。';
+    });
+  }
+  loadCode('html', 'admin-ai-order.html', 'codeHtml');
+  loadCode('css', 'admin-ai-order.css', 'codeCss');
+  loadCode('js', 'admin-ai-order.js', 'codeJs');
+  document.querySelectorAll('.copy-btn').forEach(button => button.addEventListener('click', async () => {
+    const text = codeCache[button.dataset.copy];
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = button.textContent;
+      button.textContent = '已复制';
+      button.classList.add('ok');
+      setTimeout(() => { button.textContent = old; button.classList.remove('ok'); }, 1500);
+    } catch (error) { button.textContent = '复制失败'; }
+  }));
+</script>
+</body>
+</html>
