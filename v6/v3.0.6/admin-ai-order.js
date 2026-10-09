@@ -131,7 +131,8 @@ function renderTable(){
     return;
   }
   tb.innerHTML = rows.map(function(r){
-    var ops = '<button class="el-button el-button--text el-button--small" data-act="detail" data-no="'+r.no+'">明细</button>';
+    var ops = '<button class="el-button el-button--text el-button--small">使用</button>'
+        + '<button class="el-button el-button--text el-button--small" data-act="detail" data-no="'+r.no+'">明细</button>';
     var cells = [r.phone, r.nick, r.renew, r.type+(r.type==='AI订单'?'<span class="st-ai">AI</span>':''), r.pkg,
       '<span class="col-new-text">'+fmtAi(r.aiPoints)+'</span>', fmtAi(r.left), String(r.today), r.dur,
       (r.price===''?'--':r.price), (r.dis===''?'--':r.dis), (r.pay===''?'--':r.pay),
@@ -197,35 +198,20 @@ var CONSUME_ROWS = [
   ['户外露营装备有哪些蓝海机会？帮我挖掘一下', '2026-09-11 08:47:55', '户外露营装备挖掘', 20]
 ];
 var consumeRange = 90;
-var customRange = null;
-var CONSUME_PAGE = 1, RECHARGE_PAGE = 1;
-var DETAIL_PAGE_SIZE = 5;
+function pillStart(range){
+  if(range==='today') return 0;
+  if(range==='7') return 7;
+  return 90;
+}
 function fmtRange(days){
   function f(d){ var p=function(n){return (n<10?'0':'')+n;}; return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate()); }
   var end = new Date();
-  var start = new Date(end.getTime() - (days-1)*86400000);
+  var start = new Date(end.getTime() - (days===0?0:(days-1))*86400000);
   return f(start)+' - '+f(end);
 }
-function renderPager(el, total, page, onGo){
-  var pages = Math.max(1, Math.ceil(total / DETAIL_PAGE_SIZE));
-  if(page > pages) page = pages;
-  var html = '<span class="pg-btn'+(page<=1?' disabled':'')+'" data-pg="prev">‹</span>';
-  for(var i=1;i<=pages;i++) html += '<span class="pg-num'+(i===page?' active':'')+'" data-pg="'+i+'">'+i+'</span>';
-  html += '<span class="pg-btn'+(page>=pages?' disabled':'')+'" data-pg="next">›</span>';
-  el.innerHTML = html;
-  el.querySelectorAll('[data-pg]').forEach(function(b){
-    b.addEventListener('click', function(){
-      if(b.classList.contains('disabled')) return;
-      var v = b.getAttribute('data-pg');
-      if(v==='prev') page = Math.max(1, page-1);
-      else if(v==='next') page = Math.min(pages, page+1);
-      else page = +v;
-      onGo(page);
-    });
-  });
-}
 function renderDetailTab(tab){
-  document.querySelectorAll('.detail-toggle').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
+  var btns = document.querySelectorAll('.detail-toggle');
+  btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
   document.getElementById('detailRecharge').style.display = tab==='recharge' ? '' : 'none';
   document.getElementById('detailConsume').style.display = tab==='consume' ? '' : 'none';
   document.getElementById('secTitle').textContent = tab==='recharge' ? '充值明细' : '消耗明细';
@@ -234,33 +220,21 @@ function renderDetailTab(tab){
   document.querySelector('.detail-filter').style.display = tab==='consume' ? '' : 'none';
   if(!curDetail) return;
   if(tab==='recharge'){
+    document.getElementById('detailRange').textContent = '';
     var re = list.filter(function(x){ return x.phone===curDetail.phone; });
     var sum = 0;
-    RECHARGE_PAGE = Math.min(RECHARGE_PAGE, Math.max(1, Math.ceil(re.length / DETAIL_PAGE_SIZE)));
-    var start = (RECHARGE_PAGE-1)*DETAIL_PAGE_SIZE;
-    document.getElementById('rechargeBody').innerHTML = re.slice(start, start+DETAIL_PAGE_SIZE).map(function(x){
+    document.getElementById('rechargeBody').innerHTML = re.map(function(x){
       sum += Number(x.aiPoints)||0;
       return '<tr>'+[x.no, x.pkg, x.created, '<span class="pt-add">+'+fmtAi(x.aiPoints)+'</span>'].map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
     }).join('');
     document.getElementById('rechargeSum').innerHTML = '共 <i>'+re.length+'</i> 条 · 累计充值 <i>'+fmtAi(sum)+'</i>';
-    renderPager(document.getElementById('rechargePager'), re.length, RECHARGE_PAGE, function(pg){ RECHARGE_PAGE=pg; renderDetailTab('recharge'); });
   } else {
-    document.getElementById('detailRange').textContent = customRange ? customRange[0].replace(/-/g,'/')+' - '+customRange[1].replace(/-/g,'/') : fmtRange(consumeRange);
-    var startTs, endTs;
-    if(customRange){
-      startTs = new Date(customRange[0].replace(/-/g,'/')).getTime();
-      endTs = new Date(customRange[1].replace(/-/g,'/')).getTime() + 86399999;
-    } else {
-      startTs = Date.now() - (consumeRange-1)*86400000;
-      endTs = Date.now() + 86399999;
-    }
-    var rows = CONSUME_ROWS.filter(function(r){ var t=new Date(r[1].replace(/-/g,'/')).getTime(); return t>=startTs && t<=endTs; });
-    var cutFull = 0;
-    rows.forEach(function(r){ cutFull += r[3]; });
-    CONSUME_PAGE = Math.min(CONSUME_PAGE, Math.max(1, Math.ceil(rows.length / DETAIL_PAGE_SIZE)));
-    var pStart = (CONSUME_PAGE-1)*DETAIL_PAGE_SIZE;
-    var pageRows = rows.slice(pStart, pStart+DETAIL_PAGE_SIZE);
-    document.getElementById('consumeBody').innerHTML = pageRows.length ? pageRows.map(function(r){
+    document.getElementById('detailRange').textContent = fmtRange(consumeRange);
+    var startTs = Date.now() - (consumeRange===0?0:(consumeRange-1))*86400000;
+    var rows = CONSUME_ROWS.filter(function(r){ return new Date(r[1].replace(/-/g,'/')).getTime() >= startTs; });
+    var cut = 0;
+    document.getElementById('consumeBody').innerHTML = rows.length ? rows.map(function(r){
+      cut += r[3];
       var dt = r[1].split(' ');
       return '<tr>'
         + '<td class="left"><div class="cell q-text">'+r[0]+'</div></td>'
@@ -269,36 +243,13 @@ function renderDetailTab(tab){
         + '<td><div class="cell"><span class="pt-cut">-'+r[3]+'</span></div></td>'
         + '</tr>';
     }).join('') : '<tr><td colspan="4" style="padding:30px 0;color:#909399">该时间范围内暂无消耗记录</td></tr>';
-    document.getElementById('consumeSum').innerHTML = '共 <i>'+rows.length+'</i> 条 · 累计消耗 <i>'+cutFull+' 点</i>';
-    renderPager(document.getElementById('consumePager'), rows.length, CONSUME_PAGE, function(pg){ CONSUME_PAGE=pg; renderDetailTab('consume'); });
   }
 }
 document.getElementById('consumePills').addEventListener('click', function(e){
   var b = e.target.closest('.pill'); if(!b) return;
   document.querySelectorAll('#consumePills .pill').forEach(function(x){ x.classList.toggle('active', x===b); });
-  consumeRange = Number(b.getAttribute('data-range'));
-  customRange = null;
-  CONSUME_PAGE = 1;
+  consumeRange = b.getAttribute('data-range')==='today' ? 0 : Number(b.getAttribute('data-range'));
   renderDetailTab('consume');
-});
-document.getElementById('rangeBtn').addEventListener('click', function(e){
-  e.stopPropagation();
-  var pop = document.getElementById('rangePop');
-  pop.style.display = pop.style.display==='none' ? '' : 'none';
-});
-document.getElementById('rangePop').addEventListener('click', function(e){ e.stopPropagation(); });
-document.addEventListener('click', function(e){
-  if(!e.target.closest('.detail-range-wrap')) document.getElementById('rangePop').style.display = 'none';
-});
-document.getElementById('rangeApply').addEventListener('click', function(){
-  var s = document.getElementById('rangeStart').value, e2 = document.getElementById('rangeEnd').value;
-  if(!s || !e2){ toast('请选择开始和结束日期','error'); return; }
-  if(s > e2){ toast('开始日期不能晚于结束日期','error'); return; }
-  customRange = [s, e2];
-  document.querySelectorAll('#consumePills .pill').forEach(function(x){ x.classList.remove('active'); });
-  CONSUME_PAGE = 1;
-  renderDetailTab('consume');
-  document.getElementById('rangePop').style.display = 'none';
 });
 document.querySelectorAll('.detail-toggle').forEach(function(b){
   b.addEventListener('click', function(){ renderDetailTab(b.getAttribute('data-tab')); });

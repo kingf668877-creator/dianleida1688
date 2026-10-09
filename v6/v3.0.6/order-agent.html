@@ -56,7 +56,7 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe src="admin-ai-order.html?v=2026100991" title="后台-AI订单效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe src="admin-ai-order.html?v=2026100992" title="后台-AI订单效果图"></iframe></section>
     <section class="panel" id="panel-spec">
       <div class="spec-wrap">
         <div class="spec-card">
@@ -88,7 +88,7 @@
     panels.forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab));
   }));
   function loadCode(type, url, targetId) {
-    fetch(url + '?v=2026100991').then(response => {
+    fetch(url + '?v=2026100992').then(response => {
       if (!response.ok) throw new Error('加载失败');
       return response.text();
     }).then(text => {
