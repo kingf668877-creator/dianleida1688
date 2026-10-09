@@ -56,7 +56,7 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe src="admin-ai-package.html?v=2026100920" title="后台-创建AI套餐效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe src="admin-ai-package.html?v=2026100930" title="后台-创建AI套餐效果图"></iframe></section>
     <section class="panel" id="panel-spec">
       <div class="spec-wrap">
         <div class="spec-card">
@@ -66,7 +66,7 @@
             <li><b>新增字段：</b><code>aiPoints</code>（AI点数/额度，整数，单位：点；展示时格式化为「x万点」）</li>
             <li><b>列表展示：</b>套餐管理新增「AI点数」列，位于「套餐时长」之后；表头带红色「新增」徽标，整列高亮</li>
             <li><b>取值规则：</b>仅 AI 服务类套餐展示（体验包 10万点 / 标准包 100万点 / 旗舰包 1000万点）；其他套餐显示「--」</li>
-            <li><b>创建 / 编辑：</b>业务线为 AI服务 时必填，支持预设档位或自定义点数（万点），保存前校验拦截</li>
+            <li><b>创建 / 编辑：</b>在「套餐内容配置 → AI点数」中填写（单位：万点），AI 服务类套餐必填，保存前校验拦截；不再单独设置「AI点数/额度」</li>
             <li><b>预览联动：</b>创建套餐右侧预览卡片同步展示 AI 点数</li>
             <li class="dim">列表为演示数据，保存在浏览器本地；HTML / CSS / JS 标签可查看对应源码</li>
           </ul>
@@ -87,7 +87,7 @@
     panels.forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab));
   }));
   function loadCode(type, url, targetId) {
-    fetch(url + '?v=2026100920').then(response => {
+    fetch(url + '?v=2026100930').then(response => {
       if (!response.ok) throw new Error('加载失败');
       return response.text();
     }).then(text => {

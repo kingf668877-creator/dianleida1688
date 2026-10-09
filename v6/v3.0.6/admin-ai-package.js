@@ -5,7 +5,6 @@ var SUB_MAP = { '会员套餐':['年套餐','半年套餐','季度套餐','月�
 var CAT_MAP = { '会员套餐':'会员套餐', '服务':'增值包', 'AI服务':'AI套餐' };
 var PLAT_MAP = { 'Ozon生态':['Ozon'], '拼多多生态':['拼多多'], '阿里生态':['1688','淘宝','天猫'], '通用':['全平台'] };
 var DUR = [ {v:0,l:'年'},{v:1,l:'半年'},{v:2,l:'季度'},{v:3,l:'月'},{v:4,l:'7天'} ];
-var AI_OPTS = [ {v:100000,l:'10万点'},{v:500000,l:'50万点'},{v:1000000,l:'100万点'},{v:5000000,l:'500万点'} ];
 var STORE_KEY = 'dld_ai_setmeal_v1';
 
 /* ================= 菜单 ================= */
@@ -241,25 +240,21 @@ var form = { editingId:null, eco:'', biz:'', sub:'', gift:'', trial:false };
 var D = {
   title: document.getElementById('dlgTitle'),
   dlg: document.getElementById('dlgSetMeal'),
-  rowAi: document.getElementById('rowAi'),
   name: document.getElementById('fNameInput'),
   price: document.getElementById('fPrice'),
   original: document.getElementById('fOriginal'),
   customDays: document.getElementById('fCustomDays'),
-  aiCustom: document.getElementById('fAiCustom'),
   sign: document.getElementById('fSign'),
   text: document.getElementById('fText'),
-  imgSearch: document.getElementById('fImgSearch'),
+  aiPts: document.getElementById('fAiPoints'),
   trial: document.getElementById('fTrial')
 };
 var fPriority = document.getElementById('fPriority');
 var fDuration = document.getElementById('fDuration');
-var fAi = document.getElementById('fAi');
 radioGroup(fPriority, [0,1,2,3,4,5].map(function(n){ return {v:n,l:n}; }), 0, updatePreview);
 radioGroup(fDuration, DUR, 0, function(){ D.customDays.value=''; updatePreview(); });
-radioGroup(fAi, AI_OPTS, 0, function(){ D.aiCustom.value=''; updatePreview(); });
 D.trial.addEventListener('click', function(){ form.trial = !form.trial; D.trial.classList.toggle('on', form.trial); });
-['fNameInput','fPrice','fOriginal','fCustomDays','fAiCustom','fSign','fText','fImgSearch'].forEach(function(id){
+['fNameInput','fPrice','fOriginal','fCustomDays','fAiPoints','fSign','fText'].forEach(function(id){
   document.getElementById(id).addEventListener('input', updatePreview);
 });
 document.getElementById('fCustomDays').addEventListener('input', function(){ updatePreview(); });
@@ -271,11 +266,9 @@ function durLabel(){
   return r ? r.l : '';
 }
 function aiPoints(){
-  if(D.rowAi.style.display === 'none') return '';
-  var c = D.aiCustom.value.trim();
-  if(c !== '' && !isNaN(+c) && +c > 0) return +c*10000;
-  var r = radioValue(fAi, AI_OPTS);
-  return r ? r.v : '';
+  var c = D.aiPts.value.trim();
+  if(isAi() && c !== '' && !isNaN(+c) && +c > 0) return +c*10000;
+  return '';
 }
 function isAi(){ return form.sub === 'AI点数包'; }
 function updatePreview(){
@@ -293,7 +286,7 @@ function updatePreview(){
   pvD.textContent = durLabel() || '年';
   if(D.sign.value.trim()){ pvS.textContent = D.sign.value.trim(); pvS.classList.add('show'); } else pvS.classList.remove('show');
   var ai = aiPoints();
-  if(isAi() && ai !== ''){ pvA.textContent = 'AI额度 '+fmtAi(ai); pvA.classList.add('show'); } else pvA.classList.remove('show');
+  if(isAi() && ai !== ''){ pvA.textContent = 'AI点数 '+fmtAi(ai); pvA.classList.add('show'); } else pvA.classList.remove('show');
   pvC.textContent = D.text.value.trim();
 }
 function openDialog(rec){
@@ -303,22 +296,14 @@ function openDialog(rec){
   D.price.value = rec ? rec.price : '';
   D.original.value = rec ? rec.original : '';
   D.customDays.value = '';
-  D.aiCustom.value = '';
   D.sign.value = rec ? rec.sign : '';
   D.text.value = rec ? rec.text : '';
-  D.imgSearch.value = '';
   D.trial.classList.toggle('on', form.trial);
   radioSet(fPriority, rec ? Math.min(5, rec.priority||0) : 0);
   var durIdx = rec ? DUR.map(function(d){return d.l;}).indexOf(rec.duration) : 0;
   if(rec && rec.duration && /^\d+天$/.test(rec.duration)){ D.customDays.value = rec.duration.replace('天',''); radioSet(fDuration, -1); }
   else { radioSet(fDuration, Math.max(0, durIdx)); }
-  radioSet(fAi, 0);
-  if(rec && rec.aiPoints !== '' && rec.aiPoints !== null && rec.aiPoints !== undefined){
-    var n = Number(rec.aiPoints);
-    var aiIdx = AI_OPTS.map(function(o){return o.v;}).indexOf(n);
-    if(aiIdx >= 0) radioSet(fAi, aiIdx);
-    else if(!isNaN(n) && n > 0){ radioSet(fAi, -1); D.aiCustom.value = String(Math.round(n/1000)/10); }
-  }
+  D.aiPts.value = (rec && rec.aiPoints) ? String(rec.aiPoints / 10000) : '';
   // 类型三级联动
   var eco = rec ? rec.eco : '', biz = rec ? rec.biz : '', sub = rec ? rec.sub : '';
   setOptions('dEco', toOpts(ECO));
@@ -335,7 +320,6 @@ function openDialog(rec){
   SEL.dGift.input.value = SEL.dGift.value;
   markSelected('dGift');
   form.eco=eco; form.biz=biz; form.sub=sub; form.gift=SEL.dGift.value;
-  D.rowAi.style.display = isAi() ? '' : 'none';
   D.title.textContent = (rec?'编辑套餐':'创建套餐') + '（套餐在用户侧展示顺序按优先级低到高，同级按先创建先展示）';
   document.getElementById('btnSubmitUp').textContent = rec ? '保存并上架' : '创建并上架';
   document.getElementById('btnSubmitSave').textContent = rec ? '保存不上架' : '保存不上架';
@@ -350,7 +334,7 @@ function closeDialog(id){ document.getElementById(id).classList.remove('show'); 
 function validate(){
   if(!form.eco || !form.biz || !form.sub){ toast('请选择完整的套餐类型','error'); return false; }
   if(!D.name.value.trim()){ toast('请输入套餐名称','error'); return false; }
-  if(isAi() && aiPoints()===''){ toast('请选择或输入AI点数/额度','error'); return false; }
+  if(isAi() && aiPoints()===''){ toast('请输入AI点数','error'); return false; }
   return true;
 }
 function buildRecord(status, rec){
@@ -368,7 +352,6 @@ function buildRecord(status, rec){
   rec.sign = D.sign.value.trim();
   rec.text = D.text.value.trim();
   rec.gift = form.gift === '无' ? '' : form.gift;
-  rec.imgSearch = D.imgSearch.value.trim();
   return rec;
 }
 document.getElementById('btnSubmitUp').addEventListener('click', function(){
@@ -450,16 +433,15 @@ initSelect('dEco', function(v){
   form.eco=v;
   setOptions('dBiz', toOpts(BIZ)); SEL.dBiz.value=''; SEL.dBiz.input.value=''; markSelected('dBiz');
   setOptions('dSub', []); SEL.dSub.value=''; SEL.dSub.input.value='';
-  form.biz=''; form.sub=''; D.rowAi.style.display='none'; updatePreview();
+  form.biz=''; form.sub=''; updatePreview();
 });
 initSelect('dBiz', function(v){
   form.biz=v;
   setOptions('dSub', toOpts(SUB_MAP[v]||[])); SEL.dSub.value=''; SEL.dSub.input.value='';
-  form.sub=''; D.rowAi.style.display='none'; updatePreview();
+  form.sub=''; updatePreview();
 });
 initSelect('dSub', function(v){
   form.sub=v;
-  D.rowAi.style.display = isAi() ? '' : 'none';
   updatePreview();
 });
 initSelect('dGift', function(v){ form.gift=v; });
