@@ -105,7 +105,7 @@ function seed(){
     r('13512349876','阿May','否/0','AI订单','AI标准包（月）',1000000,720000,280000,'月','99','0','99','已支付','线上订单','2026-10-04 08:45:19','2026-11-04 23:59:59','202610040845193340')
   ];
 }
-var STORE_KEY = 'dld_ai_order_v1';
+var STORE_KEY = 'dld_ai_order_v2';
 var list = [];
 function load(){ try{ var raw = localStorage.getItem(STORE_KEY); if(raw){ list = JSON.parse(raw); return; } }catch(e){} list = seed(); save(); }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(list)); }catch(e){} }
