@@ -30,8 +30,6 @@
 /* ===== 明细弹窗头部（参考版） ===== */
 .detail-dlg{border-radius:10px}
 .detail-header{display:flex;align-items:center;gap:12px;padding:16px 20px 0}
-.detail-back{width:28px;height:28px;border:1px solid #e5e6eb;border-radius:50%;background:#fff;color:#4e5969;font-size:16px;line-height:26px;cursor:pointer;flex-shrink:0}
-.detail-back:hover{color:#1890ff;border-color:#1890ff}
 .detail-head-text{display:flex;flex-direction:column;line-height:1.35;margin-right:auto}
 .detail-title{font-size:17px;font-weight:600;color:#1d2129}
 .detail-caption{font-size:12px;color:#86909c}
