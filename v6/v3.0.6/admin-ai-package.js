@@ -160,7 +160,7 @@ function renderTable(){
         '<span class="clamp2">'+(r.text===''?'--':r.text)+'</span>',
         '<div class="op-btns">'+ops+'</div>'
       ];
-      return '<tr>'+cells.map(function(c,i){ return '<td'+(i===11?' class="left"':'')+'><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
+      return '<tr>'+cells.map(function(c,i){ var cls = i===11 ? ' class="left"' : (i===7 ? ' class="col-new"' : ''); return '<td'+cls+'><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
     }).join('');
   }
   renderPager(arr.length, pages);

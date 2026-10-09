@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -30,6 +30,15 @@
   .empty-state p { margin: 0; color: #86909c; font-size: 14px; line-height: 1.7; }
   .status { display: inline-flex; margin-top: 18px; padding: 5px 11px; border-radius: 999px; background: #f2f3f5; color: #4e5969; font-size: 12px; }
   .code-panel { padding: 20px; }
+  .spec-wrap { height: 100%; overflow: auto; padding: 28px 32px; background: #f7f8fa; }
+  .spec-card { max-width: 760px; margin: 0 auto; padding: 28px 32px; border: 1px solid #e5e6eb; border-radius: 12px; background: #fff; box-shadow: 0 1px 4px rgba(29,33,41,.05); }
+  .spec-flag { display: inline-block; margin-bottom: 12px; padding: 3px 12px; border-radius: 999px; background: linear-gradient(135deg, #ff6034, #ff4d4f); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+  .spec-card h1 { margin: 0 0 14px; font-size: 20px; }
+  .spec-card h1 small { margin-left: 8px; color: #86909c; font-size: 13px; font-weight: 400; }
+  .spec-card ul { margin: 0; padding-left: 20px; color: #4e5969; font-size: 14px; line-height: 2; }
+  .spec-card b { color: #1d2129; }
+  .spec-card code { padding: 1px 7px; border-radius: 5px; background: #f0ebff; color: #6236ff; font: 13px Consolas, monospace; }
+  .spec-card .dim { margin-left: -20px; color: #86909c; font-size: 13px; list-style: none; }
   .code-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .code-header small { color: #86909c; font: 12px Consolas, monospace; }
   .copy-btn { height: 30px; padding: 0 14px; border: 1px solid #e5e6eb; border-radius: 6px; background: #fff; color: #4e5969; font-size: 12px; cursor: pointer; }
@@ -47,9 +56,22 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe src="admin-ai-package.html?v=20261009" title="后台-创建AI套餐效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe src="admin-ai-package.html?v=2026100920" title="后台-创建AI套餐效果图"></iframe></section>
     <section class="panel" id="panel-spec">
-      <div class="empty-wrap"><div class="empty-state"><div class="empty-icon">SPEC</div><h1>后台-创建AI套餐</h1><p>展示后台套餐管理页面。点击“创建套餐”可查看套餐配置表单；页面内数据保存在当前浏览器中。HTML、CSS、JS 标签分别展示对应源码。</p><span class="status">原型演示</span></div></div>
+      <div class="spec-wrap">
+        <div class="spec-card">
+          <span class="spec-flag">新增功能</span>
+          <h1>AI点数 · 开发说明<small>V3.0.6</small></h1>
+          <ul>
+            <li><b>新增字段：</b><code>aiPoints</code>（AI点数/额度，整数，单位：点；展示时格式化为「x万点」）</li>
+            <li><b>列表展示：</b>套餐管理新增「AI点数」列，位于「套餐时长」之后；表头带红色「新增」徽标，整列高亮</li>
+            <li><b>取值规则：</b>仅 AI 服务类套餐展示（体验包 10万点 / 标准包 100万点 / 旗舰包 1000万点）；其他套餐显示「--」</li>
+            <li><b>创建 / 编辑：</b>业务线为 AI服务 时必填，支持预设档位或自定义点数（万点），保存前校验拦截</li>
+            <li><b>预览联动：</b>创建套餐右侧预览卡片同步展示 AI 点数</li>
+            <li class="dim">列表为演示数据，保存在浏览器本地；HTML / CSS / JS 标签可查看对应源码</li>
+          </ul>
+        </div>
+      </div>
     </section>
     <section class="panel code-panel" id="panel-html"><div class="code-header"><small>admin-ai-package.html</small><button class="copy-btn" data-copy="html">复制 HTML</button></div><pre class="code" id="codeHtml">正在加载…</pre></section>
     <section class="panel code-panel" id="panel-css"><div class="code-header"><small>admin-ai-package.css</small><button class="copy-btn" data-copy="css">复制 CSS</button></div><pre class="code" id="codeCss">正在加载…</pre></section>
@@ -65,7 +87,7 @@
     panels.forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab));
   }));
   function loadCode(type, url, targetId) {
-    fetch(url + '?v=20261009').then(response => {
+    fetch(url + '?v=2026100920').then(response => {
       if (!response.ok) throw new Error('加载失败');
       return response.text();
     }).then(text => {
