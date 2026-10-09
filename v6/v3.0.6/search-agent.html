@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 新品 · V2.9.6</title>
+<title>后台-创建AI套餐 · V3.0.6</title>
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -39,7 +39,7 @@
 </style>
 </head>
 <body>
-  <div class="tabs-wrap" role="tablist" aria-label="AI 新品原型内容">
+  <div class="tabs-wrap" role="tablist" aria-label="后台-创建AI套餐原型内容">
     <button class="tab-btn tab-preview active" data-tab="preview" role="tab"><span class="tab-dot"></span>效果图</button>
     <button class="tab-btn tab-spec" data-tab="spec" role="tab"><span class="tab-dot"></span>原型说明</button>
     <button class="tab-btn tab-html" data-tab="html" role="tab"><span class="tab-dot"></span>HTML</button>
@@ -47,13 +47,13 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe src="ai-new-product.html?v=2026090918" title="AI 新品效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe src="admin-ai-package.html?v=20261009" title="后台-创建AI套餐效果图"></iframe></section>
     <section class="panel" id="panel-spec">
-      <div class="empty-wrap"><div class="empty-state"><div class="empty-icon">SPEC</div><h1>原型说明暂为空</h1><p>当前仅创建 V2.9.6「AI 新品」版本骨架。<br>具体功能说明将在下一轮需求确认后补充。</p><span class="status">等待需求输入</span></div></div>
+      <div class="empty-wrap"><div class="empty-state"><div class="empty-icon">SPEC</div><h1>后台-创建AI套餐</h1><p>展示后台套餐管理页面。点击“创建套餐”可查看套餐配置表单；页面内数据保存在当前浏览器中。HTML、CSS、JS 标签分别展示对应源码。</p><span class="status">原型演示</span></div></div>
     </section>
-    <section class="panel code-panel" id="panel-html"><div class="code-header"><small>ai-new-product.html</small><button class="copy-btn" data-copy="html">复制 HTML</button></div><pre class="code" id="codeHtml">正在加载…</pre></section>
-    <section class="panel code-panel" id="panel-css"><div class="code-header"><small>ai-new-product.css</small><button class="copy-btn" data-copy="css">复制 CSS</button></div><pre class="code" id="codeCss">正在加载…</pre></section>
-    <section class="panel code-panel" id="panel-js"><div class="code-header"><small>ai-new-product.js</small><button class="copy-btn" data-copy="js">复制 JS</button></div><pre class="code" id="codeJs">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-html"><div class="code-header"><small>admin-ai-package.html</small><button class="copy-btn" data-copy="html">复制 HTML</button></div><pre class="code" id="codeHtml">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-css"><div class="code-header"><small>admin-ai-package.css</small><button class="copy-btn" data-copy="css">复制 CSS</button></div><pre class="code" id="codeCss">正在加载…</pre></section>
+    <section class="panel code-panel" id="panel-js"><div class="code-header"><small>admin-ai-package.js</small><button class="copy-btn" data-copy="js">复制 JS</button></div><pre class="code" id="codeJs">正在加载…</pre></section>
   </div>
 <script>
   const tabs = document.querySelectorAll('.tab-btn');
@@ -65,19 +65,19 @@
     panels.forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab));
   }));
   function loadCode(type, url, targetId) {
-    fetch(url + '?v=2026090918').then(response => {
+    fetch(url + '?v=20261009').then(response => {
       if (!response.ok) throw new Error('加载失败');
       return response.text();
     }).then(text => {
       codeCache[type] = text;
       document.getElementById(targetId).textContent = text;
     }).catch(() => {
-      document.getElementById(targetId).textContent = '内容暂为空，等待下一轮需求补充。';
+      document.getElementById(targetId).textContent = '源码加载失败，请刷新页面后重试。';
     });
   }
-  loadCode('html', 'ai-new-product.html', 'codeHtml');
-  loadCode('css', 'ai-new-product.css', 'codeCss');
-  loadCode('js', 'ai-new-product.js', 'codeJs');
+  loadCode('html', 'admin-ai-package.html', 'codeHtml');
+  loadCode('css', 'admin-ai-package.css', 'codeCss');
+  loadCode('js', 'admin-ai-package.js', 'codeJs');
   document.querySelectorAll('.copy-btn').forEach(button => button.addEventListener('click', async () => {
     const text = codeCache[button.dataset.copy];
     if (!text) return;

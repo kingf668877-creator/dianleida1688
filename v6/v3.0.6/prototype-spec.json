@@ -1,0 +1,16 @@
+{
+  "version": "20261009",
+  "pages": {
+    "v3.0.6-admin-ai-package": "v3.0.6/search-agent.html"
+  },
+  "rows": [
+    {
+      "id": "v3.0.6",
+      "name": "V3.0.6",
+      "title": "后台-创建AI套餐",
+      "summary": "后台套餐管理原型，包含创建套餐表单及 HTML、CSS、JS 独立源码",
+      "status": "原型演示",
+      "modules": []
+    }
+  ]
+}
