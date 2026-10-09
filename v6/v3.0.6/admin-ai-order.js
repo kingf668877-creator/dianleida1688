@@ -198,58 +198,81 @@ var CONSUME_ROWS = [
   ['户外露营装备有哪些蓝海机会？帮我挖掘一下', '2026-09-11 08:47:55', '户外露营装备挖掘', 20]
 ];
 var consumeRange = 90;
-function pillStart(range){
-  if(range==='today') return 0;
-  if(range==='7') return 7;
-  return 90;
+var customRange = null;
+var consumePage = 1;
+var rechargePage = 1;
+var detailPageSize = 5;
+function datePart(d){
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 }
-function fmtRange(days){
-  function f(d){ var p=function(n){return (n<10?'0':'')+n;}; return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate()); }
-  var end = new Date();
-  var start = new Date(end.getTime() - (days===0?0:(days-1))*86400000);
-  return f(start)+' - '+f(end);
+function renderPager(id,total,page,go){
+  var pages = Math.max(1,Math.ceil(total/detailPageSize));
+  var nav = document.getElementById(id);
+  nav.innerHTML = '';
+  function button(text,target,disabled,active){
+    var el = document.createElement('button');
+    el.type='button'; el.textContent=text; el.className='pg-btn'+(active?' active':'');
+    el.disabled=disabled;
+    if(active) el.setAttribute('aria-current','page');
+    el.addEventListener('click',function(){ go(target); });
+    nav.appendChild(el);
+  }
+  button('‹',page-1,page===1,false);
+  for(var n=1;n<=pages;n++) button(String(n),n,false,n===page);
+  button('›',page+1,page===pages,false);
 }
 function renderDetailTab(tab){
-  var btns = document.querySelectorAll('.detail-toggle');
-  btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
-  document.getElementById('detailRecharge').style.display = tab==='recharge' ? '' : 'none';
-  document.getElementById('detailConsume').style.display = tab==='consume' ? '' : 'none';
-  document.getElementById('secTitle').textContent = tab==='recharge' ? '充值明细' : '消耗明细';
-  document.getElementById('secNote').textContent = tab==='recharge' ? '剩余点数记录' : 'AI任务点数消耗记录';
-  document.getElementById('detailTitle').textContent = tab==='recharge' ? '充值明细' : '消耗明细';
-  document.querySelector('.detail-filter').style.display = tab==='consume' ? '' : 'none';
+  document.querySelectorAll('.detail-toggle').forEach(function(el){ el.classList.toggle('active',el.dataset.tab===tab); });
+  document.getElementById('detailRecharge').hidden=tab!=='recharge';
+  document.getElementById('detailConsume').hidden=tab!=='consume';
+  document.getElementById('secTitle').textContent=tab==='recharge'?'充值明细':'消耗明细';
+  document.getElementById('secNote').textContent=tab==='recharge'?'充值点数记录':'AI任务点数消耗记录';
+  document.getElementById('detailTitle').textContent=tab==='recharge'?'充值明细':'消耗明细';
+  document.querySelector('.detail-filter').hidden=tab!=='consume';
   if(!curDetail) return;
   if(tab==='recharge'){
-    document.getElementById('detailRange').textContent = '';
-    var re = list.filter(function(x){ return x.phone===curDetail.phone; });
-    var sum = 0;
-    document.getElementById('rechargeBody').innerHTML = re.map(function(x){
-      sum += Number(x.aiPoints)||0;
-      return '<tr>'+[x.no, x.pkg, x.created, '<span class="pt-add">+'+fmtAi(x.aiPoints)+'</span>'].map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
-    }).join('');
-    document.getElementById('rechargeSum').innerHTML = '共 <i>'+re.length+'</i> 条 · 累计充值 <i>'+fmtAi(sum)+'</i>';
-  } else {
-    document.getElementById('detailRange').textContent = fmtRange(consumeRange);
-    var startTs = Date.now() - (consumeRange===0?0:(consumeRange-1))*86400000;
-    var rows = CONSUME_ROWS.filter(function(r){ return new Date(r[1].replace(/-/g,'/')).getTime() >= startTs; });
-    var cut = 0;
-    document.getElementById('consumeBody').innerHTML = rows.length ? rows.map(function(r){
-      cut += r[3];
-      var dt = r[1].split(' ');
-      return '<tr>'
-        + '<td class="left"><div class="cell q-text">'+r[0]+'</div></td>'
-        + '<td><div class="cell cell-time">'+dt[0]+'<br>'+dt[1]+'</div></td>'
-        + '<td><div class="cell"><span class="src-pill">'+r[2]+'</span></div></td>'
-        + '<td><div class="cell"><span class="pt-cut">-'+r[3]+'</span></div></td>'
-        + '</tr>';
-    }).join('') : '<tr><td colspan="4" style="padding:30px 0;color:#909399">该时间范围内暂无消耗记录</td></tr>';
+    var records=list.filter(function(x){return x.phone===curDetail.phone;});
+    var total=records.reduce(function(v,x){return v+(Number(x.aiPoints)||0);},0);
+    rechargePage=Math.min(rechargePage,Math.max(1,Math.ceil(records.length/detailPageSize)));
+    document.getElementById('rechargeBody').innerHTML=records.slice((rechargePage-1)*detailPageSize,rechargePage*detailPageSize).map(function(x){
+      return '<tr>'+[x.no,x.pkg,x.created,'<span class="pt-add">+'+fmtAi(x.aiPoints)+'</span>'].map(function(c){return '<td><div class="cell">'+c+'</div></td>';}).join('')+'</tr>';
+    }).join('')||'<tr><td colspan="4">暂无充值记录</td></tr>';
+    document.getElementById('rechargeSum').innerHTML='共 <i>'+records.length+'</i> 条 · 累计充值 <i>'+fmtAi(total)+'</i>';
+    renderPager('rechargePager',records.length,rechargePage,function(n){rechargePage=n;renderDetailTab('recharge');});
+  }else{
+    var end=customRange?new Date(customRange[1]+'T23:59:59'):new Date();
+    var start=customRange?new Date(customRange[0]+'T00:00:00'):new Date(end.getFullYear(),end.getMonth(),end.getDate()-(consumeRange-1));
+    document.getElementById('detailRange').textContent=datePart(start).replace(/-/g,'/')+' - '+datePart(end).replace(/-/g,'/');
+    var rows=CONSUME_ROWS.filter(function(x){var d=new Date(x[1].replace(' ','T'));return d>=start&&d<=end;});
+    var sum=rows.reduce(function(v,x){return v+x[3];},0);
+    consumePage=Math.min(consumePage,Math.max(1,Math.ceil(rows.length/detailPageSize)));
+    document.getElementById('consumeBody').innerHTML=rows.slice((consumePage-1)*detailPageSize,consumePage*detailPageSize).map(function(x){
+      var time=x[1].split(' ');
+      return '<tr><td class="left"><div class="cell q-text">'+x[0]+'</div></td><td><div class="cell cell-time">'+time[0]+'<br>'+time[1]+'</div></td><td><div class="cell"><span class="src-pill">'+x[2]+'</span></div></td><td><div class="cell"><span class="pt-cut">-'+x[3]+'</span></div></td></tr>';
+    }).join('')||'<tr><td colspan="4" class="detail-empty">该时间范围内暂无消耗记录</td></tr>';
+    document.getElementById('consumeSum').innerHTML='共 <i>'+rows.length+'</i> 条 · 累计消耗 <i>'+sum+' 点</i>';
+    renderPager('consumePager',rows.length,consumePage,function(n){consumePage=n;renderDetailTab('consume');});
   }
 }
-document.getElementById('consumePills').addEventListener('click', function(e){
-  var b = e.target.closest('.pill'); if(!b) return;
-  document.querySelectorAll('#consumePills .pill').forEach(function(x){ x.classList.toggle('active', x===b); });
-  consumeRange = b.getAttribute('data-range')==='today' ? 0 : Number(b.getAttribute('data-range'));
+document.getElementById('consumePills').addEventListener('click',function(e){
+  var btn=e.target.closest('.pill');if(!btn)return;
+  consumeRange=Number(btn.dataset.range);customRange=null;consumePage=1;
+  document.querySelectorAll('#consumePills .pill').forEach(function(x){x.classList.toggle('active',x===btn);});
   renderDetailTab('consume');
+});
+document.getElementById('rangeBtn').addEventListener('click',function(e){
+  e.stopPropagation();document.getElementById('rangePop').hidden=!document.getElementById('rangePop').hidden;
+});
+document.getElementById('rangePop').addEventListener('click',function(e){e.stopPropagation();});
+document.addEventListener('click',function(e){if(!e.target.closest('.detail-range-wrap'))document.getElementById('rangePop').hidden=true;});
+document.getElementById('rangeApply').addEventListener('click',function(){
+  var start=document.getElementById('rangeStart').value,end=document.getElementById('rangeEnd').value;
+  if(!start||!end){toast('请选择开始和结束日期','error');return;}
+  if(start>end){toast('开始日期不能晚于结束日期','error');return;}
+  customRange=[start,end];consumePage=1;
+  document.querySelectorAll('#consumePills .pill').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('rangePop').hidden=true;renderDetailTab('consume');
 });
 document.querySelectorAll('.detail-toggle').forEach(function(b){
   b.addEventListener('click', function(){ renderDetailTab(b.getAttribute('data-tab')); });
