@@ -185,12 +185,41 @@ bindCreate('btnGiftSave', 'dlgGift', function(phone, pkgName){
 
 /* ================= 点数明细（充值 / 消耗） ================= */
 var curDetail = null;
+var CONSUME_ROWS = [
+  ['帮我找一下近30天的夏季防晒衣爆款，要价格和销量对比', '2026-10-09 10:12:36', '夏季防晒衣热销选品', 20],
+  ['夏季防蚊衣现在哪些是热销款？帮我做个选品分析', '2026-10-09 08:40:02', '夏季防蚊衣热销选品', 20],
+  ['AI详情描述：给这款保温杯写五套卖点文案', '2026-10-05 16:44:02', '保温杯卖点文案', 25],
+  ['推荐几款厨房收纳好物，最好带销量数据', '2026-09-28 09:38:51', '厨房收纳好物推荐', 25],
+  ['宠物用品这个类目帮我分析一下，重点看狗窝和猫爬架', '2026-09-24 15:20:14', '宠物用品类目分析', 20],
+  ['母婴用品热销榜单整理一下，要 top20', '2026-09-20 11:05:47', '母婴用品热销榜单', 30],
+  ['秋冬男装外套的流行趋势是什么？帮我盘一盘', '2026-09-16 14:52:29', '秋冬男装外套趋势', 20],
+  ['帮我出一份家居香薰的选品报告，侧重性价比', '2026-09-12 10:31:08', '家居香薰选品报告', 25],
+  ['户外露营装备有哪些蓝海机会？帮我挖掘一下', '2026-09-11 08:47:55', '户外露营装备挖掘', 20]
+];
+var consumeRange = 90;
+function pillStart(range){
+  if(range==='today') return 0;
+  if(range==='7') return 7;
+  return 90;
+}
+function fmtRange(days){
+  function f(d){ var p=function(n){return (n<10?'0':'')+n;}; return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate()); }
+  var end = new Date();
+  var start = new Date(end.getTime() - (days===0?0:(days-1))*86400000);
+  return f(start)+' - '+f(end);
+}
 function renderDetailTab(tab){
-  document.querySelectorAll('.detail-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
+  var btns = document.querySelectorAll('.detail-toggle');
+  btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
   document.getElementById('detailRecharge').style.display = tab==='recharge' ? '' : 'none';
   document.getElementById('detailConsume').style.display = tab==='consume' ? '' : 'none';
+  document.getElementById('secTitle').textContent = tab==='recharge' ? '充值明细' : '消耗明细';
+  document.getElementById('secNote').textContent = tab==='recharge' ? '剩余点数记录' : 'AI任务点数消耗记录';
+  document.getElementById('detailTitle').textContent = tab==='recharge' ? '充值明细' : '消耗明细';
+  document.querySelector('.detail-filter').style.display = tab==='consume' ? '' : 'none';
   if(!curDetail) return;
   if(tab==='recharge'){
+    document.getElementById('detailRange').textContent = '';
     var re = list.filter(function(x){ return x.phone===curDetail.phone; });
     var sum = 0;
     document.getElementById('rechargeBody').innerHTML = re.map(function(x){
@@ -199,26 +228,37 @@ function renderDetailTab(tab){
     }).join('');
     document.getElementById('rechargeSum').innerHTML = '共 <i>'+re.length+'</i> 条 · 累计充值 <i>'+fmtAi(sum)+'</i>';
   } else {
-    var base = curDetail.created.slice(0,10);
-    var uses = [['09:12','AI标题生成',2000],['10:05','AI选品分析',5000],['14:37','AI详情描述',3000],['16:20','AI卖点提炼',2000],['18:03','AI竞品洞察',5000]];
+    document.getElementById('detailRange').textContent = fmtRange(consumeRange);
+    var startTs = Date.now() - (consumeRange===0?0:(consumeRange-1))*86400000;
+    var rows = CONSUME_ROWS.filter(function(r){ return new Date(r[1].replace(/-/g,'/')).getTime() >= startTs; });
     var cut = 0;
-    document.getElementById('consumeBody').innerHTML = uses.map(function(u){
-      cut += u[2];
-      return '<tr>'+[base+' '+u[0], u[1], '<span class="pt-cut">-'+u[2]+'</span>'].map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
-    }).join('');
-    document.getElementById('consumeSum').innerHTML = '共 <i>'+uses.length+'</i> 条 · 累计消耗 <i>'+cut+' 点</i>';
+    document.getElementById('consumeBody').innerHTML = rows.length ? rows.map(function(r){
+      cut += r[3];
+      var dt = r[1].split(' ');
+      return '<tr>'
+        + '<td class="left"><div class="cell q-text">'+r[0]+'</div></td>'
+        + '<td><div class="cell cell-time">'+dt[0]+'<br>'+dt[1]+'</div></td>'
+        + '<td><div class="cell"><span class="src-pill">'+r[2]+'</span></div></td>'
+        + '<td><div class="cell"><span class="pt-cut">-'+r[3]+'</span></div></td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="4" style="padding:30px 0;color:#909399">该时间范围内暂无消耗记录</td></tr>';
   }
 }
-document.querySelectorAll('.detail-tab').forEach(function(b){
+document.getElementById('consumePills').addEventListener('click', function(e){
+  var b = e.target.closest('.pill'); if(!b) return;
+  document.querySelectorAll('#consumePills .pill').forEach(function(x){ x.classList.toggle('active', x===b); });
+  consumeRange = b.getAttribute('data-range')==='today' ? 0 : Number(b.getAttribute('data-range'));
+  renderDetailTab('consume');
+});
+document.querySelectorAll('.detail-toggle').forEach(function(b){
   b.addEventListener('click', function(){ renderDetailTab(b.getAttribute('data-tab')); });
 });
 document.getElementById('tableBody').addEventListener('click', function(e){
   var b = e.target.closest('button[data-act="detail"]'); if(!b) return;
   var rec = list.find(function(x){ return x.no===b.getAttribute('data-no'); }); if(!rec) return;
   curDetail = rec;
-  document.getElementById('detailTitle').textContent = '点数明细';
-  document.getElementById('detailSub').innerHTML = rec.phone + ' · ' + rec.pkg + ' · 剩余点数 <b>' + fmtAi(rec.left) + '</b>';
-  renderDetailTab('recharge');
+  document.getElementById('detailSub').innerHTML = '用户：' + rec.phone + ' · ' + rec.pkg + ' · 剩余点数 <b>' + fmtAi(rec.left) + '</b>';
+  renderDetailTab('consume');
   openDialog('dlgDetail');
 });
 
