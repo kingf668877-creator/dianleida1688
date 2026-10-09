@@ -88,8 +88,7 @@ function payTag(st){
 var AI_PACKAGES = [
   {name:'AI体验包（月）', points:100000, price:'9.9', dur:'月'},
   {name:'AI标准包（月）', points:1000000, price:'99', dur:'月'},
-  {name:'AI旗舰包（年）', points:10000000, price:'499', dur:'年'},
-  {name:'AI点数包（自定义）', points:'', price:'', dur:'自定义'}
+  {name:'AI旗舰包（年）', points:10000000, price:'499', dur:'年'}
 ];
 function seed(){
   var r = function(phone,nick,renew,type,pkg,ai,left,today,dur,price,dis,pay,st,src,created,end,no){
@@ -102,7 +101,7 @@ function seed(){
     r('13666778899','Molly','否/0','AI订单','AI旗舰包（年）',10000000,10000000,0,'年','499','100','399','待支付','线上订单','2026-10-08 09:05:22','--','202610080905224410'),
     r('15099887766','老张做跨境','否/0','AI订单','AI标准包（月）',1000000,1000000,0,'月','','99','0','已关闭','线上订单','2026-10-07 11:30:00','--','202610071130009922'),
     r('18911223344','Lisa','是/1','AI订单','AI体验包（月）',100000,84500,15500,'月','0','0','0','已支付','赠送订单','2026-10-06 15:20:33','2026-11-05 23:59:59','202610061520335566'),
-    r('17766554433','Peter外贸笔记','否/0','AI订单','AI点数包（自定义）',500000,470000,30000,'自定义','49.9','0','49.9','已支付','手工订单','2026-10-05 20:08:45','--','202610052008451120'),
+    r('17766554433','Peter外贸笔记','否/0','AI订单','AI体验包（月）',100000,80000,20000,'月','9.9','0','9.9','已支付','手工订单','2026-10-05 20:08:45','2026-11-04 23:59:59','202610052008451120'),
     r('13512349876','阿May','否/0','AI订单','AI标准包（月）',1000000,720000,280000,'月','99','0','99','已支付','线上订单','2026-10-04 08:45:19','2026-11-04 23:59:59','202610040845193340')
   ];
 }
@@ -132,7 +131,7 @@ function renderTable(){
     return;
   }
   tb.innerHTML = rows.map(function(r){
-    var ops = '<button class="el-button el-button--text el-button--small" data-act="detail" data-no="'+r.no+'">使用</button>';
+    var ops = '<button class="el-button el-button--text el-button--small" data-act="detail" data-no="'+r.no+'">明细</button>';
     var cells = [r.phone, r.nick, r.renew, r.type+(r.type==='AI订单'?'<span class="st-ai">AI</span>':''), r.pkg,
       '<span class="col-new-text">'+fmtAi(r.aiPoints)+'</span>', fmtAi(r.left), String(r.today), r.dur,
       (r.price===''?'--':r.price), (r.dis===''?'--':r.dis), (r.pay===''?'--':r.pay),
@@ -184,19 +183,42 @@ bindCreate('btnGiftSave', 'dlgGift', function(phone, pkgName){
   save(); closeDialog('dlgGift'); renderTable(); toast('赠送订单创建成功' + (note?'（'+note+'）':''));
 });
 
-/* ================= 点数使用明细 ================= */
+/* ================= 点数明细（充值 / 消耗） ================= */
+var curDetail = null;
+function renderDetailTab(tab){
+  document.querySelectorAll('.detail-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
+  document.getElementById('detailRecharge').style.display = tab==='recharge' ? '' : 'none';
+  document.getElementById('detailConsume').style.display = tab==='consume' ? '' : 'none';
+  if(!curDetail) return;
+  if(tab==='recharge'){
+    var re = list.filter(function(x){ return x.phone===curDetail.phone; });
+    var sum = 0;
+    document.getElementById('rechargeBody').innerHTML = re.map(function(x){
+      sum += Number(x.aiPoints)||0;
+      return '<tr>'+[x.no, x.pkg, x.created, '<span class="pt-add">+'+fmtAi(x.aiPoints)+'</span>'].map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
+    }).join('');
+    document.getElementById('rechargeSum').innerHTML = '共 <i>'+re.length+'</i> 条 · 累计充值 <i>'+fmtAi(sum)+'</i>';
+  } else {
+    var base = curDetail.created.slice(0,10);
+    var uses = [['09:12','AI标题生成',2000],['10:05','AI选品分析',5000],['14:37','AI详情描述',3000],['16:20','AI卖点提炼',2000],['18:03','AI竞品洞察',5000]];
+    var cut = 0;
+    document.getElementById('consumeBody').innerHTML = uses.map(function(u){
+      cut += u[2];
+      return '<tr>'+[base+' '+u[0], u[1], '<span class="pt-cut">-'+u[2]+'</span>'].map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
+    }).join('');
+    document.getElementById('consumeSum').innerHTML = '共 <i>'+uses.length+'</i> 条 · 累计消耗 <i>'+cut+' 点</i>';
+  }
+}
+document.querySelectorAll('.detail-tab').forEach(function(b){
+  b.addEventListener('click', function(){ renderDetailTab(b.getAttribute('data-tab')); });
+});
 document.getElementById('tableBody').addEventListener('click', function(e){
   var b = e.target.closest('button[data-act="detail"]'); if(!b) return;
   var rec = list.find(function(x){ return x.no===b.getAttribute('data-no'); }); if(!rec) return;
-  document.getElementById('detailTitle').textContent = rec.phone + ' · ' + rec.pkg + ' · 剩余 ' + fmtAi(rec.left);
-  var rows = [
-    [rec.created.slice(0,10)+' 09:12', 'AI标题生成', 2000, rec.left],
-    [rec.created.slice(0,10)+' 10:05', 'AI详情描述', 5000, Math.max(0, rec.left)],
-    [rec.created.slice(0,10)+' 15:40', 'AI卖点提炼', 3000, Math.max(0, rec.left)]
-  ];
-  document.getElementById('detailBody').innerHTML = rows.map(function(r2){
-    return '<tr>'+[r2[0],r2[1],String(r2[2]),fmtAi(r2[3])].map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
-  }).join('');
+  curDetail = rec;
+  document.getElementById('detailTitle').textContent = '点数明细';
+  document.getElementById('detailSub').innerHTML = rec.phone + ' · ' + rec.pkg + ' · 剩余点数 <b>' + fmtAi(rec.left) + '</b>';
+  renderDetailTab('recharge');
   openDialog('dlgDetail');
 });
 
@@ -216,5 +238,5 @@ initSelect('gPkg', AI_PACKAGES.map(function(x){ return x.name; }), function(v){
   var pkg = AI_PACKAGES.find(function(x){ return x.name===v; });
   document.getElementById('gPoints').value = pkg.points ? String(pkg.points) : '';
 });
-initSelect('gDur', ['7天','月','年','自定义']);
+initSelect('gDur', ['7天','月','年']);
 renderTable();

@@ -16,3 +16,17 @@
 .col-new-text{color:#ff6034;font-weight:600}
 .hint-block{background:#f4f8ff;border:1px solid #d9e8ff;border-radius:4px;padding:8px 12px;color:#606266;font-size:12px;line-height:1.7;margin-bottom:14px}
 .detail-table th{background:#f5f7fa}
+/* ===== 表格横向滚动兼容（18 列） ===== */
+.table-scroll{overflow-x:auto}
+.order-table .data-table{min-width:1780px}
+.order-table .data-table th,.order-table .data-table td{white-space:nowrap}
+/* ===== 点数明细弹窗（充值 / 消耗） ===== */
+.detail-sub{margin-bottom:10px;font-size:13px;color:#303133}
+.detail-sub b{color:#ff6034}
+.detail-tabs{display:flex;gap:8px;margin-bottom:12px}
+.detail-tab{height:30px;padding:0 16px;border:1px solid #dcdfe6;border-radius:15px;background:#fff;color:#606266;font-size:13px;cursor:pointer}
+.detail-tab.active{background:#1890ff;border-color:#1890ff;color:#fff}
+.pt-add{color:#67c23a;font-weight:600}
+.pt-cut{color:#f56c6c;font-weight:600}
+.detail-sum{margin:10px 2px 0;font-size:13px;color:#606266}
+.detail-sum i{font-style:normal;color:#ff6034;font-weight:600}

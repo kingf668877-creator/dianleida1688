@@ -56,7 +56,7 @@
     <button class="tab-btn tab-js" data-tab="js" role="tab"><span class="tab-dot"></span>JS</button>
   </div>
   <div class="panels">
-    <section class="panel active" id="panel-preview"><iframe src="admin-ai-order.html?v=2026100950" title="后台-AI订单效果图"></iframe></section>
+    <section class="panel active" id="panel-preview"><iframe src="admin-ai-order.html?v=2026100960" title="后台-AI订单效果图"></iframe></section>
     <section class="panel" id="panel-spec">
       <div class="spec-wrap">
         <div class="spec-card">
@@ -68,7 +68,7 @@
             <li><b>筛选：</b>创建时间 / 订单状态 / 是否续费订单 / 订单类型（全部、AI订单）/ 订单来源 / 手机号</li>
             <li><b>创建手工订单：</b>手机号 + 选择 AI 套餐（自动带出点数与金额，可调）+ 支付金额；校验手机号为主账号</li>
             <li><b>创建赠送订单：</b>手机号 + AI 套餐 + 赠送时长 + 赠送AI点数 + 备注；交易金额为 0</li>
-            <li><b>点数明细：</b>操作列「使用」查看该订单 AI 点数消耗记录（功能模块 / 消耗 / 剩余）</li>
+            <li><b>点数明细：</b>操作列「明细」弹窗查看该用户的充值明细（订单号 / 套餐 / 点数变动）与消耗明细（功能模块 / 消耗），双 Tab 切换并汇总</li>
             <li class="dim">列表为演示数据，保存在浏览器本地；HTML / CSS / JS 标签可查看对应源码（公共后台样式复用 admin-ai-package.css）</li>
           </ul>
         </div>
@@ -88,7 +88,7 @@
     panels.forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tab));
   }));
   function loadCode(type, url, targetId) {
-    fetch(url + '?v=2026100950').then(response => {
+    fetch(url + '?v=2026100960').then(response => {
       if (!response.ok) throw new Error('加载失败');
       return response.text();
     }).then(text => {
