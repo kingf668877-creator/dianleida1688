@@ -267,7 +267,7 @@ function durLabel(){
 }
 function aiPoints(){
   var c = D.aiPts.value.trim();
-  if(isAi() && c !== '' && !isNaN(+c) && +c > 0) return +c*10000;
+  if(isAi() && c !== '' && !isNaN(+c) && +c > 0) return +c;
   return '';
 }
 function isAi(){ return form.sub === 'AI点数包'; }
@@ -303,7 +303,7 @@ function openDialog(rec){
   var durIdx = rec ? DUR.map(function(d){return d.l;}).indexOf(rec.duration) : 0;
   if(rec && rec.duration && /^\d+天$/.test(rec.duration)){ D.customDays.value = rec.duration.replace('天',''); radioSet(fDuration, -1); }
   else { radioSet(fDuration, Math.max(0, durIdx)); }
-  D.aiPts.value = (rec && rec.aiPoints) ? String(rec.aiPoints / 10000) : '';
+  D.aiPts.value = (rec && rec.aiPoints) ? String(rec.aiPoints) : '';
   // 类型三级联动
   var eco = rec ? rec.eco : '', biz = rec ? rec.biz : '', sub = rec ? rec.sub : '';
   setOptions('dEco', toOpts(ECO));
@@ -379,16 +379,6 @@ document.getElementById('btnSubmitSave').addEventListener('click', function(){
   save(); closeDialog('dlgSetMeal'); renderTable();
 });
 
-/* ================= 弹窗：修改价格 ================= */
-var priceId = null;
-document.getElementById('btnPriceSave').addEventListener('click', function(){
-  var rec = list.find(function(x){ return x.id===priceId; });
-  if(rec){
-    rec.price = document.getElementById('priceNew').value.trim();
-    rec.original = document.getElementById('priceOld').value.trim();
-    save(); toast('价格修改成功'); closeDialog('dlgPrice'); renderTable();
-  }
-});
 
 /* ================= 表格操作 ================= */
 document.getElementById('tableBody').addEventListener('click', function(e){
@@ -399,13 +389,7 @@ document.getElementById('tableBody').addEventListener('click', function(e){
   if(!rec) return;
   var act = b.getAttribute('data-act');
   if(act==='edit') openDialog(rec);
-  else if(act==='price'){
-    priceId = id;
-    document.getElementById('priceName').textContent = rec.name;
-    document.getElementById('priceNew').value = rec.price;
-    document.getElementById('priceOld').value = rec.original;
-    document.getElementById('dlgPrice').classList.add('show');
-  }
+  else if(act==='price'){ openDialog(rec); }
   else if(act==='toggle'){
     rec.status = rec.status==='已上架' ? '未上架' : '已上架';
     save(); toast(rec.status==='已上架'?'已上架':'已下架'); renderTable();
