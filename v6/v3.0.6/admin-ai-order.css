@@ -18,7 +18,8 @@
 .detail-table th{background:#f5f7fa}
 /* ===== 表格横向滚动兼容（18 列） ===== */
 .table-scroll{overflow-x:auto}
-.order-table .data-table{min-width:1780px}
+.order-table .data-table{min-width:1940px}
+.order-note{display:block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .order-table .data-table th,.order-table .data-table td{white-space:nowrap}
 /* ===== 点数明细弹窗（充值 / 消耗） ===== */
 .detail-sub{margin-bottom:10px;font-size:13px;color:#303133}

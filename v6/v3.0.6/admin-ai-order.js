@@ -79,6 +79,9 @@ function fmtAi(v){
   if(isNaN(v)) return '--';
   return (v%10000===0 ? (v/10000)+'万点' : v+'点');
 }
+function safeText(value){
+  return String(value).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
 function payTag(st){
   var cls = st==='已支付' ? 'pay-ok' : (st==='待支付' ? 'pay-wait' : 'pay-close');
   return '<span class="tag-dot '+cls+'"></span>'+st;
@@ -92,7 +95,7 @@ var AI_PACKAGES = [
 ];
 function seed(){
   var r = function(phone,nick,renew,type,pkg,ai,left,today,dur,price,dis,pay,st,src,created,end,no){
-    return {phone:phone,nick:nick,renew:renew,type:type,pkg:pkg,aiPoints:ai,left:left,today:today,dur:dur,price:price,dis:dis,pay:pay,st:st,src:src,created:created,end:end,no:no};
+    return {phone:phone,nick:nick,renew:renew,type:type,pkg:pkg,aiPoints:ai,left:left,today:today,dur:dur,price:price,dis:dis,pay:pay,st:st,src:src,created:created,end:end,no:no,note:src==='赠送订单'?'体验赠送':''};
   };
   return [
     r('18373229819','--','否/0','AI订单','AI体验包（月）',100000,100000,0,'月','9.9','0','9.9','已支付','线上订单','2026-10-09 14:33:05','2026-11-09 23:59:59','202610091433046571'),
@@ -127,7 +130,7 @@ function renderTable(){
   document.getElementById('totalCount').textContent = rows.length;
   var tb = document.getElementById('tableBody');
   if(!rows.length){
-    tb.innerHTML = '<tr><td colspan="18" style="padding:40px 0;color:#909399">暂无数据</td></tr>';
+    tb.innerHTML = '<tr><td colspan="19" style="padding:40px 0;color:#909399">暂无数据</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(function(r){
@@ -136,7 +139,7 @@ function renderTable(){
     var cells = [r.phone, r.nick, r.renew, r.type+(r.type==='AI订单'?'<span class="st-ai">AI</span>':''), r.pkg,
       '<span class="col-new-text">'+fmtAi(r.aiPoints)+'</span>', fmtAi(r.left), String(r.today), r.dur,
       (r.price===''?'--':r.price), (r.dis===''?'--':r.dis), (r.pay===''?'--':r.pay),
-      payTag(r.st), r.src, ' '+r.created+' ', r.end, r.no, '<div class="op-btns">'+ops+'</div>'];
+      payTag(r.st), r.src, ' '+r.created+' ', r.end, r.no, '<span class="order-note" title="'+safeText(r.note||'')+'">'+(r.note?safeText(r.note):'--')+'</span>', '<div class="op-btns">'+ops+'</div>'];
     return '<tr>'+cells.map(function(c){ return '<td><div class="cell">'+c+'</div></td>'; }).join('')+'</tr>';
   }).join('');
 }
@@ -180,7 +183,7 @@ bindCreate('btnGiftSave', 'dlgGift', function(phone, pkgName){
   list.unshift({phone:phone,nick:'--',renew:'否/0',type:'AI订单',pkg:pkgName,
     aiPoints:pts===''?(pkg.points||0):Number(pts), left:pts===''?(pkg.points||0):Number(pts), today:0,
     dur:SEL.gDur.value||'7天', price:'0', dis:'0', pay:'0',
-    st:'已支付', src:'赠送订单', created:d, end:'--', no:nextNo(d)});
+    st:'已支付', src:'赠送订单', created:d, end:'--', no:nextNo(d), note:note});
   save(); closeDialog('dlgGift'); renderTable(); toast('赠送订单创建成功' + (note?'（'+note+'）':''));
 });
 
