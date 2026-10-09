@@ -77,7 +77,7 @@ function fmtAi(v){
   if(v===''||v===null||v===undefined) return '--';
   v = Number(v);
   if(isNaN(v)) return '--';
-  return (v%10000===0 ? (v/10000)+'万点' : v+'点');
+  return (v%10000===0 ? (v/10000)+'万积分' : v+'积分');
 }
 function safeText(value){
   return String(value).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
@@ -230,7 +230,7 @@ function renderDetailTab(tab){
   document.getElementById('detailRecharge').hidden=tab!=='recharge';
   document.getElementById('detailConsume').hidden=tab!=='consume';
   document.getElementById('secTitle').textContent=tab==='recharge'?'充值明细':'消耗明细';
-  document.getElementById('secNote').textContent=tab==='recharge'?'充值点数记录':'AI任务点数消耗记录';
+  document.getElementById('secNote').textContent=tab==='recharge'?'充值积分记录':'AI任务积分消耗记录';
   document.getElementById('detailTitle').textContent=tab==='recharge'?'充值明细':'消耗明细';
   document.querySelector('.detail-filter').hidden=tab!=='consume';
   if(!curDetail) return;
@@ -254,7 +254,7 @@ function renderDetailTab(tab){
       var time=x[1].split(' ');
       return '<tr><td class="left"><div class="cell q-text">'+x[0]+'</div></td><td><div class="cell cell-time">'+time[0]+'<br>'+time[1]+'</div></td><td><div class="cell"><span class="src-pill">'+x[2]+'</span></div></td><td><div class="cell"><span class="pt-cut">-'+x[3]+'</span></div></td></tr>';
     }).join('')||'<tr><td colspan="4" class="detail-empty">该时间范围内暂无消耗记录</td></tr>';
-    document.getElementById('consumeSum').innerHTML='共 <i>'+rows.length+'</i> 条 · 累计消耗 <i>'+sum+' 点</i>';
+    document.getElementById('consumeSum').innerHTML='共 <i>'+rows.length+'</i> 条 · 累计消耗 <i>'+sum+' 积分</i>';
     renderPager('consumePager',rows.length,consumePage,function(n){consumePage=n;renderDetailTab('consume');});
   }
 }
@@ -284,7 +284,7 @@ document.getElementById('tableBody').addEventListener('click', function(e){
   var b = e.target.closest('button[data-act="detail"]'); if(!b) return;
   var rec = list.find(function(x){ return x.no===b.getAttribute('data-no'); }); if(!rec) return;
   curDetail = rec;
-  document.getElementById('detailSub').innerHTML = '用户：' + rec.phone + ' · ' + rec.pkg + ' · 剩余点数 <b>' + fmtAi(rec.left) + '</b>';
+  document.getElementById('detailSub').innerHTML = '用户：' + rec.phone + ' · ' + rec.pkg + ' · 剩余积分 <b>' + fmtAi(rec.left) + '</b>';
   renderDetailTab('consume');
   openDialog('dlgDetail');
 });

@@ -108,7 +108,7 @@ function fmtAi(v){
   if(v===''||v===null||v===undefined) return '--';
   v = Number(v);
   if(isNaN(v)) return '--';
-  return (v%10000===0 ? (v/10000)+'万点' : v+'点');
+  return (v%10000===0 ? (v/10000)+'万积分' : v+'积分');
 }
 function catOf(rec){ return CAT_MAP[rec.biz] || rec.biz; }
 
@@ -286,7 +286,7 @@ function updatePreview(){
   pvD.textContent = durLabel() || '年';
   if(D.sign.value.trim()){ pvS.textContent = D.sign.value.trim(); pvS.classList.add('show'); } else pvS.classList.remove('show');
   var ai = aiPoints();
-  if(isAi() && ai !== ''){ pvA.textContent = 'AI点数 '+fmtAi(ai); pvA.classList.add('show'); } else pvA.classList.remove('show');
+  if(isAi() && ai !== ''){ pvA.textContent = 'AI积分 '+fmtAi(ai); pvA.classList.add('show'); } else pvA.classList.remove('show');
   pvC.textContent = D.text.value.trim();
 }
 function openDialog(rec){
@@ -334,7 +334,7 @@ function closeDialog(id){ document.getElementById(id).classList.remove('show'); 
 function validate(){
   if(!form.eco || !form.biz || !form.sub){ toast('请选择完整的套餐类型','error'); return false; }
   if(!D.name.value.trim()){ toast('请输入套餐名称','error'); return false; }
-  if(isAi() && aiPoints()===''){ toast('请输入AI点数','error'); return false; }
+  if(isAi() && aiPoints()===''){ toast('请输入AI积分','error'); return false; }
   return true;
 }
 function buildRecord(status, rec){
