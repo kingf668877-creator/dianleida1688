@@ -100,7 +100,16 @@ function seed(){
 }
 var list = [];
 function load(){
-  try{ var raw = localStorage.getItem(STORE_KEY); if(raw){ list = JSON.parse(raw); return; } }catch(e){}
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      list = JSON.parse(raw);
+      var migrated = false;
+      list.forEach(function(r){ if(r.sub === 'AI点数包'){ r.sub = 'AI积分包'; migrated = true; } });
+      if(migrated) save();
+      return;
+    }
+  }catch(e){}
   list = seed(); save();
 }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(list)); }catch(e){} }
