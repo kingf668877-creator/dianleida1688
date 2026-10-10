@@ -12,16 +12,16 @@
     "2026": [
       {
         "module": "产品需求",
-        "version": "V2.9.6",
+        "version": "V3.0.6",
         "features": [
-          "店铺榜单和商品推荐优化"
+          "1688 Angent【前后台】"
         ],
-        "reviewAt": "2026-08-18",
+        "reviewAt": "2026-10-10",
         "plannedAt": "",
         "releasedAt": "",
         "progress": "",
         "completion": "",
-        "owner": "卢佳兴"
+        "owner": "郑桂锋"
       },
       {
         "module": "产品需求",
@@ -32,8 +32,8 @@
         "reviewAt": "2026-08-19",
         "plannedAt": "",
         "releasedAt": "",
-        "progress": "",
-        "completion": "",
+        "progress": "100%",
+        "completion": "完成度：100%\n（功能完整上线且前稳定运行）",
         "owner": "郑桂锋"
       },
       {
@@ -43,10 +43,10 @@
           "OZON AI搜索词"
         ],
         "reviewAt": "2026-08-17",
-        "plannedAt": "",
-        "releasedAt": "",
-        "progress": "",
-        "completion": "",
+        "plannedAt": "2026-08-20",
+        "releasedAt": "2026-08-20",
+        "progress": "100%",
+        "completion": "完成度：100%\n（功能完整上线且前稳定运行）",
         "owner": "郑桂锋"
       },
       {
@@ -57,9 +57,9 @@
         ],
         "reviewAt": "2026-08-10",
         "plannedAt": "2026-08-20",
-        "releasedAt": "",
-        "progress": "0%",
-        "completion": "",
+        "releasedAt": "2026-08-25",
+        "progress": "100%",
+        "completion": "完成度：100%\n（功能完整上线且前稳定运行）",
         "owner": "郑桂锋"
       },
       {
