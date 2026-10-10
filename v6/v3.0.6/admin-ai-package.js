@@ -84,9 +84,9 @@ function seed(){
     return {id:id,eco:eco,biz:biz,sub:sub,platform:platform,trial:trial,name:name,priority:pri,price:price,original:original,duration:duration,aiPoints:ai,created:created,status:status,sign:sign,text:text};
   };
   return [
-    r(1,'通用','服务','MCP增值包','全平台',0,'注册赠送MCP增购包',3,'0','','','','2026-09-18 15:39:57','已上架','',''),
+    r(1,'通用','服务','MCP增值包','全平台',0,'注册赠送MCP增购包',3,'0','','',100,'2026-09-18 15:39:57','已上架','',''),
     r(2,'通用','服务','API增值包','全平台',0,'注册赠送API增购包',1,'0','','','','2026-09-18 15:39:41','已上架','',''),
-    r(3,'通用','服务','MCP增值包','全平台',0,'购买赠送MCP增购包',2,'0','','','','2026-09-18 15:40:12','已上架','',''),
+    r(3,'通用','服务','MCP增值包','全平台',0,'购买赠送MCP增购包',2,'0','','',100,'2026-09-18 15:40:12','已上架','',''),
     r(4,'阿里生态','会员套餐','年套餐','1688',0,'阿里会员年套餐',5,'399','599','年','','2026-08-01 10:00:00','已上架','限时优惠','包含1688店铺数据分析、竞店监控、关键词排名等全部功能'),
     r(5,'阿里生态','会员套餐','月套餐','1688',0,'阿里会员月套餐',4,'69','99','月','','2026-08-01 10:05:00','已上架','',''),
     r(6,'拼多多生态','会员套餐','年套餐','拼多多',0,'拼多多会员年套餐',5,'299','499','年','','2026-07-12 09:30:00','已上架','热卖','拼多多数据化选品、竞店分析、类目大盘一站式运营工具'),
@@ -105,7 +105,12 @@ function load(){
     if(raw){
       list = JSON.parse(raw);
       var migrated = false;
-      list.forEach(function(r){ if(r.sub === 'AI点数包'){ r.sub = 'AI积分包'; migrated = true; } });
+      list.forEach(function(r){
+        if(r.sub === 'AI点数包'){ r.sub = 'AI积分包'; migrated = true; }
+        if(r.sub === 'MCP增值包' && (r.aiPoints === '' || r.aiPoints === null || r.aiPoints === undefined)){
+          r.aiPoints = 100; migrated = true;
+        }
+      });
       if(migrated) save();
       return;
     }
