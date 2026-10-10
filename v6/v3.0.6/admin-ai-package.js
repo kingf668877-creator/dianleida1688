@@ -283,6 +283,12 @@ function aiPoints(){
   return '';
 }
 function isAi(){ return form.sub === 'AI积分包' || form.sub === 'AI点数包'; }
+function quotaLabel(){ return isAi() ? '积分' : '点数'; }
+function updateQuotaLabel(){
+  var el = document.getElementById('quotaLabel');
+  if(el) el.textContent = quotaLabel();
+  if(D.aiPts) D.aiPts.placeholder = '请输入' + quotaLabel();
+}
 function updatePreview(){
   var pvT = document.getElementById('pvTitle');
   var pvP = document.getElementById('pvPrice');
@@ -290,6 +296,7 @@ function updatePreview(){
   var pvD = document.getElementById('pvDur');
   var pvS = document.getElementById('pvSign');
   var pvA = document.getElementById('pvAi');
+  updateQuotaLabel();
   var pvC = document.getElementById('pvContent');
   pvT.textContent = D.name.value.trim() || '套餐名称';
   pvP.textContent = D.price.value.trim() === '' ? '0' : D.price.value.trim();
