@@ -1,7 +1,7 @@
 /* ================= 基础配置 ================= */
 var ECO = ['Ozon生态','拼多多生态','阿里生态','通用'];
 var BIZ = ['会员套餐','服务','AI服务'];
-var SUB_MAP = { '会员套餐':['年套餐','半年套餐','季度套餐','月套餐'], '服务':['MCP增值包','API增值包'], 'AI服务':['AI点数包'] };
+var SUB_MAP = { '会员套餐':['年套餐','半年套餐','季度套餐','月套餐'], '服务':['MCP增值包','API增值包'], 'AI服务':['AI积分包'] };
 var CAT_MAP = { '会员套餐':'会员套餐', '服务':'增值包', 'AI服务':'AI套餐' };
 var PLAT_MAP = { 'Ozon生态':['Ozon'], '拼多多生态':['拼多多'], '阿里生态':['1688','淘宝','天猫'], '通用':['全平台'] };
 var DUR = [ {v:0,l:'年'},{v:1,l:'半年'},{v:2,l:'季度'},{v:3,l:'月'},{v:4,l:'7天'} ];
@@ -91,9 +91,9 @@ function seed(){
     r(5,'阿里生态','会员套餐','月套餐','1688',0,'阿里会员月套餐',4,'69','99','月','','2026-08-01 10:05:00','已上架','',''),
     r(6,'拼多多生态','会员套餐','年套餐','拼多多',0,'拼多多会员年套餐',5,'299','499','年','','2026-07-12 09:30:00','已上架','热卖','拼多多数据化选品、竞店分析、类目大盘一站式运营工具'),
     r(7,'Ozon生态','会员套餐','季度套餐','Ozon',0,'Ozon会员季度套餐',4,'139','199','季度','','2026-07-01 14:20:00','未上架','',''),
-    r(8,'通用','AI服务','AI点数包','全平台',1,'AI体验包',1,'9.9','19.9','月',100000,'2026-10-01 10:00:00','已上架','新功能','适合轻度体验AI功能：AI标题生成、AI详情描述、AI卖点提炼'),
-    r(9,'通用','AI服务','AI点数包','全平台',0,'AI标准包',2,'99','199','月',1000000,'2026-10-01 10:02:00','已上架','热卖','适合日常运营：AI选品分析、AI竞品洞察、AI文案批量生成'),
-    r(10,'通用','AI服务','AI点数包','全平台',0,'AI旗舰包',3,'499','999','年',10000000,'2026-10-01 10:05:00','未上架','','适合团队协作，畅享全部AI能力'),
+    r(8,'通用','AI服务','AI积分包','全平台',1,'AI体验包',1,'9.9','19.9','月',100000,'2026-10-01 10:00:00','已上架','新功能','适合轻度体验AI功能：AI标题生成、AI详情描述、AI卖点提炼'),
+    r(9,'通用','AI服务','AI积分包','全平台',0,'AI标准包',2,'99','199','月',1000000,'2026-10-01 10:02:00','已上架','热卖','适合日常运营：AI选品分析、AI竞品洞察、AI文案批量生成'),
+    r(10,'通用','AI服务','AI积分包','全平台',0,'AI旗舰包',3,'499','999','年',10000000,'2026-10-01 10:05:00','未上架','','适合团队协作，畅享全部AI能力'),
     r(11,'通用','服务','API增值包','全平台',0,'API调用增购包（100万次）',1,'0','','','','2026-06-15 11:00:00','已上架','',''),
     r(12,'阿里生态','会员套餐','半年套餐','1688',0,'阿里会员半年套餐',4,'219','329','半年','','2026-05-20 16:40:00','已上架','','')
   ];
@@ -104,12 +104,15 @@ function load(){
   list = seed(); save();
 }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(list)); }catch(e){} }
-function fmtAi(v){
+function quotaUnit(rec){ return rec && (rec.biz==='AI服务' || rec.sub==='AI积分包' || rec.sub==='AI点数包') ? '积分' : '点数'; }
+function fmtQuota(v, unit){
   if(v===''||v===null||v===undefined) return '--';
   v = Number(v);
   if(isNaN(v)) return '--';
-  return (v%10000===0 ? (v/10000)+'万积分' : v+'积分');
+  unit = unit || '积分';
+  return (v%10000===0 ? (v/10000)+'万' : v) + unit;
 }
+function fmtAi(v){ return fmtQuota(v, '积分'); }
 function catOf(rec){ return CAT_MAP[rec.biz] || rec.biz; }
 
 /* ================= 筛选 / 排序 / 分页 ================= */
@@ -152,7 +155,7 @@ function renderTable(){
         (r.original===''?'--':r.original),
         (r.price===''?'--':r.price),
         (r.duration===''?'--':r.duration),
-        fmtAi(r.aiPoints),
+        fmtQuota(r.aiPoints, quotaUnit(r)),
         ' '+r.created+' ',
         ' '+r.status+' ',
         (r.sign===''?'--':r.sign),
@@ -270,7 +273,7 @@ function aiPoints(){
   if(isAi() && c !== '' && !isNaN(+c) && +c > 0) return +c;
   return '';
 }
-function isAi(){ return form.sub === 'AI点数包'; }
+function isAi(){ return form.sub === 'AI积分包' || form.sub === 'AI点数包'; }
 function updatePreview(){
   var pvT = document.getElementById('pvTitle');
   var pvP = document.getElementById('pvPrice');
@@ -286,7 +289,7 @@ function updatePreview(){
   pvD.textContent = durLabel() || '年';
   if(D.sign.value.trim()){ pvS.textContent = D.sign.value.trim(); pvS.classList.add('show'); } else pvS.classList.remove('show');
   var ai = aiPoints();
-  if(isAi() && ai !== ''){ pvA.textContent = 'AI积分 '+fmtAi(ai); pvA.classList.add('show'); } else pvA.classList.remove('show');
+  if(isAi() && ai !== ''){ pvA.textContent = 'AI积分 '+fmtQuota(ai, '积分'); pvA.classList.add('show'); } else pvA.classList.remove('show');
   pvC.textContent = D.text.value.trim();
 }
 function openDialog(rec){
